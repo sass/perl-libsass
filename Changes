@@ -1,0 +1,6 @@
+Revision history for Perl extension Text::Sass::XS.
+
+0.01  Wed May 29 11:13:51 2013
+	- original version; created by h2xs 1.23 with options
+		-A -n Text::Sass::XS
+
