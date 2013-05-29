@@ -23,7 +23,7 @@ my $builder = Module::Build->new(
     extra_linker_flags   => '',
     c_source     => 'libsass',
     xs_files     => {
-        './XS.xs' => 'lib/Text/Sass/XS.xs',
+        './sass.xs' => 'lib/Text/Sass/XS.xs',
     },
 );
 
