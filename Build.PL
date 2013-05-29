@@ -19,7 +19,7 @@ my $builder = Module::Build->new(
     },
     add_to_cleanup     => [ 'Text-Sass-XS-*' ],
     create_makefile_pl => 'traditional',
-    extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare',
+    extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value',
     extra_linker_flags   => '',
     c_source     => 'libsass',
     xs_files     => {
