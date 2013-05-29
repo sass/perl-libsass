@@ -1,28 +1,16 @@
 package Text::Sass::XS;
 
-use 5.012004;
 use strict;
 use warnings;
+use Carp;
 
 require Exporter;
 
 our @ISA = qw(Exporter);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration	use Text::Sass::XS ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
+our @EXPORT_OK = qw( sass_compile );
 our @EXPORT = qw(
-	
+	SASS_STYLE_NESTED
+	SASS_STYLE_COMPRESSED
 );
 
 our $VERSION = '0.01';
@@ -30,7 +18,37 @@ our $VERSION = '0.01';
 require XSLoader;
 XSLoader::load('Text::Sass::XS', $VERSION);
 
-# Preloaded methods go here.
+sub new {
+    my ($class, %options) = @_;
+    bless { options=>\%options }, $class;
+};
+
+sub options {
+    shift->{options}
+}
+
+sub last_error {
+    my ($self) = @_;
+    $self->{last_error}
+}
+
+sub sass_compile {
+    my ($sass_code, %options) = @_;
+    my $r = compile_sass($sass_code, { %options,
+                                       # Override include_paths with a ':' separated list
+                                       !$options{include_paths} ? ()
+                                                                : (include_paths => join(':', @{$options{include_paths}})),
+                                     });
+    wantarray ? ($r->{output_string}, $r->{error_message}) : $r->{output_string}
+}
+
+sub compile {
+    my ($self, $sass_code) = @_;
+    my $compiled;
+    ($compiled, $self->{last_error}) = sass_compile($sass_code, %{$self->options});
+    croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
+    $compiled
+}
 
 1;
 __END__
