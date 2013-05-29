@@ -1,5 +1,5 @@
 Changes
-Makefile.PL
+Build.PL
 MANIFEST
 ppport.h
 README
