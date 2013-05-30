@@ -64,7 +64,7 @@ is    ($r->{error_message}, undef,       "import w/ 2 paths error_message is und
 like  ($r->{output_string}, qr/#ff1111/, "import w/ 2 paths imported red");
 
 
-# $options->{include_paths}
+# $options->{image_path}
 $r = Text::Sass::XS::compile_sass('.valid { color: image-url("path"); }', { });
 is    ($r->{error_status},  0,                        "image_path no error_status");
 is    ($r->{error_message}, undef,                    "image_path error_message is undef");
