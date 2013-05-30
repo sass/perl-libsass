@@ -32,9 +32,6 @@ my $builder = Module::Build->new(
     extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value',
     extra_linker_flags   => '',
     c_source     => 'libsass',
-    xs_files     => {
-        './sass.xs' => 'lib/CSS/Sass.xs',
-    },
 );
 
 $builder->create_build_script();
