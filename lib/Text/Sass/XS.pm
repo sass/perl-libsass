@@ -19,7 +19,7 @@ our @EXPORT = qw(
 	SASS_STYLE_COMPRESSED
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.1.0'; # Always keep the rightmost digit, even if it's zero (stupid perl).
 
 require XSLoader;
 XSLoader::load('Text::Sass::XS', $VERSION);
