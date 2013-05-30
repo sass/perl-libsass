@@ -14,10 +14,10 @@ Installation
 
 To install this module type the following:
 
-   perl Build.PL
-   ./Build
-   ./Build test
-   ./Build install
+    perl Build.PL
+    ./Build
+    ./Build test
+    ./Build install
 
 Documentation
 -------------
