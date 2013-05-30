@@ -1,8 +1,13 @@
 Text::Sass::XS
 ==============
 
-This is a perl interface for [libsass](https://github.com/hcatlin/libsass),
-which is a fairly complete C implementation of SASS.
+### Compile .scss files using libsass
+
+Text::Sass::XS provides a perl interface to [libsass][1], a fairly complete
+Sass compiler written in C. Despite its name, Text::Sass::XS can only
+compile the newer ".scss" files.
+
+[1]: https://github.com/hcatlin/libsass
 
 Installation
 ------------
