@@ -1,8 +1,0 @@
-Changes
-Build.PL
-MANIFEST
-ppport.h
-README
-sass.xs
-t/Text-Sass-XS.t
-lib/Text/Sass/XS.pm

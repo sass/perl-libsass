@@ -3,6 +3,16 @@ use strict;
 use warnings FATAL => 'all';
 use Module::Build;
 
+if (-d ".git") { # Are we in our development tree? If so, create MANIFEST.
+    my ($dir, $manifest);
+    open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
+    print $manifest "MANIFEST\n";
+    open $dir, '-|', 'git', 'ls-files' or die "Couldn't run git: $!";
+    while (<$dir>) { print $manifest $_ unless /^\.|^libsass/ }
+    open $dir, '-|', 'cd libsass && git ls-files' or die "Couldn't run git in libsass: $!";
+    while (<$dir>) { print $manifest "libsass/$_" unless /^\./ }
+}
+
 my $builder = Module::Build->new(
     module_name         => 'Text::Sass::XS',
     license             => 'perl',
