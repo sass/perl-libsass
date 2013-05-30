@@ -4,12 +4,12 @@ use strict;
 use warnings;
 
 use Test::More tests => 19;
-BEGIN { use_ok('Text::Sass::XS', qw(:DEFAULT sass_compile)) };
+BEGIN { use_ok('CSS::Sass', qw(:DEFAULT sass_compile)) };
 
 my $r;
 
 # OO interface
-my $sass = Text::Sass::XS->new;
+my $sass = CSS::Sass->new;
 $r = $sass->compile(".valid { color: red; }");
 isnt  ($r,                undef,       "Successful compile returns something");
 
@@ -30,7 +30,7 @@ $sass->options->{dont_die} = 0;
 $r = eval { $sass->compile('@import "colors"; .valid { color: $red; }') };
 like  ($@,                  qr/error:/,  "failed import dies with error message");
 
-$sass = Text::Sass::XS->new(include_paths => ['t/inc']);
+$sass = CSS::Sass->new(include_paths => ['t/inc']);
 $r = eval { $sass->compile('@import "colors"; .valid { color: $red; }') };
 like  ($r,                  qr/#ff1111/, "import imported red");
 

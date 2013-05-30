@@ -4,4 +4,4 @@ use strict;
 use warnings;
 
 use Test::More tests => 1;
-BEGIN { use_ok('Text::Sass::XS') };
+BEGIN { use_ok('CSS::Sass') };

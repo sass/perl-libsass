@@ -4,7 +4,7 @@
 # it under the same terms as Perl itself, either Perl version 5.12.4 or,
 # at your option, any later version of Perl 5 you may have available.
 
-package Text::Sass::XS;
+package CSS::Sass;
 
 use strict;
 use warnings;
@@ -22,7 +22,7 @@ our @EXPORT = qw(
 our $VERSION = '0.1.0'; # Always keep the rightmost digit, even if it's zero (stupid perl).
 
 require XSLoader;
-XSLoader::load('Text::Sass::XS', $VERSION);
+XSLoader::load('CSS::Sass', $VERSION);
 
 sub new {
     my ($class, %options) = @_;
@@ -61,23 +61,23 @@ __END__
 
 =head1 NAME
 
-Text::Sass::XS - Compile .scss files using libsass
+CSS::Sass - Compile .scss files using libsass
 
 =head1 SYNOPSIS
 
   # Object Oriented API
-  use Text::Sass::XS;
+  use CSS::Sass;
 
-  my $sass = Text::Sass::XS->new;
+  my $sass = CSS::Sass->new;
   my $css = $sass->compile(".something { color: red; }");
 
 
   # Object Oriented API w/ options
-  my $sass = Text::Sass::XS->new(include_paths   => ['some/include/path'],
-                                 image_path      => 'base_url',
-                                 output_style    => SASS_STYLE_COMPRESSED,
-                                 source_comments => 1,
-                                 dont_die        => 1);
+  my $sass = CSS::Sass->new(include_paths   => ['some/include/path'],
+                            image_path      => 'base_url',
+                            output_style    => SASS_STYLE_COMPRESSED,
+                            source_comments => 1,
+                            dont_die        => 1);
   my $css = $sass->compile(".something { color: red; }");
   if (!defined $css) { # $css can be undef because 'dont_die' was set
     warn $sass->last_error;
@@ -86,7 +86,7 @@ Text::Sass::XS - Compile .scss files using libsass
 
 
   # Functional API
-  use Text::Sass::XS qw(:Default sass_compile);
+  use CSS::Sass qw(:Default sass_compile);
 
   my ($css, $err) = sass_compile(".something { color: red; }");
   die $err if defined $err;
@@ -107,8 +107,8 @@ Text::Sass::XS - Compile .scss files using libsass
 
 =head1 DESCRIPTION
 
-Text::Sass::XS provides a perl interface to libsass, a fairly complete Sass
-compiler written in C. Despite its name, Text::Sass::XS can only compile the
+CSS::Sass provides a perl interface to libsass, a fairly complete Sass
+compiler written in C. Despite its name, CSS::Sass can only compile the
 newer ".scss" files.
 
 =head1 OBJECT ORIENTED INTERFACE
@@ -117,12 +117,12 @@ newer ".scss" files.
 
 =item C<new>
 
-  $sass = Text::Sass::XS->new(options)
+  $sass = CSS::Sass->new(options)
 
 Creates a Sass object with the specified options. Example:
 
-  $sass = Text::Sass::XS->new; # no options
-  $sass = Text::Sass::XS->new(output_style => SASS_STYLE_NESTED);
+  $sass = CSS::Sass->new; # no options
+  $sass = CSS::Sass->new(output_style => SASS_STYLE_NESTED);
 
 =item C<compile(source_code)>
 
@@ -217,7 +217,7 @@ L<The Sass Home Page|http://sass-lang.com/>
 
 L<The libsass Home Page|https://github.com/hcatlin/libsass>
 
-L<The Text::Sass::XS Home Page|https://github.com/caldwell/Text-Sass-XS>
+L<The CSS::Sass Home Page|https://github.com/caldwell/CSS-Sass>
 
 =head1 AUTHOR
 

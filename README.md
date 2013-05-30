@@ -1,10 +1,10 @@
-Text::Sass::XS
-==============
+CSS::Sass
+=========
 
 ### Compile .scss files using libsass
 
-Text::Sass::XS provides a perl interface to [libsass][1], a fairly complete
-Sass compiler written in C. Despite its name, Text::Sass::XS can only
+CSS::Sass provides a perl interface to [libsass][1], a fairly complete
+Sass compiler written in C. Despite its name, CSS::Sass can only
 compile the newer ".scss" files.
 
 [1]: https://github.com/hcatlin/libsass
@@ -24,11 +24,11 @@ Documentation
 
 Before installing:
 
-    perldoc lib/Text/Sass/XS.pm
+    perldoc lib/CSS/Sass.pm
 
 After installing:
 
-    man Test::Sass::XS
+    man CSS::Sass
 
 Dependencies
 ------------

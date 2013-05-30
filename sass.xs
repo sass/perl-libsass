@@ -15,7 +15,7 @@
 #define hv_fetch_key(hv, key, lval)     hv_fetch((hv), (key), sizeof(key)-1, (lval))
 #define hv_store_key(hv, key, sv, hash) hv_store((hv), (key), sizeof(key)-1, (sv), (hash))
 
-MODULE = Text::Sass::XS		PACKAGE = Text::Sass::XS
+MODULE = CSS::Sass		PACKAGE = CSS::Sass
 
 int
 SASS_STYLE_NESTED()

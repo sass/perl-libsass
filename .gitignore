@@ -14,8 +14,8 @@ blib/
 nytprof.out
 pod2htm*.tmp
 pm_to_blib
-Text-Sass-XS-*
-Text-Sass-XS-*.tar.gz
+CSS-Sass-*
+CSS-Sass-*.tar.gz
 lib/**/*.o
 lib/**/*.c
 lib/**/*.xs
