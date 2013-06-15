@@ -1,3 +1,9 @@
+CSS::Sass (0.2.0)
+
+  * Don't try to pass clang options to non-clang compilers.
+
+ -- David Caldwell <david@porkrind.org>  Sat, 15 Jun 2013 03:14:37 -0700
+
 CSS::Sass (0.1.0)
 
   * Rename module.
