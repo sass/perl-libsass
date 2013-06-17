@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 34;
+use Test::More tests => 42;
 BEGIN { use_ok('CSS::Sass') };
 
 my $r;
@@ -33,6 +33,9 @@ is    ($r->{error_status},  0,           "output_style=>SASS_STYLE_COMPRESSED no
 is    ($r->{error_message}, undef,       "output_style=>SASS_STYLE_COMPRESSED error_message is undef");
 unlike($r->{output_string}, qr/{\n/,     "output_style=>SASS_STYLE_COMPRESSED has no returns in output");
 
+$r = CSS::Sass::compile_sass(".valid { color: red; }", { output_style => { wrong_type => 1 } });
+is    ($r->{error_status},  0,           "output_style=>{} no_error_status and doesn't crash");
+is    ($r->{error_message}, undef,       "output_style=>{} error_message is undef");
 
 # $options->{source_comment}
 $r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => 1 });
@@ -45,6 +48,10 @@ $r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => 
 is    ($r->{error_status},  0,           "source_comments=>0 no error_status");
 is    ($r->{error_message}, undef,       "source_comments=>0 error_message is undef");
 unlike($r->{output_string}, qr@/\*@,     "source_comments=>0 has no added comments");
+
+$r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => [ 'wrong type' ] });
+is    ($r->{error_status},  0,           "source_comments=>[] no error_status and doesn't crash");
+is    ($r->{error_message}, undef,       "source_comments=>[] error_message is undef");
 
 
 # $options->{include_paths}
@@ -64,6 +71,9 @@ is    ($r->{error_status},  0,           "import w/ 2 paths no error_status");
 is    ($r->{error_message}, undef,       "import w/ 2 paths error_message is undef");
 like  ($r->{output_string}, qr/#ff1111/, "import w/ 2 paths imported red");
 
+$r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { include_paths => [ 'wrong type' ] });
+is    ($r->{error_status},  1,           "import w/ bad type sets error_status but doesn't crash");
+like  ($r->{error_message}, qr/error:/,  "import w/ bad type sets error_message");
 
 # $options->{image_path}
 $r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { });
@@ -75,3 +85,7 @@ $r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { image_pat
 is    ($r->{error_status},  0,                        "image_path paths no error_status");
 is    ($r->{error_message}, undef,                    "image_path paths error_message is undef");
 like  ($r->{output_string}, qr@url\("/a/b/c/path"\)@, "image_path works");
+
+$r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { image_path => { wrong_type => 1 } });
+is    ($r->{error_status},  0,                        "image_path w/ bad type no error_status and doesn't crash");
+is    ($r->{error_message}, undef,                    "image_path w/ bad type error_message is undef");
