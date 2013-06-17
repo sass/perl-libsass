@@ -1,3 +1,10 @@
+CSS::Sass (0.4.0)
+
+  * Fix building on Mac OS X 10.7.
+  * Update to latest libsass code.
+
+ -- David Caldwell <david@porkrind.org>  Mon, 17 Jun 2013 11:01:50 -0700
+
 CSS::Sass (0.3.0)
 
   * Fix building on Linux/GCC.

@@ -19,7 +19,7 @@ our @EXPORT = qw(
 	SASS_STYLE_COMPRESSED
 );
 
-our $VERSION = '0.3.0'; # Always keep the rightmost digit, even if it's zero (stupid perl).
+our $VERSION = '0.4.0'; # Always keep the rightmost digit, even if it's zero (stupid perl).
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
