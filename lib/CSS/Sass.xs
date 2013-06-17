@@ -18,6 +18,16 @@
 
 #define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
 
+char *safe_svpv(SV *sv)
+{
+    size_t length;
+    char *str = SvPV(sv, length);
+    if (memchr(str, 0, length+1)) // NULL Terminated?
+        return str;
+    return NULL;
+}
+
+
 MODULE = CSS::Sass		PACKAGE = CSS::Sass
 
 BOOT:
@@ -47,17 +57,10 @@ compile_sass(input_string, options)
             ctx->options.output_style = SvUV(*output_style_sv);
         if (source_comments_sv)
             ctx->options.source_comments = SvTRUE(*source_comments_sv);
-        if (include_paths_sv) {
-            size_t include_paths_length;
-            char *include_paths = SvPV(*include_paths_sv, include_paths_length);
-            if (memchr(include_paths, 0, include_paths_length+1)) // NULL Terminated?
-                ctx->options.include_paths = include_paths;
-        }
-        if (image_path_sv) {
-            size_t image_path_length;
-            char *image_path = SvPV(*image_path_sv, image_path_length);
-            if (memchr(image_path, 0, image_path_length+1)) // NULL Terminated?
-                ctx->options.image_path = image_path;
+        if (include_paths_sv)
+            ctx->options.include_paths = safe_svpv(*include_paths_sv);
+        if (image_path_sv)
+            ctx->options.image_path = safe_svpv(*image_path_sv);
         }
 
         sass_compile(ctx); // Always returns zero. What's the point??
