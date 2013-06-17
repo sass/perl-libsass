@@ -1,3 +1,10 @@
+CSS::Sass (0.3.0)
+
+  * Fix building on Linux/GCC.
+  * Stop including Makefile.PL.
+
+ -- David Caldwell <david@porkrind.org>  Mon, 17 Jun 2013 01:45:45 -0700
+
 CSS::Sass (0.2.0)
 
   * Don't try to pass clang options to non-clang compilers.
