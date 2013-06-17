@@ -16,37 +16,18 @@
 #define hv_fetch_key(hv, key, lval)     hv_fetch((hv), (key), sizeof(key)-1, (lval))
 #define hv_store_key(hv, key, sv, hash) hv_store((hv), (key), sizeof(key)-1, (sv), (hash))
 
+#define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
+
 MODULE = CSS::Sass		PACKAGE = CSS::Sass
 
-int
-SASS_STYLE_NESTED()
-    CODE:
-        RETVAL = SASS_STYLE_NESTED;
-    OUTPUT:
-        RETVAL
-
-#// These are in sass_interface.h but aren't implemented:
-#//
-#// int
-#// SASS_STYLE_EXPANDED()
-#//     CODE:
-#//         RETVAL = SASS_STYLE_EXPANDED
-#//     OUTPUT:
-#//         RETVAL
-#//
-#// int
-#// SASS_STYLE_COMAPCT()
-#//     CODE:
-#//         RETVAL = SASS_STYLE_COMPACT
-#//     OUTPUT:
-#//         RETVAL
-
-int
-SASS_STYLE_COMPRESSED()
-    CODE:
-        RETVAL = SASS_STYLE_COMPRESSED;
-    OUTPUT:
-        RETVAL
+BOOT:
+{
+    HV *stash = gv_stashpv("CSS::Sass", 0);
+    Constant(SASS_STYLE_NESTED);
+    //Constant(stash, SASS_STYLE_EXPANDED); // not implemented in libsass yet
+    //Constant(stash, SASS_STYLE_COMPACT);  // not implemented in libsass yet
+    Constant(SASS_STYLE_COMPRESSED);
+}
 
 HV*
 compile_sass(input_string, options)
