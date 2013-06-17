@@ -67,11 +67,11 @@ like  ($r->{output_string}, qr/#ff1111/, "import w/ 2 paths imported red");
 
 # $options->{image_path}
 $r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { });
-is    ($r->{error_status},  0,                        "image_path no error_status");
-is    ($r->{error_message}, undef,                    "image_path error_message is undef");
+is    ($r->{error_status},  0,                        "image_path default no error_status");
+is    ($r->{error_message}, undef,                    "image_path default error_message is undef");
 like  ($r->{output_string}, qr@url\("/path"\)@,       "image_path defaults to /");
 
 $r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { image_path => "/a/b/c" });
-is    ($r->{error_status},  0,                        "image_path w/ 2 paths no error_status");
-is    ($r->{error_message}, undef,                    "image_path w/ 2 paths error_message is undef");
+is    ($r->{error_status},  0,                        "image_path paths no error_status");
+is    ($r->{error_message}, undef,                    "image_path paths error_message is undef");
 like  ($r->{output_string}, qr@url\("/a/b/c/path"\)@, "image_path works");
