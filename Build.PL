@@ -29,7 +29,6 @@ my $builder = Module::Build->new(
     requires => {
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
-    create_makefile_pl => 'traditional',
     $Config{cc} eq 'clang' ? (
         # clang has a bunch of asinine warnings on by default:
         extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value',
