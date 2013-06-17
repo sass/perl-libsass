@@ -36,6 +36,7 @@ my $builder = Module::Build->new(
     ) : (),
     extra_linker_flags   => '',
     c_source     => 'libsass',
+    config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)
 );
 
 $builder->create_build_script();
