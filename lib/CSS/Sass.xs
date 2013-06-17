@@ -7,6 +7,7 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include <stdbool.h>
 
 #include "ppport.h"
 
