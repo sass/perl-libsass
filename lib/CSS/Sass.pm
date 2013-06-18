@@ -57,6 +57,10 @@ sub compile {
     $compiled
 }
 
+sub sass_function_callback {
+    shift->(@_);
+}
+
 1;
 __END__
 
