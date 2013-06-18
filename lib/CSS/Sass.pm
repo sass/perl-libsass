@@ -23,6 +23,7 @@ our $VERSION = v0.5.0; # Always keep the rightmost digit, even if it's zero (stu
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
+require CSS::Sass::Type;
 
 sub new {
     my ($class, %options) = @_;
@@ -41,6 +42,10 @@ sub last_error {
 sub sass_compile {
     my ($sass_code, %options) = @_;
     my $r = compile_sass($sass_code, { %options,
+                                       # Override sass_functions with the arrayref of arrayrefs that the XS expects.
+                                       !$options{sass_functions} ? ()
+                                                                 : (sass_functions => [ map { [ $_ => $options{sass_functions}->{$_} ]
+                                                                                            } keys %{$options{sass_functions}} ]),
                                        # Override include_paths with a ':' separated list
                                        !$options{include_paths} ? ()
                                                                 : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
@@ -58,7 +63,10 @@ sub compile {
 }
 
 sub sass_function_callback {
-    shift->(@_);
+    my $cb = shift;
+    my $rep = eval { $cb->(map { CSS::Sass::Type->new_from_xs_rep($_) } @_)->xs_rep };
+    return CSS::Sass::Type::Error->new("$@")->xs_rep if $@;
+    $rep;
 }
 
 1;
