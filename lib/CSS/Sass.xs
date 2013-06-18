@@ -18,13 +18,13 @@
 
 #define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
 
-char *safe_svpv(SV *sv)
+char *safe_svpv(SV *sv, char *_default)
 {
     size_t length;
     char *str = SvPV(sv, length);
     if (memchr(str, 0, length+1)) // NULL Terminated?
         return str;
-    return NULL;
+    return _default;
 }
 
 
@@ -58,9 +58,9 @@ compile_sass(input_string, options)
         if (source_comments_sv)
             ctx->options.source_comments = SvTRUE(*source_comments_sv);
         if (include_paths_sv)
-            ctx->options.include_paths = safe_svpv(*include_paths_sv);
+            ctx->options.include_paths = safe_svpv(*include_paths_sv, NULL);
         if (image_path_sv)
-            ctx->options.image_path = safe_svpv(*image_path_sv);
+            ctx->options.image_path = safe_svpv(*image_path_sv, NULL);
         }
 
         sass_compile(ctx); // Always returns zero. What's the point??
