@@ -20,6 +20,7 @@ my $builder = Module::Build->new(
     dist_author         => q{David Caldwell <david@porkrind.org>},
     dist_version_from   => 'lib/CSS/Sass.pm',
     release_status      => 'stable',
+    create_license      => 1,
     configure_requires => {
         'Module::Build' => 0,
     },
