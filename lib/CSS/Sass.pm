@@ -64,9 +64,10 @@ sub compile {
 
 sub sass_function_callback {
     my $cb = shift;
-    my $rep = eval { $cb->(map { CSS::Sass::Type->new_from_xs_rep($_) } @_)->xs_rep };
+    my $ret = eval { $cb->(map { CSS::Sass::Type->new_from_xs_rep($_) } @_) };
     return CSS::Sass::Type::Error->new("$@")->xs_rep if $@;
-    $rep;
+    return CSS::Sass::Type::String->new('')->xs_rep if !defined $ret;
+    $ret->xs_rep;
 }
 
 1;

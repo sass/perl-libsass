@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 22;
 
 use CSS::Sass;
 
@@ -83,3 +83,9 @@ is    ($err, undef,                                    "Sass function space list
                                                                        [ $_[2], $_[1], $_[0] ]) } });
 like  ($r,   qr/color: rgba\(4, 3, 2, 0.5\) 40in 5%;/, "Sass function list i/o works");
 is    ($err, undef,                                    "Sass function list i/o returns no errors");
+
+# Returning undef
+($r, $err) = CSS::Sass::sass_compile(".valid { color: test(); }",
+    sass_functions => { 'test()' => sub { } } );
+like  ($r,   qr/color: ;/,                             "Sass function undef works");
+is    ($err, undef,                                    "Sass function undef returns no errors");
