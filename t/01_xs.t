@@ -58,7 +58,8 @@ is    ($r->{error_status},  0,           "import no error_status");
 is    ($r->{error_message}, undef,       "import error_message is undef");
 like  ($r->{output_string}, qr/#ff1111/, "import imported red");
 
-$r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { include_paths => 't/nonexistent:t/inc' });
+my $pathsep = $^O eq 'MSWin32' ? ';' : ':';
+$r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { include_paths => "t/nonexistent${pathsep}t/inc" });
 is    ($r->{error_status},  0,           "import w/ 2 paths no error_status");
 is    ($r->{error_message}, undef,       "import w/ 2 paths error_message is undef");
 like  ($r->{output_string}, qr/#ff1111/, "import w/ 2 paths imported red");

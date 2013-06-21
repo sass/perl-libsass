@@ -43,7 +43,8 @@ sub sass_compile {
     my $r = compile_sass($sass_code, { %options,
                                        # Override include_paths with a ':' separated list
                                        !$options{include_paths} ? ()
-                                                                : (include_paths => join(':', @{$options{include_paths}})),
+                                                                : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
+                                                                                         @{$options{include_paths}})),
                                      });
     wantarray ? ($r->{output_string}, $r->{error_message}) : $r->{output_string}
 }
