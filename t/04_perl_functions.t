@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 24;
+use Test::More tests => 28;
 
 use CSS::Sass;
 
@@ -95,3 +95,22 @@ is    ($err, undef,                                    "Sass function undef retu
     sass_functions => { 'test($x)' => sub { return $_[0]->value } } );
 is    ($r,   undef,                                    "Sass function die returns no css");
 like  ($err, qr/CSS::Sass::Type/,                      "Sass function die returns informative error message");
+
+
+# Testing my example code
+my %sass_func = (
+    sass_functions => {
+        'append_hello($str)' => sub {
+            my ($str) = @_;
+            die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
+            return CSS::Sass::Type::String->new($str->value . " hello");
+        }
+    } );
+
+($r, $err) = CSS::Sass::sass_compile('.valid { some_rule: append_hello("Well,"); }', %sass_func);
+like  ($r,   qr/some_rule: Well, hello;/,              "Sass function example works");
+is    ($err, undef,                                    "Sass function example returns no errors");
+
+($r, $err) = CSS::Sass::sass_compile('.valid { some_rule: append_hello(5%); }', %sass_func);
+is    ($r,   undef,                                    "Sass function bad example returns no css");
+like  ($err, qr/should be a string/,                   "Sass function bad example returns informative error message");
