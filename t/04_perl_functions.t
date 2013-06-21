@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 24;
 
 use CSS::Sass;
 
@@ -89,3 +89,9 @@ is    ($err, undef,                                    "Sass function list i/o r
     sass_functions => { 'test()' => sub { } } );
 like  ($r,   qr/color: ;/,                             "Sass function undef works");
 is    ($err, undef,                                    "Sass function undef returns no errors");
+
+# Returning a non CSS::Sass::Type
+($r, $err) = CSS::Sass::sass_compile('.valid { color: test("x"); }',
+    sass_functions => { 'test($x)' => sub { return $_[0]->value } } );
+is    ($r,   undef,                                    "Sass function die returns no css");
+like  ($err, qr/CSS::Sass::Type/,                      "Sass function die returns informative error message");

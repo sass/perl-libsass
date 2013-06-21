@@ -67,6 +67,8 @@ sub sass_function_callback {
     my $ret = eval { $cb->(map { CSS::Sass::Type->new_from_xs_rep($_) } @_) };
     return CSS::Sass::Type::Error->new("$@")->xs_rep if $@;
     return CSS::Sass::Type::String->new('')->xs_rep if !defined $ret;
+    return CSS::Sass::Type::Error->new("Perl Sass function returned something that wasn't a CSS::Sass::Type")->xs_rep
+        unless ref $ret && $ret->isa("CSS::Sass::Type");
     $ret->xs_rep;
 }
 
