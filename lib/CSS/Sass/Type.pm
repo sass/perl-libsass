@@ -82,3 +82,55 @@ package CSS::Sass::Type::Error;
 use base 'CSS::Sass::Type';
 __PACKAGE__->add_field(CSS::Sass::SASS_ERROR, qw(message));
 1;
+__END__
+
+=head1 NAME
+
+CSS::Sass::Types - Types for implementing Sass Functions in Perl
+
+=head1 SYNOPSIS
+
+ # Creating:                                         # Sass representation:
+ my $b = CSS::Sass::Type::Boolean->new(1);           # 1
+ my $n = CSS::Sass::Type::Number->new(42);           # 42
+ my $p = CSS::Sass::Type::Percentage->new(15.5);     # 15.5%
+ my $d = CSS::Sass::Type::Dimension->new(20, 'px');  # 20px
+ my $c = CSS::Sass::Type::Color->new(255,128,255,1); # rbga(255,128,255,1)
+ my $s = CSS::Sass::Type::String->new("A string");   # A string  /*no quotes!*/
+
+ my $l = CSS::Sass::Type::List->new(CSS::Sass::SASS_SPACE, # or SASS_COMMA
+                                    CSS::Sass::Type::Number->new(1),
+                                    CSS::Sass::Type::Number->new(2),
+                                    CSS::Sass::Type::Percentage->new(3));
+                                                     # 1 2 3%   /*SASS_SPACE*/
+                                                     # 1, 2, 3% /*SASS_COMMA*/
+
+ my $e = CSS::Sass::Type::Error->new("some error message");
+
+ # Accessing:
+ $b->value;
+ $n->value;
+ $p->value;
+ $d->value; $d->units;
+ $c->r; $c->g; $c->b; $c->a;
+ $s->value;
+ $l->separator; @{$l->values};
+ $e->message;
+
+=head1 SEE ALSO
+
+L<CSS::Sass>
+
+=head1 AUTHOR
+
+David Caldwell E<lt>david@porkrind.orgE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2013 by David Caldwell
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.12.4 or,
+at your option, any later version of Perl 5 you may have available.
+
+=cut

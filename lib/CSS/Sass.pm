@@ -93,7 +93,10 @@ CSS::Sass - Compile .scss files using libsass
                             image_path      => 'base_url',
                             output_style    => SASS_STYLE_COMPRESSED,
                             source_comments => 1,
-                            dont_die        => 1);
+                            dont_die        => 1,
+                            sass_functions  => {
+                              'my_sass_function($arg)' => sub { $_[0] }
+                            });
   my $css = $sass->compile(".something { color: red; }");
   if (!defined $css) { # $css can be undef because 'dont_die' was set
     warn $sass->last_error;
@@ -225,9 +228,42 @@ is set to C<'file:///tmp/a/b/c'>, then the follwoing Sass code:
 This is only valid when used with the L<Object Oriented Interface|/"OBJECT ORIENTED INTERFACE">. It is
 described in detail there.
 
+=item C<sass_functions>
+
+This is a hash of Sass functions implemented in Perl. The key for each
+function should be the function's Sass signature and the value should be a
+Perl subroutine reference. This subroutine will be called whenever the
+function is used in the Sass being compiled. The arguments to the subroutine
+are L<CSS::Sass::Type> objects and the return value I<must> also be one of
+those types. It may also return C<undef> which is just a shortcut for
+CSS::Sass::Type::String->new('').
+
+The function is called with an C<eval> statement so you may use "die" to
+throw errors back to libsass.
+
+A simple example:
+
+    sass_functions => {
+        'append_hello($str)' => sub {
+            my ($str) = @_;
+            die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
+            return CSS::Sass::Type::String->new($str->value . " hello");
+        }
+    }
+
+If this is encountered in the Sass:
+
+    some_rule: append_hello("Well,");
+
+Then the ouput would be:
+
+    some_rule: Well, hello;
+
 =back
 
 =head1 SEE ALSO
+
+L<CSS::Sass::Type>
 
 L<The Sass Home Page|http://sass-lang.com/>
 
