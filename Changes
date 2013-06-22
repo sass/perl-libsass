@@ -1,3 +1,9 @@
+CSS::Sass (0.6.0)
+
+  * Add Sass functions implemented in Perl.
+
+ -- David Caldwell <david@porkrind.org>  Sat, 22 Jun 2013 13:10:04 -0700
+
 CSS::Sass (0.5.0)
 
   * Fix build issue on OpenSolaris.
