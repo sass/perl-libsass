@@ -60,10 +60,11 @@ SV *sv_from_sass_value(union Sass_Value val)
         case SASS_STRING:
             av_push(perl, newSVpv(val.string.value, 0));
             break;
-        case SASS_LIST:
-            for (int i=0; i<val.list.length; i++)
+        case SASS_LIST: {
+            int i;
+            for (i=0; i<val.list.length; i++)
                 av_push(perl, sv_from_sass_value(val.list.values[i]));
-            break;
+        }   break;
         case SASS_ERROR:
             av_push(perl, newSVpv(val.error.message, 0));
             break;
@@ -106,7 +107,8 @@ union Sass_Value sass_value_from_sv(SV *sv)
         case SASS_LIST: {
             enum Sass_Separator sep = sviv(*av_fetch(av, 1, false));
             union Sass_Value list = make_sass_list(av_len(av)+1-2, sep);
-            for (int i=0; i<list.list.length; i++)
+            int i;
+            for (i=0; i<list.list.length; i++)
                 list.list.values[i] = sass_value_from_sv(*av_fetch(av, i+2, false));
             return list;
         }
@@ -119,13 +121,14 @@ union Sass_Value sass_function_callback(union Sass_Value s_args, void *cookie)
 {
     dSP;
     SV *perl_callback = cookie;
+    int i;
 
     ENTER;
     SAVETMPS;
 
     PUSHMARK(SP);
     XPUSHs(perl_callback);
-    for (int i=0; i<s_args.list.length; i++)
+    for (i=0; i<s_args.list.length; i++)
         XPUSHs(sv_2mortal(sv_from_sass_value(s_args.list.values[i])));
     PUTBACK;
 
@@ -195,6 +198,7 @@ compile_sass(input_string, options)
         if (image_path_sv)
             ctx->options.image_path = safe_svpv(*image_path_sv, NULL);
         if (sass_functions_sv) {
+            int i;
             AV* sass_functions_av;
             if (!SvROK(*sass_functions_sv) || SvTYPE(SvRV(*sass_functions_sv)) != SVt_PVAV) {
                 ctx->error_status = 1;
@@ -209,7 +213,7 @@ compile_sass(input_string, options)
                 ctx->error_message = strdup("couldn't alloc memory for c_functions");
                 goto fail;
             }
-            for (int i=0; i<=av_len(sass_functions_av); i++) {
+            for (i=0; i<=av_len(sass_functions_av); i++) {
                 SV** entry_sv = av_fetch(sass_functions_av, i, false);
                 AV* entry_av;
                 if (!SvROK(*entry_sv) || SvTYPE(SvRV(*entry_sv)) != SVt_PVAV) {
