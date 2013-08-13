@@ -226,9 +226,9 @@ compile_sass(input_string, options)
                 SV **sig_sv = av_fetch(entry_av, 0, false);
                 SV **sub_sv = av_fetch(entry_av, 1, false);
 
-                ctx->c_functions[0].signature = safe_svpv(*sig_sv, "");
-                ctx->c_functions[0].function = sass_function_callback;
-                ctx->c_functions[0].cookie = *sub_sv;
+                ctx->c_functions[i].signature = safe_svpv(*sig_sv, "");
+                ctx->c_functions[i].function = sass_function_callback;
+                ctx->c_functions[i].cookie = *sub_sv;
             }
         }
 
