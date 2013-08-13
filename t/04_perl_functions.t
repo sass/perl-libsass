@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 28;
+use Test::More tests => 31;
 
 use CSS::Sass;
 
@@ -114,3 +114,11 @@ is    ($err, undef,                                    "Sass function example re
 ($r, $err) = CSS::Sass::sass_compile('.valid { some_rule: append_hello(5%); }', %sass_func);
 is    ($r,   undef,                                    "Sass function bad example returns no css");
 like  ($err, qr/should be a string/,                   "Sass function bad example returns informative error message");
+
+# Multiple functions
+($r, $err) = CSS::Sass::sass_compile('.valid { foo: foo(); bar: bar() }',
+    sass_functions => { 'foo()' => sub { CSS::Sass::Type::Boolean->new(1) },
+                        'bar()' => sub { CSS::Sass::Type::Boolean->new(0) } } );
+like  ($r,   qr/foo:\s*true;/,                         "First function worked");
+like  ($r,   qr/bar:\s*false;/,                        "Second function worked");
+is    ($err, undef,                                    "Sass multiple functions test returns no errors");
