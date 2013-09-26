@@ -78,11 +78,10 @@ union Sass_Value make_sass_error_f(char *format,...)
 {
     va_list ap;
     va_start(ap, format);
-    char *msg = NULL;
-    vasprintf(&msg, format, ap);
+    char msg[1024];
+    vsnprintf(msg, 1024, format, ap);
     va_end(ap);
     union Sass_Value err = make_sass_error(msg ? msg : format);
-    free(msg);
     return err;
 }
 union Sass_Value sass_value_from_sv(SV *sv)
@@ -202,7 +201,9 @@ compile_sass(input_string, options)
             AV* sass_functions_av;
             if (!SvROK(*sass_functions_sv) || SvTYPE(SvRV(*sass_functions_sv)) != SVt_PVAV) {
                 ctx->error_status = 1;
-                asprintf(&ctx->error_message, "sass_functions should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*sass_functions_sv)));
+                char msg[1024];
+                snprintf(msg, 1024, "sass_functions should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*sass_functions_sv)));
+                ctx->error_message = strdup(msg);
                 goto fail;
             }
             sass_functions_av = (AV*)SvRV(*sass_functions_sv);
@@ -218,7 +219,9 @@ compile_sass(input_string, options)
                 AV* entry_av;
                 if (!SvROK(*entry_sv) || SvTYPE(SvRV(*entry_sv)) != SVt_PVAV) {
                     ctx->error_status = 1;
-                    asprintf(&ctx->error_message, "each sass_function entry should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*entry_sv)));
+                    char msg[1024];
+                    snprintf(msg, 1024, "each sass_function entry should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*entry_sv)));
+                    ctx->error_message = strdup(msg);
                     goto fail;
                 }
                 entry_av = (AV*)SvRV(*entry_sv);
