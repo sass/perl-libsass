@@ -4,7 +4,7 @@ use warnings FATAL => 'all';
 use Module::Build;
 use Config;
 
-if (-d ".git") { # Are we in our development tree? If so, create MANIFEST.
+if (-d ".git" && !Module::Build->is_windowsish()) { # Are we in our development tree? If so, create MANIFEST.
     my ($dir, $manifest);
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
