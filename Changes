@@ -1,3 +1,9 @@
+CSS::Sass (0.8.0)
+
+  * Fix building on Strawberry Perl (Marcel Greter).
+
+ -- David Caldwell <david@porkrind.org>  Fri, 27 Sep 2013 14:43:36 -0700
+
 CSS::Sass (0.7.0)
 
   * Fix Sass functions so that you may have more than 1 at a time (Dan
