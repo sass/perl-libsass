@@ -78,8 +78,8 @@ union Sass_Value make_sass_error_f(char *format,...)
 {
     va_list ap;
     va_start(ap, format);
-    char msg[1024];
-    vsnprintf(msg, 1024, format, ap);
+    char msg[100];
+    vsnprintf(msg, sizeof(msg), format, ap);
     va_end(ap);
     union Sass_Value err = make_sass_error(msg ? msg : format);
     return err;
@@ -182,6 +182,7 @@ compile_sass(input_string, options)
         sv_2mortal((SV*)RETVAL);
     {
         struct sass_context *ctx = sass_new_context();
+        char error[100] = "";
         ctx->source_string = input_string;
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
         SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
@@ -200,28 +201,21 @@ compile_sass(input_string, options)
             int i;
             AV* sass_functions_av;
             if (!SvROK(*sass_functions_sv) || SvTYPE(SvRV(*sass_functions_sv)) != SVt_PVAV) {
-                ctx->error_status = 1;
-                char msg[1024];
-                snprintf(msg, 1024, "sass_functions should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*sass_functions_sv)));
-                ctx->error_message = strdup(msg);
+                snprintf(error, sizeof(error), "sass_functions should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*sass_functions_sv)));
                 goto fail;
             }
             sass_functions_av = (AV*)SvRV(*sass_functions_sv);
 
             ctx->c_functions = calloc(sizeof(struct Sass_C_Function_Data), av_len(sass_functions_av) + 1/*av_len() is $#av*/ + 1/*null terminated array*/);
             if (!ctx->c_functions) {
-                ctx->error_status = 1;
-                ctx->error_message = strdup("couldn't alloc memory for c_functions");
+                snprintf(error, sizeof(error), "couldn't alloc memory for c_functions");
                 goto fail;
             }
             for (i=0; i<=av_len(sass_functions_av); i++) {
                 SV** entry_sv = av_fetch(sass_functions_av, i, false);
                 AV* entry_av;
                 if (!SvROK(*entry_sv) || SvTYPE(SvRV(*entry_sv)) != SVt_PVAV) {
-                    ctx->error_status = 1;
-                    char msg[1024];
-                    snprintf(msg, 1024, "each sass_function entry should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*entry_sv)));
-                    ctx->error_message = strdup(msg);
+                    snprintf(error, sizeof(error), "each sass_function entry should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*entry_sv)));
                     goto fail;
                 }
                 entry_av = (AV*)SvRV(*entry_sv);
@@ -238,9 +232,10 @@ compile_sass(input_string, options)
         sass_compile(ctx); // Always returns zero. What's the point??
 
       fail:
-        hv_store_key(RETVAL, "error_status", newSViv(ctx->error_status), 0);
+        hv_store_key(RETVAL, "error_status", newSViv(ctx->error_status || !!*error), 0);
         hv_store_key(RETVAL, "output_string", ctx->output_string ? newSVpv(ctx->output_string, 0) : newSV(0), 0);
-        hv_store_key(RETVAL, "error_message", ctx->error_message ? newSVpv(ctx->error_message, 0) : newSV(0), 0);
+        hv_store_key(RETVAL, "error_message", *error             ? newSVpv(error, 0)              :
+                                              ctx->error_message ? newSVpv(ctx->error_message, 0) : newSV(0), 0);
 
         sass_free_context(ctx);
     }
