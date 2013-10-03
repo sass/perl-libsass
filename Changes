@@ -1,3 +1,10 @@
+CSS::Sass (0.8.1)
+
+  * Add requirement for Class::Accessor::Fast to Build.PL. One day it will
+    pass tests on cpantesters.
+
+ -- David Caldwell <david@porkrind.org>  Thu, 03 Oct 2013 16:52:17 -0700
+
 CSS::Sass (0.8.0)
 
   * Fix building on Strawberry Perl (Marcel Greter).
