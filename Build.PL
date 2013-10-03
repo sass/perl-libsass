@@ -28,6 +28,7 @@ my $builder = Module::Build->new(
         'Test::More' => 0,
     },
     requires => {
+        'Class::Accessor::Fast' => 0,
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
     $Config{cc} eq 'clang' ? (
