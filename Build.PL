@@ -30,6 +30,11 @@ my $builder = Module::Build->new(
     requires => {
         'Class::Accessor::Fast' => 0,
     },
+    meta_merge => {
+      resources => {
+        repository  => 'https://github.com/caldwell/CSS-Sass',
+      },
+    },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
     $Config{cc} eq 'clang' ? (
         # clang has a bunch of asinine warnings on by default:
