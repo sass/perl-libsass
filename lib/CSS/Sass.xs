@@ -14,7 +14,6 @@
 #include "ppport.h"
 
 #include "sass_interface.h"
-#include "sass_values.h"
 
 #define hv_fetch_key(hv, key, lval)     hv_fetch((hv), (key), sizeof(key)-1, (lval))
 #define hv_store_key(hv, key, sv, hash) hv_store((hv), (key), sizeof(key)-1, (sv), (hash))
@@ -43,13 +42,7 @@ SV *sv_from_sass_value(union Sass_Value val)
             break;
         case SASS_NUMBER:
             av_push(perl, newSViv(val.number.value));
-            break;
-        case SASS_PERCENTAGE:
-            av_push(perl, newSViv(val.percentage.value));
-            break;
-        case SASS_DIMENSION:
-            av_push(perl, newSVnv(val.dimension.value));
-            av_push(perl, newSVpv(val.dimension.unit, 0));
+            av_push(perl, newSVpv(val.number.unit, 0));
             break;
         case SASS_COLOR:
             av_push(perl, newSVnv(val.color.r));
@@ -92,10 +85,8 @@ union Sass_Value sass_value_from_sv(SV *sv)
     AV *av = (AV*)SvRV(sv);
     switch (sviv(*av_fetch(av, 0, false))) {
         case SASS_BOOLEAN:    return make_sass_boolean(sviv(*av_fetch(av, 1, false)));
-        case SASS_NUMBER:     return make_sass_number(svnv(*av_fetch(av, 1, false)));
-        case SASS_PERCENTAGE: return make_sass_percentage(svnv(*av_fetch(av, 1, false)));
-        case SASS_DIMENSION:  return make_sass_dimension(svnv(*av_fetch(av, 1, false)),
-                                                         safe_svpv(*av_fetch(av, 2, false), ""));
+        case SASS_NUMBER:     return make_sass_number(svnv(*av_fetch(av, 1, false)),
+                                                      safe_svpv(*av_fetch(av, 2, false), ""));
         case SASS_COLOR:      return make_sass_color(svnv(*av_fetch(av, 1, false)),
                                                      svnv(*av_fetch(av, 2, false)),
                                                      svnv(*av_fetch(av, 3, false)),
@@ -162,8 +153,6 @@ BOOT:
 
     Constant(SASS_BOOLEAN);
     Constant(SASS_NUMBER);
-    Constant(SASS_PERCENTAGE);
-    Constant(SASS_DIMENSION);
     Constant(SASS_COLOR);
     Constant(SASS_STRING);
     Constant(SASS_LIST);
@@ -194,9 +183,9 @@ compile_sass(input_string, options)
         if (source_comments_sv)
             ctx->options.source_comments = SvTRUE(*source_comments_sv);
         if (include_paths_sv)
-            ctx->options.include_paths = safe_svpv(*include_paths_sv, NULL);
+            ctx->options.include_paths = safe_svpv(*include_paths_sv, "");
         if (image_path_sv)
-            ctx->options.image_path = safe_svpv(*image_path_sv, NULL);
+            ctx->options.image_path = safe_svpv(*image_path_sv, "");
         if (sass_functions_sv) {
             int i;
             AV* sass_functions_av;
@@ -206,7 +195,7 @@ compile_sass(input_string, options)
             }
             sass_functions_av = (AV*)SvRV(*sass_functions_sv);
 
-            ctx->c_functions = calloc(sizeof(struct Sass_C_Function_Data), av_len(sass_functions_av) + 1/*av_len() is $#av*/ + 1/*null terminated array*/);
+            ctx->c_functions = calloc(sizeof(struct Sass_C_Function_Descriptor), av_len(sass_functions_av) + 1/*av_len() is $#av*/ + 1/*null terminated array*/);
             if (!ctx->c_functions) {
                 snprintf(error, sizeof(error), "couldn't alloc memory for c_functions");
                 goto fail;
@@ -225,7 +214,6 @@ compile_sass(input_string, options)
 
                 ctx->c_functions[i].signature = safe_svpv(*sig_sv, "");
                 ctx->c_functions[i].function = sass_function_callback;
-                ctx->c_functions[i].cookie = *sub_sv;
             }
         }
 

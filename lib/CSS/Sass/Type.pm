@@ -46,14 +46,6 @@ package CSS::Sass::Type::Number;
 use base 'CSS::Sass::Type';
 __PACKAGE__->add_field(CSS::Sass::SASS_NUMBER, qw(value));
 
-package CSS::Sass::Type::Percentage;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_PERCENTAGE, qw(value));
-
-package CSS::Sass::Type::Dimension;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_DIMENSION, qw(value units));
-
 package CSS::Sass::Type::Color;
 use base 'CSS::Sass::Type';
 __PACKAGE__->add_field(CSS::Sass::SASS_COLOR, qw(r g b a));
