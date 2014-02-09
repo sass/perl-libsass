@@ -68,10 +68,11 @@ my $builder = Module::Build::Custom->new(
     ) : (),
     extra_linker_flags => '',
     c_source => { 'libsass' => [ qw(
-        ast.cpp bind.cpp constants.cpp context.cpp contextualize.cpp copy_c_str.cpp
-        error_handling.cpp eval.cpp expand.cpp extend.cpp file.cpp functions.cpp
-        inspect.cpp output_compressed.cpp output_nested.cpp parser.cpp prelexer.cpp
-        sass.cpp sass_interface.cpp to_c.cpp to_string.cpp units.cpp
+        ast.cpp base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp
+        copy_c_str.cpp emscripten_wrapper.cpp error_handling.cpp eval.cpp expand.cpp
+        extend.cpp file.cpp functions.cpp inspect.cpp output_compressed.cpp
+        output_nested.cpp parser.cpp prelexer.cpp sass.cpp sass_interface.cpp
+        source_map.cpp to_c.cpp to_string.cpp units.cpp
     ) ] },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)
 );
