@@ -23,6 +23,7 @@
 char *safe_svpv(SV *sv, char *_default)
 {
     size_t length;
+    if (!SvOK(sv)) return _default;
     char *str = SvPV(sv, length);
     if (memchr(str, 0, length+1)) // NULL Terminated?
         return str;
