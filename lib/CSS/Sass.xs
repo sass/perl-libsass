@@ -214,6 +214,7 @@ compile_sass(input_string, options)
 
                 ctx->c_functions[i].signature = safe_svpv(*sig_sv, "");
                 ctx->c_functions[i].function = sass_function_callback;
+                ctx->c_functions[i].cookie = *sub_sv;
             }
         }
 
