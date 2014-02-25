@@ -17,6 +17,8 @@ our @EXPORT_OK = qw( sass_compile );
 our @EXPORT = qw(
 	SASS_STYLE_NESTED
 	SASS_STYLE_COMPRESSED
+	SASS_SOURCE_COMMENTS_MAP
+	SASS_SOURCE_COMMENTS_DEFAULT
 );
 
 our $VERSION = v0.8.1; # Always keep the rightmost digit, even if it's zero (stupid perl).
@@ -51,7 +53,22 @@ sub sass_compile {
                                                                 : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
                                                                                          @{$options{include_paths}})),
                                      });
-    wantarray ? ($r->{output_string}, $r->{error_message}) : $r->{output_string}
+    wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
+}
+
+sub sass_compile_file {
+    my ($input_path, %options) = @_;
+    my $r = compile_sass_file($input_path, { %options,
+                                            # Override sass_functions with the arrayref of arrayrefs that the XS expects.
+                                            !$options{sass_functions} ? ()
+                                                                      : (sass_functions => [ map { [ $_ => $options{sass_functions}->{$_} ]
+                                                                                                 } keys %{$options{sass_functions}} ]),
+                                            # Override include_paths with a ':' separated list
+                                            !$options{include_paths} ? ()
+                                                                     : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
+                                                                                              @{$options{include_paths}})),
+                                          });
+    wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
 }
 
 sub compile {
