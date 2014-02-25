@@ -124,7 +124,7 @@ CSS::Sass - Compile .scss files using libsass
   # Functional API
   use CSS::Sass qw(:Default sass_compile);
 
-  my ($css, $err) = sass_compile(".something { color: red; }");
+  my ($css, $err, $srcmap) = sass_compile(".something { color: red; }");
   die $err if defined $err;
 
 
@@ -134,11 +134,11 @@ CSS::Sass - Compile .scss files using libsass
 
 
   # Functional API w/ options
-  my ($css, $err) = sass_compile(".something { color: red; }",
-                                 include_paths => ['some/include/path'],
-                                 image_path    => 'base_url',
-                                 output_style  => SASS_STYLE_NESTED,
-                                 source_comments => 1);
+  my ($css, $err, $srcmap) = sass_compile(".something { color: red; }",
+                                          include_paths => ['some/include/path'],
+                                          image_path    => 'base_url',
+                                          output_style  => SASS_STYLE_NESTED,
+                                          source_comments => 1);
 
 
 =head1 DESCRIPTION
@@ -190,7 +190,7 @@ Allows you to inspect or change the options after a call to C<new>.
 
 =over 4
 
-=item C<($css, $err) = sass_compile(source_code, options)>
+=item C<($css, $err, $srcmap) = sass_compile(source_code, options)>
 
 =item C<$css = sass_compile(source_code, options)>
 
@@ -222,6 +222,11 @@ eliminate all whitespace (for your production CSS).
 
 Set to C<0> (the default) and no extra comments are output. Set to C<1> and
 comments are output indicating what input line the code corresponds to.
+
+=item C<source_map_file>
+
+Set to a path. This will not create the given file itself. It is just a
+string that is used to inserted the sourcemap link into the generated code.
 
 =item C<include_paths>
 
