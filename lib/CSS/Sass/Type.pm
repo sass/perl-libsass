@@ -22,7 +22,7 @@ sub add_field {
     @{$index{$class}}{@new_field} = (0..$#new_field);
 }
 sub add_default {
-    my ($class, $tag, $field, $value) = @_;
+    my ($class, $field, $value) = @_;
     $default{$class}->{$field} = $value;
 }
 sub xs_rep {
@@ -56,7 +56,7 @@ __PACKAGE__->add_field(CSS::Sass::SASS_BOOLEAN, qw(value));
 package CSS::Sass::Type::Number;
 use base 'CSS::Sass::Type';
 __PACKAGE__->add_field(CSS::Sass::SASS_NUMBER, qw(value unit));
-__PACKAGE__->add_default(CSS::Sass::SASS_NUMBER, 'unit', '');
+__PACKAGE__->add_default('unit', '');
 
 package CSS::Sass::Type::Color;
 use base 'CSS::Sass::Type';
