@@ -1,0 +1,17 @@
+/* not closed comment
+  not closed comment
+ not closed comment */
+outer {
+  inner {
+    color: red; } }
+
+/* some before */
+/* not closed comment
+   //   some more lines
+ edge case (still works
+   but one char is overwritten */
+
+/* this
+  is also
+
+ 	a comment! */
