@@ -3,7 +3,9 @@
  not closed comment */
 outer {
   inner {
-    color: red; } }
+    color: red;
+    /* before closing */ }
+  /* on parent */ }
 
 /* some before */
 /* not closed comment
