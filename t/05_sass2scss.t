@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 19;
+use Test::More tests => 25;
 
 use CSS::Sass;
 use File::Slurp;
@@ -91,4 +91,25 @@ $expect = read_file('t/inc/scss/t-07.scss');
 
 is    ($r, $expect,                                    "Handle self closing multiline comments");
 is    ($err, undef,                                    "Handle self closing multiline comments");
+
+$src = read_file('t/inc/sass/t-08.sass');
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTYFY_1 | SASS2SCSS_KEEP_COMMENT);
+$expect = read_file('t/inc/scss/t-08.scss');
+
+is    ($r, $expect,                                    "Handle 'keep_comments' option");
+is    ($err, undef,                                    "Handle 'keep_comments' option");
+
+$src = read_file('t/inc/sass/t-09.sass');
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTYFY_1 | SASS2SCSS_CONVERT_COMMENT);
+$expect = read_file('t/inc/scss/t-09.scss');
+
+is    ($r, $expect,                                    "Handle 'convert_comment' option");
+is    ($err, undef,                                    "Handle 'convert_comment' option");
+
+$src = read_file('t/inc/sass/t-10.sass');
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTYFY_1 | SASS2SCSS_STRIP_COMMENT);
+$expect = read_file('t/inc/scss/t-10.scss');
+
+is    ($r, $expect,                                    "Handle 'strip_comment' option");
+is    ($err, undef,                                    "Handle 'strip_comment' option");
 
