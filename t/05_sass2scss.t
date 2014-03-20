@@ -24,16 +24,16 @@ my ($r, $err);
 ($r, $err) = CSS::Sass::sass2scss($sass);
 is    ($r,   $pretty1,                                  "Default pretty print");
 
-($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_0);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_0);
 is    ($r,   $pretty0,                                 "Pretty print option 0");
 
-($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_1);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_1);
 is    ($r,   $pretty1,                                 "Pretty print option 1");
 
-($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_2);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_2);
 is    ($r,   $pretty2,                                 "Pretty print option 2");
 
-($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_3);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_3);
 is    ($r,   $pretty3,                                 "Pretty print option 3");
 
 
@@ -93,21 +93,21 @@ is    ($r, $expect,                                    "Handle self closing mult
 is    ($err, undef,                                    "Handle self closing multiline comments");
 
 $src = read_file('t/inc/sass/t-08.sass');
-($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTYFY_1 | SASS2SCSS_KEEP_COMMENT);
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
 $expect = read_file('t/inc/scss/t-08.scss');
 
 is    ($r, $expect,                                    "Handle 'keep_comments' option");
 is    ($err, undef,                                    "Handle 'keep_comments' option");
 
 $src = read_file('t/inc/sass/t-09.sass');
-($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTYFY_1 | SASS2SCSS_CONVERT_COMMENT);
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_CONVERT_COMMENT);
 $expect = read_file('t/inc/scss/t-09.scss');
 
 is    ($r, $expect,                                    "Handle 'convert_comment' option");
 is    ($err, undef,                                    "Handle 'convert_comment' option");
 
 $src = read_file('t/inc/sass/t-10.sass');
-($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTYFY_1 | SASS2SCSS_STRIP_COMMENT);
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_STRIP_COMMENT);
 $expect = read_file('t/inc/scss/t-10.scss');
 
 is    ($r, $expect,                                    "Handle 'strip_comment' option");
