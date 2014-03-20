@@ -166,6 +166,16 @@ BOOT:
 
     Constant(SASS_COMMA);
     Constant(SASS_SPACE);
+
+		// sass2scss constants
+    Constant(SASS2SCSS_PRETTYFY_0);
+    Constant(SASS2SCSS_PRETTYFY_1);
+    Constant(SASS2SCSS_PRETTYFY_2);
+    Constant(SASS2SCSS_PRETTYFY_3);
+    // more options for sass2scss
+    Constant(SASS2SCSS_KEEP_COMMENT);
+    Constant(SASS2SCSS_STRIP_COMMENT);
+    Constant(SASS2SCSS_CONVERT_COMMENT);
 }
 
 HV*
@@ -333,14 +343,14 @@ compile_sass_file(input_path, options)
              RETVAL
 
 const char*
-sass2scss(sass, pretty = 1)
+sass2scss(sass, options = SASS2SCSS_PRETTYFY_1)
              char *sass
-             int pretty
+             int options
     CODE:
         sv_2mortal((SV*)RETVAL);
     {
 
-        RETVAL = sass2scss(sass, pretty);
+        RETVAL = sass2scss(sass, options);
 
     }
     OUTPUT:

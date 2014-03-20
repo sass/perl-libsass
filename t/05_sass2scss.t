@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 19;
 
 use CSS::Sass;
 use File::Slurp;
@@ -24,20 +24,17 @@ my ($r, $err);
 ($r, $err) = CSS::Sass::sass2scss($sass);
 is    ($r,   $pretty1,                                  "Default pretty print");
 
-($r, $err) = CSS::Sass::sass2scss($sass, 0);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_0);
 is    ($r,   $pretty0,                                 "Pretty print option 0");
 
-($r, $err) = CSS::Sass::sass2scss($sass, 1);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_1);
 is    ($r,   $pretty1,                                 "Pretty print option 1");
 
-($r, $err) = CSS::Sass::sass2scss($sass, 2);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_2);
 is    ($r,   $pretty2,                                 "Pretty print option 2");
 
-($r, $err) = CSS::Sass::sass2scss($sass, 3);
+($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTYFY_3);
 is    ($r,   $pretty3,                                 "Pretty print option 3");
-
-($r, $err) = CSS::Sass::sass2scss($sass, 4);
-is    ($r,   $pretty3,                                 "Pretty print option 4");
 
 
 my ($src, $expect);
@@ -45,28 +42,28 @@ my ($src, $expect);
 # \/\/\/ -- https://github.com/ArnaudRinquin/sass2scss/blob/master/test/ -- \/\/\/
 
 $src = read_file('t/inc/sass/t-01.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-01.scss');
 
 is    ($r, $expect,                                    "Very basic convertion");
 is    ($err, undef,                                    "Very basic convertion");
 
 $src = read_file('t/inc/sass/t-02.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-02.scss');
 
 is    ($r, $expect,                                    "Converts sass mixin and include aliases");
 is    ($err, undef,                                    "Converts sass mixin and include aliases");
 
 $src = read_file('t/inc/sass/t-03.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-03.scss');
 
 is    ($r, $expect,                                    "Ignore comments on block last line");
 is    ($err, undef,                                    "Ignore comments on block last line");
 
 $src = read_file('t/inc/sass/t-04.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-04.scss');
 
 is    ($r, $expect,                                    "Handle selectors not containing alphanumeric characters");
@@ -75,21 +72,21 @@ is    ($err, undef,                                    "Handle selectors not con
 # /\/\/\ -- https://github.com/ArnaudRinquin/sass2scss/blob/master/test/ -- /\/\/\
 
 $src = read_file('t/inc/sass/t-05.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-05.scss');
 
 is    ($r, $expect,                                    "Handle strange comment indentation");
 is    ($err, undef,                                    "Handle strange comment indentation");
 
 $src = read_file('t/inc/sass/t-06.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-06.scss');
 
 is    ($r, $expect,                                    "Handle not closed multiline comments");
 is    ($err, undef,                                    "Handle not closed multiline comments");
 
 $src = read_file('t/inc/sass/t-07.sass');
-($r, $err) = CSS::Sass::sass2scss($src, 1);
+($r, $err) = CSS::Sass::sass2scss($src);
 $expect = read_file('t/inc/scss/t-07.scss');
 
 is    ($r, $expect,                                    "Handle self closing multiline comments");
