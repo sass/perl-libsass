@@ -13,7 +13,7 @@ use Carp;
 require Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw( sass_compile sass_compile_file );
+our @EXPORT_OK = qw( sass2scss sass_compile sass_compile_file );
 our @EXPORT = qw(
 	SASS_STYLE_NESTED
 	SASS_STYLE_COMPRESSED

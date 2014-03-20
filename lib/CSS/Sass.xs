@@ -13,6 +13,8 @@
 
 #include "ppport.h"
 
+#include "sass2scss.h"
+
 #include "sass_interface.h"
 
 #define hv_fetch_key(hv, key, lval)     hv_fetch((hv), (key), sizeof(key)-1, (lval))
@@ -329,3 +331,18 @@ compile_sass_file(input_path, options)
     }
     OUTPUT:
              RETVAL
+
+const char*
+sass2scss(sass, pretty = 1)
+             char *sass
+             int pretty
+    CODE:
+        sv_2mortal((SV*)RETVAL);
+    {
+
+        RETVAL = sass2scss(sass, pretty);
+
+    }
+    OUTPUT:
+             RETVAL
+

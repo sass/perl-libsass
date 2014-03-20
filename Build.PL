@@ -73,7 +73,7 @@ my $builder = Module::Build::Custom->new(
         extend.cpp file.cpp functions.cpp inspect.cpp output_compressed.cpp
         output_nested.cpp parser.cpp prelexer.cpp sass.cpp sass_interface.cpp
         source_map.cpp to_c.cpp to_string.cpp units.cpp
-    ) ] },
+    ) ], "sass2scss" => [ qw(sass2scss.cpp) ] },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)
 );
 

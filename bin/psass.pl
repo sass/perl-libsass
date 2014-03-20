@@ -14,6 +14,9 @@ use warnings;
 use Pod::Usage;
 use Getopt::Long;
 
+# load constants from libsass
+use CSS::Sass qw(SASS_STYLE_NESTED);
+
 ####################################################################################################
 # config variables
 ####################################################################################################
@@ -21,6 +24,9 @@ use Getopt::Long;
 # init options
 my $comments = 0;
 my $precision = 0;
+
+# make this configurable
+my $style = SASS_STYLE_NESTED;
 
 # define a sub to print out the version (mimic behaviour of node.js blessc)
 # this script has it's own version numbering as it's not dependent on any libs
@@ -35,7 +41,7 @@ GetOptions (
 );
 
 ####################################################################################################
-use CSS::Sass qw(SASS_STYLE_NESTED sass_compile_file sass_compile);
+use CSS::Sass qw(sass_compile_file sass_compile);
 ####################################################################################################
 
 # variables
@@ -47,7 +53,8 @@ if (defined $ARGV[0] && $ARGV[0] ne '-')
 	($css, $err) = sass_compile_file(
 		$ARGV[0],
 		precision => $precision,
-		source_comments => $comments
+		output_style  => $style,
+		source_comments => $comments,
 	);
 }
 # or use standard input
@@ -56,7 +63,8 @@ else
 	($css, $err) = sass_compile(
 		join('', <STDIN>),
 		precision => $precision,
-		source_comments => $comments
+		source_comments => $style,
+		output_style  => SASS_STYLE_NESTED
 	);
 }
 
