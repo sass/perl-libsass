@@ -18,23 +18,43 @@ my $pretty1 = read_file('t/inc/scss/pretty-1.scss');
 my $pretty2 = read_file('t/inc/scss/pretty-2.scss');
 my $pretty3 = read_file('t/inc/scss/pretty-3.scss');
 
-my $ignore_whitespace = 0;
+my $ignore_whitespace = 1;
 
 my ($r, $err);
 
 ($r, $err) = CSS::Sass::sass2scss($sass);
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$pretty1 =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($pretty1) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
 is    ($r,   $pretty1,                                  "Default pretty print");
 
 ($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_0);
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$pretty0 =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($pretty0) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
 is    ($r,   $pretty0,                                 "Pretty print option 0");
 
 ($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_1);
+$pretty1 =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($pretty1) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
 is    ($r,   $pretty1,                                 "Pretty print option 1");
 
 ($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_2);
+$pretty2 =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($pretty2) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
 is    ($r,   $pretty2,                                 "Pretty print option 2");
 
 ($r, $err) = CSS::Sass::sass2scss($sass, SASS2SCSS_PRETTIFY_3);
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$pretty3 =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($pretty3) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
 is    ($r,   $pretty3,                                 "Pretty print option 3");
 
 
