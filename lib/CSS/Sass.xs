@@ -352,6 +352,10 @@ sass2scss(sass, options = SASS2SCSS_PRETTIFY_1)
 
         RETVAL = sass2scss(sass, options);
 
+        // seems to be removed automatically
+        // if enabled I get "double free" error
+        // safefree (sass);
+
     }
     OUTPUT:
              RETVAL
