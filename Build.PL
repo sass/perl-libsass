@@ -67,13 +67,14 @@ my $builder = Module::Build::Custom->new(
         extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value',
     ) : (),
     extra_linker_flags => '',
-    c_source => { 'libsass' => [ qw(
+    c_source => { 'libsass' => [ qw(sass2scss/sass2scss.cpp
         ast.cpp base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp
         copy_c_str.cpp emscripten_wrapper.cpp error_handling.cpp eval.cpp expand.cpp
         extend.cpp file.cpp functions.cpp inspect.cpp output_compressed.cpp
         output_nested.cpp parser.cpp prelexer.cpp sass.cpp sass_interface.cpp
         source_map.cpp to_c.cpp to_string.cpp units.cpp
-    ) ], "sass2scss" => [ qw(sass2scss.cpp) ] },
+    ) ] #, "sass2scss" => [ qw(sass2scss.cpp) ]
+    },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)
 );
 

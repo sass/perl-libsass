@@ -13,8 +13,6 @@
 
 #include "ppport.h"
 
-#include "sass2scss.h"
-
 #include "sass_interface.h"
 
 #define hv_fetch_key(hv, key, lval)     hv_fetch((hv), (key), sizeof(key)-1, (lval))
