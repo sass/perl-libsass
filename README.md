@@ -5,9 +5,11 @@ CSS::Sass
 
 CSS::Sass provides a perl interface to [libsass][1], a fairly complete
 Sass compiler written in C. Despite its name, CSS::Sass can only
-compile the newer ".scss" files.
+compile the newer ".scss" files (support for indented syntax is in
+[alpha stage][2]).
 
 [1]: https://github.com/hcatlin/libsass
+[2]: https://github.com/hcatlin/libsass/issues/16
 
 Installation
 ------------
@@ -18,6 +20,8 @@ To install this module type the following:
     ./Build
     ./Build test
     ./Build install
+
+On windows you need to install [Strawberry Perl](http://strawberryperl.com/).
 
 Documentation
 -------------
@@ -41,7 +45,8 @@ This module requires these other modules and libraries:
 Copyright And Licence
 ---------------------
 
-Copyright © 2013 by David Caldwell
+Copyright © 2013 by David Caldwell  
+Copyright © 2014 by Marcel Greter
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.12.4 or,
