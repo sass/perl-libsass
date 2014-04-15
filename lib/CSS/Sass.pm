@@ -92,6 +92,14 @@ sub compile {
     $compiled
 }
 
+sub compile_file {
+    my ($self, $sass_file) = @_;
+    my $compiled;
+    ($compiled, $self->{last_error}) = sass_compile_file($sass_file, %{$self->options});
+    croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
+    $compiled
+}
+
 sub sass_function_callback {
     my $cb = shift;
     my $ret = eval { $cb->(map { CSS::Sass::Type->new_from_xs_rep($_) } @_) };
