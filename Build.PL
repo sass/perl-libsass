@@ -1,17 +1,34 @@
 use 5.008;
 use strict;
 use warnings FATAL => 'all';
+use File::Spec::Functions qw(rel2abs catfile abs2rel);
 use Module::Build;
 use Config;
+use Cwd;
 
-if (-d ".git" && !Module::Build->is_windowsish()) { # Are we in our development tree? If so, create MANIFEST.
+# Are we in our development tree?
+# If so, create the MANIFEST file.
+if (-d ".git") {
+    my @modules = ('.');
+    my $base = getcwd;
     my ($dir, $manifest);
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
-    open $dir, '-|', 'git', 'ls-files' or die "Couldn't run git: $!";
-    while (<$dir>) { print $manifest $_ unless /^\.|^libsass/ }
-    open $dir, '-|', 'cd libsass && git ls-files' or die "Couldn't run git in libsass: $!";
-    while (<$dir>) { print $manifest "libsass/$_" unless /^\./ }
+    while (my $module = shift @modules)
+    {
+      my $cwd = getcwd;
+      chdir ($module) or die "pushd: $!";
+      my $files = `git ls-files` or die "Couldn't run git: $!";
+      my @items = split(/\n+/, $files);
+      my @files = grep { ! -d } @items;
+      print $manifest
+        map { tr/\\/\//; $_ . "\n" }
+        map { abs2rel $_, $base } @files;
+      push @modules,
+        map { catfile $module, $_ }
+        grep { -d } @items;
+      chdir ($cwd) or die "popd: $!";
+    }
 }
 
 my $class = Module::Build->subclass(
