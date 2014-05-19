@@ -3,4 +3,4 @@
 	url = git://github.com/hcatlin/libsass.git
 [submodule "t/specs"]
 	path = t/specs
-	url = https://github.com/mgreter/sass-spec.git
+	url = https://github.com/hcatlin/sass-spec.git
