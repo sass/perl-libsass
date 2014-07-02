@@ -1,8 +1,8 @@
 /* not closed comment
   not closed comment
  not closed comment */
-outer {
-  inner {
+outer { /* comment // ignore */
+  inner /* ignore // comment */ {
     color: red;
     /* before closing */ }
   /* on parent */ }
