@@ -15,5 +15,6 @@ before_script:
    # - git submodule update --init --recursive
 script:
    - perl Build.PL
+   - ./Build verbose=1
    - ./Build test verbose=1
    - ./Build install verbose=1

@@ -14,12 +14,14 @@ compile the newer ".scss" files (support for indented syntax is in
 Installation
 ------------
 
+[![Build Status](https://travis-ci.org/mgreter/CSS-Sass.svg?branch=master)](https://travis-ci.org/mgreter/CSS-Sass)
+
 To install this module type the following:
 
     perl Build.PL
-    ./Build
-    ./Build test
-    ./Build install
+    ./Build verbose=1
+    ./Build test verbose=1
+    ./Build install verbose=1
 
 On windows you need to install [Strawberry Perl](http://strawberryperl.com/).
 
@@ -45,7 +47,7 @@ This module requires these other modules and libraries:
 Copyright And Licence
 ---------------------
 
-Copyright © 2013 by David Caldwell  
+Copyright © 2013 by David Caldwell
 Copyright © 2014 by Marcel Greter
 
 This library is free software; you can redistribute it and/or modify
