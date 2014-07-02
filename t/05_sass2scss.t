@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 43;
+use Test::More tests => 45;
 
 use CSS::Sass;
 use File::Slurp;
@@ -228,6 +228,17 @@ chomp($r) if $ignore_whitespace;
 
 is    ($r, $expect,                                    "Handle \@content keyword");
 is    ($err, undef,                                    "Handle \@content keyword");
+
+$src = read_file('t/inc/sass/t-16.sass');
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$expect = read_file('t/inc/scss/t-16.scss');
+$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($expect) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
+
+is    ($r, $expect,                                    "Handle \@return keyword");
+is    ($err, undef,                                    "Handle \@return keyword");
 
 $src = read_file('t/inc/sass/comment.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
