@@ -8,8 +8,8 @@ before_install:
    # also initialize sass2scss submodule
    - git submodule update --init --recursive
 install:
-   # Deal with all of the DZIL dependancies, quickly and quietly
-   - cpanm --quiet --notest --skip-satisfied CSS::Sass
+   # Deal with all of the dependencies, quickly and quietly
+   - cpanm --quiet --notest --skip-satisfied Module::Build Test::More Class::Accessor::Fast
 before_script:
    # also initialize sass2scss submodule
    # - git submodule update --init --recursive
