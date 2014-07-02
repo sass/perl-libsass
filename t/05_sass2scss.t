@@ -9,8 +9,13 @@ use warnings;
 use Test::More tests => 55;
 
 use CSS::Sass;
-use File::Slurp;
-use Data::Dumper;
+
+sub read_file
+{
+  local $/=undef;
+  open my $fh, $_[0] or die "Couldn't open file: $!";
+  binmode $fh; return <$fh>;
+}
 
 my $sass = read_file('t/inc/sass/pretty.sass');
 my $pretty0 = read_file('t/inc/scss/pretty-0.scss');

@@ -10,7 +10,6 @@ use Test::More tests => 31;
 
 use CSS::Sass;
 
-use Data::Dumper;
 #use CSS::Sass::Type;
 
 my ($r, $err);

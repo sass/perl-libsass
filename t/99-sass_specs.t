@@ -39,8 +39,13 @@ BEGIN
 use Test::More tests => scalar(@tests) * 2;
 
 use CSS::Sass;
-use File::Slurp;
-use Data::Dumper;
+
+sub read_file
+{
+  local $/=undef;
+  open my $fh, $_[0] or die "Couldn't open file: $!";
+  binmode $fh; return <$fh>;
+}
 
 my $sass;
 my ($r, $err);
