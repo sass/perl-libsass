@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 51;
+use Test::More tests => 53;
 
 use CSS::Sass;
 use File::Slurp;
@@ -18,7 +18,7 @@ my $pretty1 = read_file('t/inc/scss/pretty-1.scss');
 my $pretty2 = read_file('t/inc/scss/pretty-2.scss');
 my $pretty3 = read_file('t/inc/scss/pretty-3.scss');
 
-my $ignore_whitespace = 1;
+my $ignore_whitespace = 0;
 
 my ($r, $err);
 
@@ -70,8 +70,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Very basic convertion");
-is    ($err, undef,                                    "Very basic convertion");
+is    ($r, $expect,                                    "Very basic convertion (01)");
+is    ($err, undef,                                    "Very basic convertion (01)");
 
 $src = read_file('t/inc/sass/t-02.sass');
 ($r, $err) = CSS::Sass::sass2scss($src);
@@ -81,8 +81,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Converts sass mixin and include aliases");
-is    ($err, undef,                                    "Converts sass mixin and include aliases");
+is    ($r, $expect,                                    "Converts sass mixin and include aliases (02)");
+is    ($err, undef,                                    "Converts sass mixin and include aliases (02)");
 
 $src = read_file('t/inc/sass/t-03.sass');
 ($r, $err) = CSS::Sass::sass2scss($src);
@@ -92,8 +92,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Ignore comments on block last line");
-is    ($err, undef,                                    "Ignore comments on block last line");
+is    ($r, $expect,                                    "Ignore comments on block last line (03)");
+is    ($err, undef,                                    "Ignore comments on block last line (03)");
 
 $src = read_file('t/inc/sass/t-04.sass');
 ($r, $err) = CSS::Sass::sass2scss($src);
@@ -103,8 +103,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle selectors not containing alphanumeric characters");
-is    ($err, undef,                                    "Handle selectors not containing alphanumeric characters");
+is    ($r, $expect,                                    "Handle selectors not containing alphanumeric characters (04)");
+is    ($err, undef,                                    "Handle selectors not containing alphanumeric characters (04)");
 
 # /\/\/\ -- https://github.com/ArnaudRinquin/sass2scss/blob/master/test/ -- /\/\/\
 
@@ -116,8 +116,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle strange comment indentation");
-is    ($err, undef,                                    "Handle strange comment indentation");
+is    ($r, $expect,                                    "Handle strange comment indentation (05)");
+is    ($err, undef,                                    "Handle strange comment indentation (05)");
 
 $src = read_file('t/inc/sass/t-06.sass');
 ($r, $err) = CSS::Sass::sass2scss($src);
@@ -127,8 +127,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle not closed multiline comments");
-is    ($err, undef,                                    "Handle not closed multiline comments");
+is    ($r, $expect,                                    "Handle not closed multiline comments (06)");
+is    ($err, undef,                                    "Handle not closed multiline comments (06)");
 
 $src = read_file('t/inc/sass/t-07.sass');
 ($r, $err) = CSS::Sass::sass2scss($src);
@@ -138,8 +138,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle self closing multiline comments");
-is    ($err, undef,                                    "Handle self closing multiline comments");
+is    ($r, $expect,                                    "Handle self closing multiline comments (07)");
+is    ($err, undef,                                    "Handle self closing multiline comments (07)");
 
 $src = read_file('t/inc/sass/t-08.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
@@ -149,8 +149,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle \"keep_comments\" option");
-is    ($err, undef,                                    "Handle \"keep_comments\" option");
+is    ($r, $expect,                                    "Handle \"keep_comments\" option (08)");
+is    ($err, undef,                                    "Handle \"keep_comments\" option (08)");
 
 $src = read_file('t/inc/sass/t-09.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_CONVERT_COMMENT);
@@ -160,8 +160,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle \"convert_comment\" option");
-is    ($err, undef,                                    "Handle \"convert_comment\" option");
+is    ($r, $expect,                                    "Handle \"convert_comment\" option (09)");
+is    ($err, undef,                                    "Handle \"convert_comment\" option (09)");
 
 $src = read_file('t/inc/sass/t-10.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_CONVERT_COMMENT | SASS2SCSS_STRIP_COMMENT);
@@ -171,8 +171,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle \"strip_comment\" option");
-is    ($err, undef,                                    "Handle \"strip_comment\" option");
+is    ($r, $expect,                                    "Handle \"strip_comment\" option (10)");
+is    ($err, undef,                                    "Handle \"strip_comment\" option (10)");
 
 $src = read_file('t/inc/sass/t-11.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_CONVERT_COMMENT | SASS2SCSS_STRIP_COMMENT);
@@ -182,8 +182,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle unquoted import statements");
-is    ($err, undef,                                    "Handle unquoted import statements");
+is    ($r, $expect,                                    "Handle unquoted import statements (11)");
+is    ($err, undef,                                    "Handle unquoted import statements (11)");
 
 $src = read_file('t/inc/sass/t-12.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -193,8 +193,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle comma separated selctors");
-is    ($err, undef,                                    "Handle comma separated selctors");
+is    ($r, $expect,                                    "Handle comma separated selctors (12)");
+is    ($err, undef,                                    "Handle comma separated selctors (12)");
 
 $src = read_file('t/inc/sass/t-13.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -204,8 +204,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle pseudo-selectors and sass property syntax");
-is    ($err, undef,                                    "Handle pseudo-selectors and sass property syntax");
+is    ($r, $expect,                                    "Handle pseudo-selectors and sass property syntax (13)");
+is    ($err, undef,                                    "Handle pseudo-selectors and sass property syntax (13)");
 
 $src = read_file('t/inc/sass/t-14.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -215,8 +215,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle empty selectors");
-is    ($err, undef,                                    "Handle empty selectors");
+is    ($r, $expect,                                    "Handle empty selectors (14)");
+is    ($err, undef,                                    "Handle empty selectors (14)");
 
 $src = read_file('t/inc/sass/t-15.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -226,8 +226,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle \@content keyword");
-is    ($err, undef,                                    "Handle \@content keyword");
+is    ($r, $expect,                                    "Handle \@content keyword (15)");
+is    ($err, undef,                                    "Handle \@content keyword (15)");
 
 $src = read_file('t/inc/sass/t-16.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -237,8 +237,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle \@return keyword");
-is    ($err, undef,                                    "Handle \@return keyword");
+is    ($r, $expect,                                    "Handle \@return keyword (16)");
+is    ($err, undef,                                    "Handle \@return keyword (16)");
 
 $src = read_file('t/inc/sass/t-17.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -248,8 +248,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle \@extend keyword");
-is    ($err, undef,                                    "Handle \@extend keyword");
+is    ($r, $expect,                                    "Handle \@extend keyword (17)");
+is    ($err, undef,                                    "Handle \@extend keyword (17)");
 
 $src = read_file('t/inc/sass/t-18.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -259,8 +259,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle plus char fallowed by whitespace");
-is    ($err, undef,                                    "Handle plus char fallowed by whitespace");
+is    ($r, $expect,                                    "Handle plus char fallowed by whitespace (18)");
+is    ($err, undef,                                    "Handle plus char fallowed by whitespace (18)");
 
 $src = read_file('t/inc/sass/t-19.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
@@ -270,8 +270,19 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle comments with less indentation");
-is    ($err, undef,                                    "Handle comments with less indentation");
+is    ($r, $expect,                                    "Handle comments with less indentation (19)");
+is    ($err, undef,                                    "Handle comments with less indentation (19)");
+
+$src = read_file('t/inc/sass/t-20.sass');
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$expect = read_file('t/inc/scss/t-20.scss');
+$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($expect) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
+
+is    ($r, $expect,                                    "Handle in line comments (20)");
+is    ($err, undef,                                    "Handle in line comments (20)");
 
 $src = read_file('t/inc/sass/comment.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
