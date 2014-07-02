@@ -1,7 +1,19 @@
 language: perl
 perl:
-  - "5.16"
-  - "5.14"
-  - "5.12"
+   - "5.16"
+   - "5.14"
+   - "5.12"
+
+before_install:
+   # also initialize sass2scss submodule
+   - git submodule update --init --recursive
+install:
+   # Deal with all of the DZIL dependancies, quickly and quietly
+   - cpanm --quiet --notest --skip-satisfied CSS::Sass
 before_script:
-  - git submodule update --init --recursive
+   # also initialize sass2scss submodule
+   # - git submodule update --init --recursive
+script:
+   - perl Build.PL
+   - ./Build test verbose=1
+   - ./Build install verbose=1
