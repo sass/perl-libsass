@@ -3,3 +3,5 @@ perl:
   - "5.16"
   - "5.14"
   - "5.12"
+before_script:
+  - git submodule update --init --recursive
