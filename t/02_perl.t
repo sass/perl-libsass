@@ -68,7 +68,7 @@ unlike($r,                  qr/{\n/,     "output_style=>SASS_STYLE_COMPRESSED ha
 
 use File::Temp qw(tempfile);
 my ($fh, $filename) = tempfile( SUFFIX => '.scss');
-$fh->autoflush(); $fh->binmode();
+$fh->autoflush(); binmode $fh;
 
 
 # File OO interface
