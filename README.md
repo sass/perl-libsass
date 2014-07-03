@@ -15,6 +15,7 @@ Installation
 ------------
 
 [![Build Status](https://travis-ci.org/mgreter/CSS-Sass.svg?branch=master)](https://travis-ci.org/mgreter/CSS-Sass)
+[![Coverage Status](https://img.shields.io/coveralls/mgreter/CSS-Sass.svg)](https://coveralls.io/r/mgreter/CSS-Sass?branch=master)
 
 To install this module type the following:
 

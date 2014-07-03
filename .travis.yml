@@ -7,6 +7,7 @@ perl:
 before_install:
    # also initialize sass2scss submodule
    - git submodule update --init --recursive
+   - cpanm -n Devel::Cover::Report::Coveralls
 install:
    # Deal with all of the dependencies, quickly and quietly
    - cpanm --quiet --notest --skip-satisfied Module::Build Test::More Class::Accessor::Fast
@@ -18,3 +19,5 @@ script:
    - ./Build verbose=1
    - ./Build test verbose=1
    - ./Build install verbose=1
+after_success:
+   - cover -test -report coveralls
