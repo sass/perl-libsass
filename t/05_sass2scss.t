@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 59;
+use Test::More tests => 61;
 
 use CSS::Sass;
 
@@ -321,6 +321,17 @@ chomp($r) if $ignore_whitespace;
 
 is    ($r, $expect,                                    "Handle pseudo selectors and sass property syntax (23)");
 is    ($err, undef,                                    "Handle pseudo selectors and sass property syntax (23)");
+
+$src = read_file('t/inc/sass/t-24.sass');
+($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$expect = read_file('t/inc/scss/t-24.scss');
+$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($expect) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
+
+is    ($r, $expect,                                    "Handle urls in quotes/apos correctly (24)");
+is    ($err, undef,                                    "Handle urls in quotes/apos correctly (24)");
 
 $src = read_file('t/inc/sass/comment.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1 | SASS2SCSS_KEEP_COMMENT);
