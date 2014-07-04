@@ -56,6 +56,7 @@ sub process_support_files {
 }
 SUBCLASS
 
+my $cover = $ARGV[0] && $ARGV[0] eq "cover=1" ? 1 : 0;
 
 my $builder = Module::Build::Custom->new(
     module_name         => 'CSS::Sass',
@@ -79,11 +80,13 @@ my $builder = Module::Build::Custom->new(
       },
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
+    extra_compiler_flags => ($cover ? '-O0 -fprofile-arcs -ftest-coverage' : ''),
     $Config{cc} eq 'clang' ? (
         # clang has a bunch of asinine warnings on by default:
-        extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value',
+        extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
+                                $cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '',
     ) : (),
-    extra_linker_flags => '',
+    extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
     c_source => { 'libsass' => [ qw(sass2scss/sass2scss.cpp
         ast.cpp base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp
         copy_c_str.cpp emscripten_wrapper.cpp error_handling.cpp eval.cpp expand.cpp

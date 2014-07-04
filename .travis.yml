@@ -10,14 +10,15 @@ before_install:
    - cpanm -n Devel::Cover::Report::Coveralls
 install:
    # Deal with all of the dependencies, quickly and quietly
-   - cpanm --quiet --notest --skip-satisfied Module::Build Test::More Class::Accessor::Fast
+   - cpanm --quiet --notest --skip-satisfied Class::Accessor::Fast
 before_script:
    # also initialize sass2scss submodule
    # - git submodule update --init --recursive
 script:
-   - perl Build.PL
+   - perl Build.PL cover=1
    - ./Build verbose=1
-   - ./Build test verbose=1
+   - HARNESS_PERL_SWITCHES=-MDevel::Cover ./Build test verbose=1
    - ./Build install verbose=1
 after_success:
-   - cover -test -report coveralls
+   - find -name *.gcda -type f -exec gcov -abc -o `basename {}` {} \;
+   - cover -gcov -report coveralls -ignore_re "^/usr"
