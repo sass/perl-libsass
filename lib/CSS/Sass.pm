@@ -86,18 +86,18 @@ sub sass_compile_file {
 
 sub compile {
     my ($self, $sass_code) = @_;
-    my $compiled;
-    ($compiled, $self->{last_error}) = sass_compile($sass_code, %{$self->options});
+    my ($compiled, $srcmap);
+    ($compiled, $self->{last_error}, $srcmap) = sass_compile($sass_code, %{$self->options});
     croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
-    $compiled
+    wantarray ? ($compiled, $srcmap) : $compiled
 }
 
 sub compile_file {
     my ($self, $sass_file) = @_;
-    my $compiled;
-    ($compiled, $self->{last_error}) = sass_compile_file($sass_file, %{$self->options});
+    my ($compiled, $srcmap);
+    ($compiled, $self->{last_error}, $srcmap) = sass_compile_file($sass_file, %{$self->options});
     croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
-    $compiled
+    wantarray ? ($compiled, $srcmap) : $compiled
 }
 
 sub sass_function_callback {
