@@ -13,7 +13,12 @@ use Carp;
 require Exporter;
 
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw( sass_compile );
+
+our @EXPORT_OK = qw(
+	sass_compile
+	sass_compile_file
+);
+
 our @EXPORT = qw(
 	SASS_STYLE_NESTED
 	SASS_STYLE_COMPRESSED
@@ -56,10 +61,33 @@ sub sass_compile {
     wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
 }
 
+sub sass_compile_file {
+    my ($input_path, %options) = @_;
+    my $r = compile_sass_file($input_path, { %options,
+                                            # Override sass_functions with the arrayref of arrayrefs that the XS expects.
+                                            !$options{sass_functions} ? ()
+                                                                      : (sass_functions => [ map { [ $_ => $options{sass_functions}->{$_} ]
+                                                                                                 } keys %{$options{sass_functions}} ]),
+                                            # Override include_paths with a ':' separated list
+                                            !$options{include_paths} ? ()
+                                                                     : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
+                                                                                              @{$options{include_paths}})),
+                                          });
+    wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
+}
+
 sub compile {
     my ($self, $sass_code) = @_;
     my ($compiled, $srcmap);
     ($compiled, $self->{last_error}, $srcmap) = sass_compile($sass_code, %{$self->options});
+    croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
+    wantarray ? ($compiled, $srcmap) : $compiled
+}
+
+sub compile_file {
+    my ($self, $sass_file) = @_;
+    my ($compiled, $srcmap);
+    ($compiled, $self->{last_error}, $srcmap) = sass_compile_file($sass_file, %{$self->options});
     croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
     wantarray ? ($compiled, $srcmap) : $compiled
 }
