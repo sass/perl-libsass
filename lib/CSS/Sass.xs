@@ -189,6 +189,7 @@ compile_sass(input_string, options)
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
         SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
+        SV **precision_sv       = hv_fetch_key(options, "precision",       false);
         SV **image_path_sv      = hv_fetch_key(options, "image_path",      false);
         SV **source_map_file_sv = hv_fetch_key(options, "source_map_file", false);
         SV **omit_source_map_url_sv = hv_fetch_key(options, "omit_source_map_url", false);
@@ -199,6 +200,8 @@ compile_sass(input_string, options)
             ctx->options.source_comments = SvUV(*source_comments_sv);
         if (include_paths_sv)
             ctx->options.include_paths = safe_svpv(*include_paths_sv, "");
+        if (precision_sv)
+            ctx->options.precision = SvUV(*precision_sv);
         if (image_path_sv)
             ctx->options.image_path = safe_svpv(*image_path_sv, "");
         if (source_map_file_sv)
@@ -266,6 +269,7 @@ compile_sass_file(input_path, options)
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
         SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
+        SV **precision_sv       = hv_fetch_key(options, "precision",       false);
         SV **image_path_sv      = hv_fetch_key(options, "image_path",      false);
         SV **source_map_file_sv = hv_fetch_key(options, "source_map_file", false);
         SV **omit_source_map_url_sv = hv_fetch_key(options, "omit_source_map_url", false);
@@ -276,6 +280,8 @@ compile_sass_file(input_path, options)
             ctx->options.source_comments = SvUV(*source_comments_sv);
         if (include_paths_sv)
             ctx->options.include_paths = safe_svpv(*include_paths_sv, "");
+        if (precision_sv)
+            ctx->options.precision = SvUV(*precision_sv);
         if (image_path_sv)
             ctx->options.image_path = safe_svpv(*image_path_sv, "");
         if (source_map_file_sv)
