@@ -15,6 +15,7 @@ require Exporter;
 our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(
+	sass2scss
 	sass_compile
 	sass_compile_file
 );
@@ -24,6 +25,13 @@ our @EXPORT = qw(
 	SASS_STYLE_COMPRESSED
 	SASS_SOURCE_COMMENTS_MAP
 	SASS_SOURCE_COMMENTS_DEFAULT
+	SASS2SCSS_PRETTIFY_0
+	SASS2SCSS_PRETTIFY_1
+	SASS2SCSS_PRETTIFY_2
+	SASS2SCSS_PRETTIFY_3
+	SASS2SCSS_KEEP_COMMENT
+	SASS2SCSS_STRIP_COMMENT
+	SASS2SCSS_CONVERT_COMMENT
 );
 
 our $VERSION = v0.8.1; # Always keep the rightmost digit, even if it's zero (stupid perl).

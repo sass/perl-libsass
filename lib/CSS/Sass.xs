@@ -163,6 +163,16 @@ BOOT:
 
     Constant(SASS_COMMA);
     Constant(SASS_SPACE);
+
+    // sass2scss constants
+    Constant(SASS2SCSS_PRETTIFY_0);
+    Constant(SASS2SCSS_PRETTIFY_1);
+    Constant(SASS2SCSS_PRETTIFY_2);
+    Constant(SASS2SCSS_PRETTIFY_3);
+    // more options for sass2scss
+    Constant(SASS2SCSS_KEEP_COMMENT);
+    Constant(SASS2SCSS_STRIP_COMMENT);
+    Constant(SASS2SCSS_CONVERT_COMMENT);
 }
 
 HV*
@@ -318,4 +328,21 @@ compile_sass_file(input_path, options)
     OUTPUT:
              RETVAL
 
+const char*
+sass2scss(sass, options = SASS2SCSS_PRETTIFY_1)
+             char *sass
+             int options
+    CODE:
+        sv_2mortal((SV*)RETVAL);
+    {
+
+        RETVAL = sass2scss(sass, options);
+
+        // seems to be removed automatically
+        // if enabled I get "double free" error
+        // safefree (sass);
+
+    }
+    OUTPUT:
+             RETVAL
 
