@@ -26,21 +26,21 @@ like  ($r->{output_string}, qr@color: true;@,                     "sass_function
 
 # Number input/output
 $r = CSS::Sass::compile_sass('.valid { color: test(4); }', {
-    sass_functions => [ [ 'test($x)' => sub { [ CSS::Sass::SASS_NUMBER, $_[1]->[1]*2 ]} ] ]});
+    sass_functions => [ [ 'test($x)' => sub { [ CSS::Sass::SASS_NUMBER, $_[1]->[1]*2, '' ]} ] ]});
 is    ($r->{error_status},  0,                                    "sass_function number no error_status");
 is    ($r->{error_message}, undef,                                "sass_function number error_message is undef");
 like  ($r->{output_string}, qr@color: 8;@,                        "sass_function number works");
 
 # Percentage input/output
 $r = CSS::Sass::compile_sass('.valid { color: test(40%); }', {
-    sass_functions => [ [ 'test($x)' => sub { [ CSS::Sass::SASS_PERCENTAGE, $_[1]->[1]*2 ]} ] ]});
+    sass_functions => [ [ 'test($x)' => sub { [ CSS::Sass::SASS_NUMBER, $_[1]->[1]*2, '%' ]} ] ]});
 is    ($r->{error_status},  0,                                      "sass_function percentage no error_status");
 is    ($r->{error_message}, undef,                                  "sass_function percentage error_message is undef");
 like  ($r->{output_string}, qr@color: 80%;@,                        "sass_function percentage works");
 
 # Dimension input/output
 $r = CSS::Sass::compile_sass('.valid { color: test(40cubits); }', {
-    sass_functions => [ [ 'test($x)' => sub { [ CSS::Sass::SASS_DIMENSION, $_[1]->[1]*2, $_[1]->[2]."pergallon" ]} ] ]});
+    sass_functions => [ [ 'test($x)' => sub { [ CSS::Sass::SASS_NUMBER, $_[1]->[1]*2, $_[1]->[2]."pergallon" ]} ] ]});
 is    ($r->{error_status},  0,                                      "sass_function dimension no error_status");
 is    ($r->{error_message}, undef,                                  "sass_function dimension error_message is undef");
 like  ($r->{output_string}, qr@color: 80cubitspergallon;@,          "sass_function dimension works");
@@ -61,7 +61,7 @@ $r = CSS::Sass::compile_sass('.valid { color: test("a b c"); }', {
                               [ CSS::Sass::SASS_STRING, "\"$str$str\"" ]} ] ]});
 is    ($r->{error_status},  0,                                      "sass_function string no error_status");
 is    ($r->{error_message}, undef,                                  "sass_function string error_message is undef");
-like  ($r->{output_string}, qr@color: a b ca b c;@,                 "sass_function string works");
+like  ($r->{output_string}, qr@color: \"a b ca b c\";@,                 "sass_function string works");
 
 # Error output
 $r = CSS::Sass::compile_sass('.valid { color: test(doesnt matter); }', {
