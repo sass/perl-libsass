@@ -186,6 +186,8 @@ compile_sass(input_string, options)
         struct sass_context *ctx = sass_new_context();
         char error[100] = "";
         ctx->source_string = input_string;
+        SV **input_path_sv      = hv_fetch_key(options, "input_path",      false);
+        SV **output_path_sv     = hv_fetch_key(options, "output_path",     false);
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
         SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
@@ -194,6 +196,10 @@ compile_sass(input_string, options)
         SV **source_map_file_sv = hv_fetch_key(options, "source_map_file", false);
         SV **omit_source_map_url_sv = hv_fetch_key(options, "omit_source_map_url", false);
         SV **sass_functions_sv  = hv_fetch_key(options, "sass_functions",  false);
+        if (input_path_sv)
+            ctx->input_path = safe_svpv(*input_path_sv, "");
+        if (output_path_sv)
+            ctx->output_path = safe_svpv(*output_path_sv, "");
         if (output_style_sv)
             ctx->options.output_style = SvUV(*output_style_sv);
         if (source_comments_sv)
@@ -266,6 +272,7 @@ compile_sass_file(input_path, options)
         struct sass_file_context *ctx = sass_new_file_context();
         char error[100] = "";
         ctx->input_path = input_path;
+        SV **output_path_sv     = hv_fetch_key(options, "output_path",     false);
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
         SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
@@ -274,6 +281,8 @@ compile_sass_file(input_path, options)
         SV **source_map_file_sv = hv_fetch_key(options, "source_map_file", false);
         SV **omit_source_map_url_sv = hv_fetch_key(options, "omit_source_map_url", false);
         SV **sass_functions_sv  = hv_fetch_key(options, "sass_functions",  false);
+        if (output_path_sv)
+            ctx->output_path = safe_svpv(*output_path_sv, "");
         if (output_style_sv)
             ctx->options.output_style = SvUV(*output_style_sv);
         if (source_comments_sv)
