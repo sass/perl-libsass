@@ -17,6 +17,8 @@ our @EXPORT_OK = qw( sass_compile );
 our @EXPORT = qw(
 	SASS_STYLE_NESTED
 	SASS_STYLE_COMPRESSED
+	SASS_SOURCE_COMMENTS_MAP
+	SASS_SOURCE_COMMENTS_DEFAULT
 );
 
 our $VERSION = v0.8.1; # Always keep the rightmost digit, even if it's zero (stupid perl).
@@ -51,15 +53,15 @@ sub sass_compile {
                                                                 : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
                                                                                          @{$options{include_paths}})),
                                      });
-    wantarray ? ($r->{output_string}, $r->{error_message}) : $r->{output_string}
+    wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
 }
 
 sub compile {
     my ($self, $sass_code) = @_;
-    my $compiled;
-    ($compiled, $self->{last_error}) = sass_compile($sass_code, %{$self->options});
+    my ($compiled, $srcmap);
+    ($compiled, $self->{last_error}, $srcmap) = sass_compile($sass_code, %{$self->options});
     croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
-    $compiled
+    wantarray ? ($compiled, $srcmap) : $compiled
 }
 
 sub sass_function_callback {
@@ -107,7 +109,7 @@ CSS::Sass - Compile .scss files using libsass
   # Functional API
   use CSS::Sass qw(:Default sass_compile);
 
-  my ($css, $err) = sass_compile(".something { color: red; }");
+  my ($css, $err, $srcmap) = sass_compile(".something { color: red; }");
   die $err if defined $err;
 
 
@@ -117,11 +119,11 @@ CSS::Sass - Compile .scss files using libsass
 
 
   # Functional API w/ options
-  my ($css, $err) = sass_compile(".something { color: red; }",
-                                 include_paths => ['some/include/path'],
-                                 image_path    => 'base_url',
-                                 output_style  => SASS_STYLE_NESTED,
-                                 source_comments => 1);
+  my ($css, $err, $srcmap) = sass_compile(".something { color: red; }",
+                                          include_paths => ['some/include/path'],
+                                          image_path    => 'base_url',
+                                          output_style  => SASS_STYLE_NESTED,
+                                          source_comments => 1);
 
 
 =head1 DESCRIPTION
@@ -173,7 +175,7 @@ Allows you to inspect or change the options after a call to C<new>.
 
 =over 4
 
-=item C<($css, $err) = sass_compile(source_code, options)>
+=item C<($css, $err, $srcmap) = sass_compile(source_code, options)>
 
 =item C<$css = sass_compile(source_code, options)>
 
@@ -205,6 +207,11 @@ eliminate all whitespace (for your production CSS).
 
 Set to C<0> (the default) and no extra comments are output. Set to C<1> and
 comments are output indicating what input line the code corresponds to.
+
+=item C<source_map_file>
+
+Set to a path. This will not create the given file itself. It is just a
+string that is used to inserted the sourcemap link into the generated code.
 
 =item C<include_paths>
 

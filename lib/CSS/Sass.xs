@@ -151,6 +151,9 @@ BOOT:
     //Constant(stash, SASS_STYLE_COMPACT);  // not implemented in libsass yet
     Constant(SASS_STYLE_COMPRESSED);
 
+    Constant(SASS_SOURCE_COMMENTS_DEFAULT);
+    Constant(SASS_SOURCE_COMMENTS_MAP);
+
     Constant(SASS_BOOLEAN);
     Constant(SASS_NUMBER);
     Constant(SASS_COLOR);
@@ -177,15 +180,21 @@ compile_sass(input_string, options)
         SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
         SV **image_path_sv      = hv_fetch_key(options, "image_path",      false);
+        SV **source_map_file_sv = hv_fetch_key(options, "source_map_file", false);
+        SV **omit_source_map_url_sv = hv_fetch_key(options, "omit_source_map_url", false);
         SV **sass_functions_sv  = hv_fetch_key(options, "sass_functions",  false);
         if (output_style_sv)
             ctx->options.output_style = SvUV(*output_style_sv);
         if (source_comments_sv)
-            ctx->options.source_comments = SvTRUE(*source_comments_sv);
+            ctx->options.source_comments = SvUV(*source_comments_sv);
         if (include_paths_sv)
             ctx->options.include_paths = safe_svpv(*include_paths_sv, "");
         if (image_path_sv)
             ctx->options.image_path = safe_svpv(*image_path_sv, "");
+        if (source_map_file_sv)
+            ctx->source_map_file = safe_svpv(*source_map_file_sv, "");
+        if (omit_source_map_url_sv)
+            ctx->omit_source_map_url = safe_svpv(*omit_source_map_url_sv, "");
         if (sass_functions_sv) {
             int i;
             AV* sass_functions_av;
@@ -223,6 +232,7 @@ compile_sass(input_string, options)
       fail:
         hv_store_key(RETVAL, "error_status", newSViv(ctx->error_status || !!*error), 0);
         hv_store_key(RETVAL, "output_string", ctx->output_string ? newSVpv(ctx->output_string, 0) : newSV(0), 0);
+        hv_store_key(RETVAL, "source_map_string", ctx->source_map_string ? newSVpv(ctx->source_map_string, 0) : newSV(0), 0);
         hv_store_key(RETVAL, "error_message", *error             ? newSVpv(error, 0)              :
                                               ctx->error_message ? newSVpv(ctx->error_message, 0) : newSV(0), 0);
 
