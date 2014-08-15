@@ -1,8 +1,5 @@
 # -*- perl -*-
 
-# Usefult for debugging the xs with prints:
-# cd text-sass-xs && ./Build && perl -Mlib=blib/arch -Mlib=blib/lib t/04_perl_functions.t
-
 use strict;
 use warnings;
 
