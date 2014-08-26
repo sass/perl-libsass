@@ -59,6 +59,7 @@ foreach my $test (@tests)
 
 	$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
 	$r = eval { $sass->compile_file($input_file) };
+	warn $@ if $@;
 	$expect = read_file($expected_file);
 	$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 	$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 6;
 
 use CSS::Sass;
 
@@ -40,3 +40,13 @@ chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
 ok    ($smap,                                    "Created source map 2");
+
+$sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
+($r, $smap) = $sass->compile_file('t/inc/sass/test-incs.sass');
+ok    ($smap,                                    "Created source map 3");
+like  ($r, qr/# sourceMappingURL=\.\.\/\.\.\/\.\.\/test.map/, "SourceMap relative url test 1");
+
+$sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
+($r, $smap) = $sass->compile_file('sass/test-incs.sass');
+ok    ($smap,                                    "Created source map 3");
+like  ($r, qr/# sourceMappingURL=\.\.\/test.map/, "SourceMap relative url test 1");

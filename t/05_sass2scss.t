@@ -184,8 +184,8 @@ $expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 chomp($expect) if $ignore_whitespace;
 chomp($r) if $ignore_whitespace;
 
-is    ($r, $expect,                                    "Handle unquoted import statements (11)");
-is    ($err, undef,                                    "Handle unquoted import statements (11)");
+is    ($r, $expect,                                    "Handle single quoted and unquoted import statements (11)");
+is    ($err, undef,                                    "Handle single quoted and unquoted import statements (11)");
 
 $src = read_file('t/inc/sass/t-12.sass');
 ($r, $err) = CSS::Sass::sass2scss($src, SASS2SCSS_PRETTIFY_1);
