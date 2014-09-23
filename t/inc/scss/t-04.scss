@@ -1,0 +1,6 @@
+.bar {
+  color: blue;
+  > * {
+    color: red; }
+  * {
+    color: orange; } }

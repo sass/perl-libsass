@@ -1,0 +1,19 @@
+// not closed comment
+//not closed comment
+//ot closed comment
+outer { // comment // ignore
+  inner /* ignore // comment */ {
+    color: red;
+ }    // before closing
+  /* on parent */ }
+
+/* some before */
+/* not closed comment */
+   //   some more lines
+//dge case (still works
+// but one char is overwritten
+
+/* this
+  is also
+
+ 	a comment! */

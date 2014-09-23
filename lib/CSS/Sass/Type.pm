@@ -8,6 +8,8 @@ package CSS::Sass::Type;
 use base 'Class::Accessor::Fast';
 
 my %field;
+my %index;
+my %default;
 my %tag_from_class;
 my %class_from_tag;
 
@@ -17,6 +19,11 @@ sub add_field {
     push @{$field{$class}}, @new_field;
     $tag_from_class{$class} = $tag if defined $tag;
     $class_from_tag{$tag} = $class if defined $tag;
+    @{$index{$class}}{@new_field} = (0..$#new_field);
+}
+sub add_default {
+    my ($class, $field, $value) = @_;
+    $default{$class}->{$field} = $value;
 }
 sub xs_rep {
     my $self = shift;
@@ -32,6 +39,10 @@ sub new_from_xs_rep {
 sub new {
     my $class = shift;
     my %param;
+    foreach my $field (keys %{$default{$class}}) {
+      my $idx = $index{$class}->{$field};
+      $param{$field{$class}->[$idx]} = $default{$class}->{$field};
+    }
     $param{$field{$class}->[$_]} = $_[$_] for (0..$#_);
     # warn Data::Dumper->Dump([\%param], ['param']);
     bless \%param, $class;
@@ -44,15 +55,8 @@ __PACKAGE__->add_field(CSS::Sass::SASS_BOOLEAN, qw(value));
 
 package CSS::Sass::Type::Number;
 use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_NUMBER, qw(value));
-
-package CSS::Sass::Type::Percentage;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_PERCENTAGE, qw(value));
-
-package CSS::Sass::Type::Dimension;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_DIMENSION, qw(value units));
+__PACKAGE__->add_field(CSS::Sass::SASS_NUMBER, qw(value unit));
+__PACKAGE__->add_default('unit', '');
 
 package CSS::Sass::Type::Color;
 use base 'CSS::Sass::Type';
@@ -93,15 +97,15 @@ CSS::Sass::Types - Types for implementing Sass Functions in Perl
  # Creating:                                         # Sass representation:
  my $b = CSS::Sass::Type::Boolean->new(1);           # 1
  my $n = CSS::Sass::Type::Number->new(42);           # 42
- my $p = CSS::Sass::Type::Percentage->new(15.5);     # 15.5%
- my $d = CSS::Sass::Type::Dimension->new(20, 'px');  # 20px
+ my $d = CSS::Sass::Type::Number->new(20, 'px');     # 20px
+ my $p = CSS::Sass::Type::Number->new(15.5, '%');    # 15.5%
  my $c = CSS::Sass::Type::Color->new(255,128,255,1); # rbga(255,128,255,1)
- my $s = CSS::Sass::Type::String->new("A string");   # A string  /*no quotes!*/
+ my $s = CSS::Sass::Type::String->new("A string");   # A string  /*with quotes!*/
 
  my $l = CSS::Sass::Type::List->new(CSS::Sass::SASS_SPACE, # or SASS_COMMA
                                     CSS::Sass::Type::Number->new(1),
                                     CSS::Sass::Type::Number->new(2),
-                                    CSS::Sass::Type::Percentage->new(3));
+                                    CSS::Sass::Type::Number->new(3, '%'));
                                                      # 1 2 3%   /*SASS_SPACE*/
                                                      # 1, 2, 3% /*SASS_COMMA*/
 
@@ -111,7 +115,7 @@ CSS::Sass::Types - Types for implementing Sass Functions in Perl
  $b->value;
  $n->value;
  $p->value;
- $d->value; $d->units;
+ $d->value; $d->unit;
  $c->r; $c->g; $c->b; $c->a;
  $s->value;
  $l->separator; @{$l->values};

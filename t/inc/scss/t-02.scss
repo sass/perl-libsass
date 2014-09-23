@@ -1,0 +1,6 @@
+@mixin lol {
+  color: blue; }
+
+input {
+  @include lol;
+  background: red; }
