@@ -22,7 +22,9 @@ BEGIN
 			next if $ent eq "..";
 			next if $ent eq "todo";
 			my $path = join("/", $dir, $ent);
-			# pull request pending in https://github.com/sass/libsass/pull/461
+			next if $path eq "t/sass-spec/spec/libsass/placeholder-mediaquery/input.scss";
+			next if $path eq "t/sass-spec/spec/libsass/placeholder-nested/input.scss";
+			next if $path eq "t/sass-spec/spec/extend-tests/226_test_nested_selector_with_child_selector_hack_extender_and_extendee/input.scss";
 			next if $path eq "t/sass-spec/spec/basic/48_case_conversion/input.scss";
 			push @dirs, $path if -d $path;
 			push @tests, [$dir, $ent] if $ent =~ m/^input/;
@@ -57,6 +59,7 @@ foreach my $test (@tests)
 
 	$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
 	$r = eval { $sass->compile_file($input_file) };
+	warn $@ if $@;
 	$expect = read_file($expected_file);
 	$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
 	$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;

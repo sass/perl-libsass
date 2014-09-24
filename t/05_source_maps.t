@@ -9,7 +9,7 @@ use CSS::Sass;
 
 sub read_file
 {
-  local $/ = undef;
+  local $/=undef;
   open my $fh, $_[0] or die "Couldn't open file: $!";
   binmode $fh; return <$fh>;
 }
@@ -19,24 +19,34 @@ my ($r, $err, $smap);
 my ($src, $expect);
 my $ignore_whitespace = 0;
 
-$expect = '{
-  "version": 3,
-  "file": "",
-  "sources": ["stdin"],
-  "names": [],
-  "mappings": "AAAA;EAAS,OAAO"
-}';
+my %options = ( source_comments => 2, source_map_file => 'test.map', dont_die => 1 );
 
-my %options = ( source_comments => SASS_SOURCE_COMMENTS_MAP, source_map_file => 'test.map', dont_die => 1 );
+$sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
+($r, $smap) = $sass->compile_file('t/inc/sass/test-incs.sass');
+$expect = read_file('t/inc/scss/test-incs.scss');
+$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($expect) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
 
-$sass = CSS::Sass->new(%options);
-($r, $smap) = $sass->compile('.class { color: red; }');
-ok    ($smap,                                    "Source map created");
-is    ($smap, $expect,                           "Matches expected result");
-like  ($r, qr/\/\*# sourceMappingURL=test.map \*\/\n*\z/, "Source map url inserted");
+ok    ($smap,                                    "Created source map 1");
 
-$sass = CSS::Sass->new(%options, omit_source_map_url => 1);
-($r, $smap) = $sass->compile('.class { color: green; }');
-ok    ($smap,                                    "Source map created");
-is    ($smap, $expect,                           "Matches expected result");
-unlike($r, qr/\/\*# sourceMappingURL=test.map \*\/\n*\z/, "Source map url omitted");
+$sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
+($r, $smap) = eval { $sass->compile_file('sass/test-incs.sass') };
+$expect = read_file('t/inc/scss/test-incs.scss');
+$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+chomp($expect) if $ignore_whitespace;
+chomp($r) if $ignore_whitespace;
+
+ok    ($smap,                                    "Created source map 2");
+
+$sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
+($r, $smap) = $sass->compile_file('t/inc/sass/test-incs.sass');
+ok    ($smap,                                    "Created source map 3");
+like  ($r, qr/# sourceMappingURL=\.\.\/\.\.\/\.\.\/test.map/, "SourceMap relative url test 1");
+
+$sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
+($r, $smap) = $sass->compile_file('sass/test-incs.sass');
+ok    ($smap,                                    "Created source map 3");
+like  ($r, qr/# sourceMappingURL=\.\.\/test.map/, "SourceMap relative url test 1");
