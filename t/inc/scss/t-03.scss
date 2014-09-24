@@ -1,0 +1,8 @@
+.foo {
+  color: blue; }
+
+
+.bar {
+  $bar: 4;
+  color: blue;
+  background: url(/image/#{$bar}.png); }
