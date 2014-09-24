@@ -1,18 +1,18 @@
 CSS::Sass
 =========
 
-### Compile .scss files using libsass
+### Compile .scss and .sass files using libsass
 
 CSS::Sass provides a perl interface to [libsass][1], a fairly complete
-Sass compiler written in C.
+Sass compiler written in C (approx. Ruby Sass 3.2). 
 
 [1]: https://github.com/hcatlin/libsass
 
 Installation
 ------------
 
-[![Build Status](https://travis-ci.org/caldwell/CSS-Sass.svg?branch=master)](https://travis-ci.org/caldwell/CSS-Sass)
-[![Coverage Status](https://img.shields.io/coveralls/caldwell/CSS-Sass.svg)](https://coveralls.io/r/caldwell/CSS-Sass?branch=master)
+[![Build Status](https://travis-ci.org/sass/perl-libsass.svg?branch=master)](https://travis-ci.org/sass/perl-libsass)
+[![Coverage Status](https://img.shields.io/coveralls/sass/perl-libsass.svg)](https://coveralls.io/r/sass/perl-libsass?branch=master)
 
 To install this module type the following:
 
