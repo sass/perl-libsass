@@ -4,7 +4,7 @@ CSS::Sass
 ### Compile .scss and .sass files using libsass
 
 CSS::Sass provides a perl interface to [libsass][1], a fairly complete
-Sass compiler written in C (approx. Ruby Sass 3.2). 
+Sass compiler written in C (approx. Ruby Sass 3.2).
 
 [1]: https://github.com/hcatlin/libsass
 

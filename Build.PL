@@ -58,7 +58,7 @@ SUBCLASS
 
 my $cover = $ARGV[0] && $ARGV[0] eq "cover=1" ? 1 : 0;
 
-my $builder = Module::Build::Custom->new(
+my %config = (
     module_name         => 'CSS::Sass',
     license             => 'perl',
     dist_author         => q{David Caldwell <david@porkrind.org>},
@@ -80,14 +80,15 @@ my $builder = Module::Build::Custom->new(
       },
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
-    extra_compiler_flags => ($cover ? '-O0 -fprofile-arcs -ftest-coverage' : ''),
+    extra_compiler_flags => ('-std=c++11' . ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '')),
     $Config{cc} eq 'clang' ? (
         # clang has a bunch of asinine warnings on by default:
-        extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
-                                $cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '',
+        extra_compiler_flags => '-std=c++11 -Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
+                                ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : ''),
     ) : (),
     extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
-    c_source => { 'libsass' => [ qw(sass2scss/sass2scss.cpp
+    c_source => { 'libsass' => [ qw(
+        sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp
         ast.cpp base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp
         copy_c_str.cpp emscripten_wrapper.cpp error_handling.cpp eval.cpp expand.cpp
         extend.cpp file.cpp functions.cpp inspect.cpp output_compressed.cpp
@@ -97,5 +98,9 @@ my $builder = Module::Build::Custom->new(
     },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)
 );
+
+$config{'requires'}->{'Win32::Unicode::File'} = 0 if ($^O eq "MSWin32");
+
+my $builder = Module::Build::Custom->new(%config);
 
 $builder->create_build_script();
