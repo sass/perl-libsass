@@ -35,6 +35,25 @@ my $class = Module::Build->subclass(
     class => "Module::Build::Custom",
     code => <<'SUBCLASS' );
 
+sub compile_c {
+
+  my ($self) = shift;
+  my ($file, %args) = @_;
+
+  my @extra_compiler_flags;
+  my $properties = $self->{'properties'};
+
+  if ($file =~ m/.c$/ && defined $properties->{'extra_c_compiler_flags'})
+  { push @extra_compiler_flags, @{$properties->{'extra_c_compiler_flags'}} }
+  if ($file =~ m/.cpp$/ && defined $properties->{'extra_cpp_compiler_flags'})
+  { push @extra_compiler_flags, @{$properties->{'extra_cpp_compiler_flags'}} }
+
+  push @extra_compiler_flags, @{$properties->{'extra_compiler_flags'}};
+  local $properties->{'extra_compiler_flags'} = [ @extra_compiler_flags ];
+
+  return $self->SUPER::compile_c(@_);
+}
+
 sub process_support_files {
   my $self = shift;
   my $p = $self->{properties};
@@ -80,12 +99,13 @@ my %config = (
       },
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
-    extra_compiler_flags => ('-std=c++11' . ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '')),
+    extra_compiler_flags => ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : ''),
     $Config{cc} eq 'clang' ? (
         # clang has a bunch of asinine warnings on by default:
-        extra_compiler_flags => '-std=c++11 -Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
+        extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
                                 ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : ''),
     ) : (),
+    extra_cpp_compiler_flags => [ '-std=c++11' ],
     extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
     c_source => { 'libsass' => [ qw(
         sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp
