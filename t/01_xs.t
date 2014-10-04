@@ -39,15 +39,15 @@ is    ($r->{error_message}, undef,       "output_style=>{} error_message is unde
 
 
 # $options->{source_comment}
-$r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => 1 });
-is    ($r->{error_status},  0,           "source_comments=>1 no error_status");
-is    ($r->{error_message}, undef,       "source_comments=>1 error_message is undef");
-like  ($r->{output_string}, qr@/\*@,     "source_comments=>1 has added comments");
+$r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { debug_comments => 1 });
+is    ($r->{error_status},  0,           "debug_comments=>1 no error_status");
+is    ($r->{error_message}, undef,       "debug_comments=>1 error_message is undef");
+like  ($r->{output_string}, qr@/\*@,     "debug_comments=>1 has added comments");
 
-$r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => 0 });
-is    ($r->{error_status},  0,           "source_comments=>0 no error_status");
-is    ($r->{error_message}, undef,       "source_comments=>0 error_message is undef");
-unlike($r->{output_string}, qr@/\*@,     "source_comments=>0 has no added comments");
+$r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { debug_comments => 0 });
+is    ($r->{error_status},  0,           "debug_comments=>0 no error_status");
+is    ($r->{error_message}, undef,       "debug_comments=>0 error_message is undef");
+unlike($r->{output_string}, qr@/\*@,     "debug_comments=>0 has no added comments");
 
 $r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => [ 'wrong type' ] });
 is    ($r->{error_status},  0,           "source_comments=>[] no error_status and doesn't crash");
