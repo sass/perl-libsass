@@ -19,7 +19,7 @@ my ($r, $map, $err);
 my ($src, $expect);
 my $ignore_whitespace = 0;
 
-my %mapopt = (source_map_file => 'test.map', source_map_comment => 0);
+my %mapopt = (source_map_file => 'test.map', omit_source_map => 1);
 
 $sass = CSS::Sass->new(include_paths => ['t/inc'], %mapopt);
 ($r, $map) = $sass->compile_file('t/inc/sass/test-incs.sass');
