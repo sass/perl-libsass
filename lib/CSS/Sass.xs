@@ -186,7 +186,7 @@ compile_sass(input_string, options)
         SV **input_path_sv      = hv_fetch_key(options, "input_path",      false);
         SV **output_path_sv     = hv_fetch_key(options, "output_path",     false);
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
-        SV **debug_comments_sv = hv_fetch_key(options, "debug_comments", false);
+        SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **omit_source_map_sv = hv_fetch_key(options, "omit_source_map", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
         SV **precision_sv       = hv_fetch_key(options, "precision",       false);
@@ -199,8 +199,8 @@ compile_sass(input_string, options)
             ctx->output_path = safe_svpv(*output_path_sv, "");
         if (output_style_sv)
             ctx->options.output_style = SvUV(*output_style_sv);
-        if (debug_comments_sv)
-            ctx->options.debug_comments = SvTRUE(*debug_comments_sv);
+        if (source_comments_sv)
+            ctx->options.source_comments = SvTRUE(*source_comments_sv);
         if (omit_source_map_sv)
             ctx->options.omit_source_map_url = SvTRUE(*omit_source_map_sv);
         if (include_paths_sv)
@@ -210,7 +210,7 @@ compile_sass(input_string, options)
         if (image_path_sv)
             ctx->options.image_path = safe_svpv(*image_path_sv, "");
         if (source_map_file_sv)
-            ctx->source_map_file = safe_svpv(*source_map_file_sv, "");
+            ctx->options.source_map_file = safe_svpv(*source_map_file_sv, "");
         if (sass_functions_sv) {
             int i;
             AV* sass_functions_av;
@@ -271,7 +271,7 @@ compile_sass_file(input_path, options)
         ctx->input_path = input_path;
         SV **output_path_sv     = hv_fetch_key(options, "output_path",     false);
         SV **output_style_sv    = hv_fetch_key(options, "output_style",    false);
-        SV **debug_comments_sv = hv_fetch_key(options, "debug_comments", false);
+        SV **source_comments_sv = hv_fetch_key(options, "source_comments", false);
         SV **omit_source_map_sv = hv_fetch_key(options, "omit_source_map", false);
         SV **include_paths_sv   = hv_fetch_key(options, "include_paths",   false);
         SV **precision_sv       = hv_fetch_key(options, "precision",       false);
@@ -282,8 +282,8 @@ compile_sass_file(input_path, options)
             ctx->output_path = safe_svpv(*output_path_sv, "");
         if (output_style_sv)
             ctx->options.output_style = SvUV(*output_style_sv);
-        if (debug_comments_sv)
-            ctx->options.debug_comments = SvTRUE(*debug_comments_sv);
+        if (source_comments_sv)
+            ctx->options.source_comments = SvTRUE(*source_comments_sv);
         if (omit_source_map_sv)
             ctx->options.omit_source_map_url = SvTRUE(*omit_source_map_sv);
         if (include_paths_sv)
@@ -293,7 +293,7 @@ compile_sass_file(input_path, options)
         if (image_path_sv)
             ctx->options.image_path = safe_svpv(*image_path_sv, "");
         if (source_map_file_sv)
-            ctx->source_map_file = safe_svpv(*source_map_file_sv, "");
+            ctx->options.source_map_file = safe_svpv(*source_map_file_sv, "");
         if (sass_functions_sv) {
             int i;
             AV* sass_functions_av;

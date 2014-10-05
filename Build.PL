@@ -91,6 +91,7 @@ my %config = (
         'Test::More' => 0,
     },
     requires => {
+        'File::Slurp' => 0,
         'Class::Accessor::Fast' => 0,
     },
     meta_merge => {
