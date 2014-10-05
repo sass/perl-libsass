@@ -35,4 +35,4 @@ script:
    - ./Build install verbose=1
 after_success:
    - find -name *.gcda -type f -exec gcov-4.8 -abc -o `basename {}` {} \;
-   - cover -gcov -report coveralls -ignore_re "^/usr"
+   - cover -gcov -report coveralls -ignore_re "^/usr" -ignore_re "^libsass"
