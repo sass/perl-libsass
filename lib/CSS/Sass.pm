@@ -1,5 +1,5 @@
 # Copyright © 2013 David Caldwell.
-# Copyright © 2013 Marcel Greter.
+# Copyright © 2014 Marcel Greter.
 #
 # This library is free software; you can redistribute it and/or modify
 # it under the same terms as Perl itself, either Perl version 5.12.4 or,
@@ -41,7 +41,11 @@ require CSS::Sass::Type;
 
 sub new {
     my ($class, %options) = @_;
-    bless { options=>\%options }, $class;
+    # Ensure initial sub structures on options
+    $options{include_paths} = [] unless exists $options{include_paths};
+    $options{sass_functions} = {} unless exists $options{sass_functions};
+    # Create and return new object with options
+    bless { options => \%options }, $class;
 };
 
 sub options {
@@ -123,51 +127,69 @@ CSS::Sass - Compile .scss files using libsass
   # Object Oriented API
   use CSS::Sass;
 
+  # Call default constructor
   my $sass = CSS::Sass->new;
-  my $css = $sass->compile(".something { color: red; }");
+  # Manipulate options for compile calls
+  $sass->options->{source_comments} = 1;
+  # Call file compilation (may die on errors)
+  my $css = $sass->compile_file('styles.scss');
+
+  # Add custom function to use inside your Sass code
+  sub foobar { CSS::Sass::Type::String->new('blue') }
+  $sass->options->{sass_functions}->{'foobar'} = \ &foobar;
+
+  # Compile string and get css output and source map json
+  $sass->options->{source_map_file} = 'output.css.map';
+  ($css, $srcmap) = $sass->compile('A { color: foobar(); }');
 
 
   # Object Oriented API w/ options
   my $sass = CSS::Sass->new(include_paths   => ['some/include/path'],
                             image_path      => 'base_url',
                             output_style    => SASS_STYLE_COMPRESSED,
+                            source_map_file => 'output.css.map',
                             source_comments => 1,
                             dont_die        => 1,
                             sass_functions  => {
-                              'my_sass_function($arg)' => sub { $_[0] }
+                              'foobar($arg)' => sub { $_[0] }
                             });
-  my $css = $sass->compile(".something { color: red; }");
-  if (!defined $css) { # $css can be undef because 'dont_die' was set
-    warn $sass->last_error;
-  }
 
+  # Compile string and use the registered function
+  my ($css, $srcmap) = $sass->compile('A { color: foobar(red); }');
+
+  # Result can be undef because 'dont_die' was set
+  warn $sass->last_error unless (defined $css);
 
 
   # Functional API
   use CSS::Sass qw(:Default sass_compile);
 
-  my ($css, $err, $srcmap) = sass_compile(".something { color: red; }");
+  # Functional API, with error messages and source map
+  my ($css, $err, $srcmap) = sass_compile('A { color: red; }');
   die $err if defined $err;
 
-
   # Functional API, simple, with no error messages
-  my $css = sass_compile(".something { color: red; }");
+  my $css = sass_compile('A { color: red; }');
   die unless defined $css;
 
-
   # Functional API w/ options
-  my ($css, $err, $srcmap) = sass_compile(".something { color: red; }",
-                                          include_paths => ['some/include/path'],
-                                          image_path    => 'base_url',
-                                          output_style  => SASS_STYLE_NESTED,
-                                          source_comments => 1);
+  my ($css, $err, $srcmap) = sass_compile('A { color: red; }',
+                                          include_paths   => ['some/include/path'],
+                                          image_path      => 'base_url',
+                                          output_style    => SASS_STYLE_NESTED,
+                                          source_map_file => 'output.css.map');
 
+  # Import sass2scss function
+  use CSS::Sass qw(sass2scss);
+
+  # convert indented syntax
+  my $scss = sass2scss($sass);
 
 =head1 DESCRIPTION
 
 CSS::Sass provides a perl interface to libsass, a fairly complete Sass
-compiler written in C. Despite its name, CSS::Sass can only compile the
-newer ".scss" files.
+compiler written in C++. It is currently somewhere around ruby sass 3.2
+feature parity. It can compile .scss and .sass files.
 
 =head1 OBJECT ORIENTED INTERFACE
 
@@ -184,18 +206,18 @@ Creates a Sass object with the specified options. Example:
 
 =item C<compile(source_code)>
 
-  $css = $sass->compile("source code");
+  $css = $sass->compile("A { color: blue; }");
 
-This compiles the Sass string that is passed in the first parameter. If
-there is an error it will C<croak()>, unless the C<dont_die> option has been
-set. In that case, it will return C<undef>.
+This compiles the Sass string that is passed in as the first parameter. It
+will C<croak()> if there is an error, unless the C<dont_die> option is set.
+It will return C<undef> in that case.
 
 =item C<last_error>
 
   $sass->last_error
 
 Returns the error encountered by the most recent invocation of
-C<compile>. This is really only useful if the C<dont_die> option is set.
+C<compile>. This is only useful if the C<dont_die> option is set.
 
 C<libsass> error messages are in the form ":$line:$column $error_message" so
 you can append them to the filename for a standard looking error message.
@@ -212,9 +234,9 @@ Allows you to inspect or change the options after a call to C<new>.
 
 =over 4
 
-=item C<($css, $err, $srcmap) = sass_compile(source_code, options)>
-
 =item C<$css = sass_compile(source_code, options)>
+
+=item C<($css, $err, $srcmap) = sass_compile(source_code, options)>
 
 This compiles the Sass string that is passed in the first parameter. It
 returns both the CSS and the error in list context and just the CSS in
@@ -242,13 +264,18 @@ eliminate all whitespace (for your production CSS).
 
 =item C<source_comments>
 
-Set to C<0> (the default) and no extra comments are output. Set to C<1> and
-comments are output indicating what input line the code corresponds to.
+Set to C<true> to get extra comments in the output, indicating what input
+line the code corresponds to.
 
 =item C<source_map_file>
 
-Set to a path. This will not create the given file itself. It is just a
-string that is used to inserted the sourcemap link into the generated code.
+Setting this option enables the source map generating. The file will not
+actually be created, but its content will be returned to the caller. It
+will also enable sourceMappingUrl comment by default. See C<omit_src_map_url>.
+
+=item C<omit_src_map_url>
+
+Set to C<true> to omit the sourceMappingUrl comment from the output css.
 
 =item C<include_paths>
 
@@ -302,6 +329,49 @@ If this is encountered in the Sass:
 Then the ouput would be:
 
     some_rule: Well, hello;
+
+=back
+
+=head1 MISCELLANEOUS
+
+=item C<SASS2SCSS_PRETTIFY_0>
+
+Write everything on one line (minimized)
+
+=item C<SASS2SCSS_PRETTIFY_1>
+
+Add lf after opening bracket (lisp style)
+
+=item C<SASS2SCSS_PRETTIFY_2>
+
+Add lf after opening and before closing bracket (1TBS style)
+
+=item C<SASS2SCSS_PRETTIFY_3>
+
+Add lf before/after opening and before closing (allman style)
+
+=item C<SASS2SCSS_KEEP_COMMENT>
+
+Keep multi-line source code comments.
+Single-line comments are removed by default.
+
+=item C<SASS2SCSS_STRIP_COMMENT>
+
+Strip all source code (single- and multi-line) comments.
+
+=item C<SASS2SCSS_CONVERT_COMMENT>
+
+Convert single-line comments to mutli-line comments.
+
+=item C<sass2scss>
+
+We expose the C<sass2scss> function, which can be used to convert indented sass
+syntax to the newer scss syntax. You may need this, since C<libsass> will not
+automatically recognize the format of your string data.
+
+    my $options = SASS2SCSS_PRETTIFY_1;
+    $options |= SASS2SCSS_CONVERT_COMMENT;
+    my $scss = sass2scss($sass, $options);
 
 =back
 

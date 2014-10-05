@@ -1,5 +1,5 @@
 #  Copyright (c) 2013 David Caldwell,
-#  Copyright (c) 2013 Marcel Greter,
+#  Copyright (c) 2014 Marcel Greter,
 #  All Rights Reserved. -*- cperl -*-
 
 use strict; use warnings;
@@ -71,7 +71,7 @@ sub value {
     # libsass adds quotes around the strings for some reason, but works fine without them. So we just strip them in the accessor.
     my $self = shift;
     my $rep = $self->{value};
-    $rep =~ s/(["'])(.*)\1/$2/;
+    $rep =~ s/([\"\'])(.*)\1/$2/;
     $rep;
 }
 
@@ -130,10 +130,12 @@ L<CSS::Sass>
 =head1 AUTHOR
 
 David Caldwell E<lt>david@porkrind.orgE<gt>
+Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2013 by David Caldwell
+Copyright (C) 2014 by Marcel Greter
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.12.4 or,
