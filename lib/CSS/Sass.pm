@@ -33,7 +33,7 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = v0.8.1; # Always keep the rightmost digit, even if it's zero (stupid perl).
+our $VERSION = "v3.0.0";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
@@ -55,6 +55,7 @@ sub last_error {
 
 sub sass_compile {
     my ($sass_code, %options) = @_;
+    no warnings 'uninitialized';
     my $r = compile_sass($sass_code, { %options,
                                        # Override sass_functions with the arrayref of arrayrefs that the XS expects.
                                        !$options{sass_functions} ? ()
@@ -70,6 +71,7 @@ sub sass_compile {
 
 sub sass_compile_file {
     my ($input_path, %options) = @_;
+    no warnings 'uninitialized';
     my $r = compile_sass_file($input_path, { %options,
                                             # Override sass_functions with the arrayref of arrayrefs that the XS expects.
                                             !$options{sass_functions} ? ()

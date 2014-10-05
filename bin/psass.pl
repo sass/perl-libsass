@@ -18,33 +18,50 @@ use File::Slurp qw(write_file);
 
 # load constants from libsass
 use CSS::Sass qw(SASS_STYLE_NESTED);
+use CSS::Sass qw(SASS_STYLE_COMPRESSED);
 
 ####################################################################################################
 # config variables
 ####################################################################################################
 
 # init options
-my $comments = 0;
-my $precision = 0;
+my $precision;
+my $output_style;
+my $source_comments;
 my $source_map_file;
-my $omit_src_map_url = 0;
-
-# make this configurable
-my $style = SASS_STYLE_NESTED;
+my $omit_src_map_url;
 
 # define a sub to print out the version (mimic behaviour of node.js blessc)
 # this script has it's own version numbering as it's not dependent on any libs
-sub version { print "psass 0.1.0 (perl sass (scss) compiler)"; exit 0; };
+sub version { print "psass 0.3.0 (perl sass (scss) compiler)"; exit 0; };
+
+# include paths
+my @include_paths;
 
 # get options
 GetOptions (
 	'help|h' => sub { pod2usage(1); },
 	'version|v' => \ &version,
-	'comments|c!' => \ $comments,
 	'precision|p=s' => \ $precision,
-	'source_map|s=s' => \ $source_map_file,
-	'omit_source_map!' => \ $omit_src_map_url,
+	'output-style|t=s' => \ $output_style,
+	'source-comments|c!' => \ $source_comments,
+	'source-map-file|m=s' => \ $source_map_file,
+	'omit-source-map_url|M!' => \ $omit_src_map_url,
+	'include-path|I=s' => sub { push @include_paths, $_[1] }
 );
+
+# set default if not configured
+unless (defined $output_style)
+{ $output_style = SASS_STYLE_NESTED }
+
+# parse string to constant
+if ($output_style =~ m/^n/i)
+{ $output_style = SASS_STYLE_NESTED }
+elsif ($output_style =~ m/^c/i)
+{ $output_style = SASS_STYLE_COMPRESSED }
+# die with message if style is unknown
+else { die "unknown output style: $output_style" }
+
 
 ####################################################################################################
 use CSS::Sass qw(sass_compile_file sass_compile);
@@ -59,10 +76,11 @@ if (defined $ARGV[0] && $ARGV[0] ne '-')
 	($css, $err, $smap) = sass_compile_file(
 		$ARGV[0],
 		precision => $precision,
-		output_style  => $style,
-		source_comments => $comments,
+		output_style  => $output_style,
+		include_paths => \ @include_paths,
+		source_comments => $source_comments,
 		source_map_file => $source_map_file,
-		omit_source_map_url => $omit_src_map_url
+		omit_source_map_url => $omit_src_map_url,
 	);
 }
 # or use standard input
@@ -71,10 +89,11 @@ else
 	($css, $err, $smap) = sass_compile(
 		join('', <STDIN>),
 		precision => $precision,
-		output_style  => $style,
-		source_comments => $comments,
+		output_style  => $output_style,
+		include_paths => \ @include_paths,
+		source_comments => $source_comments,
 		source_map_file => $source_map_file,
-		omit_source_map_url => $omit_src_map_url
+		omit_source_map_url => $omit_src_map_url,
 	);
 }
 
@@ -101,15 +120,17 @@ psass - perl sass (scss) compiler
 
 =head1 SYNOPSIS
 
-sass [options] [ source | - ]
+psass [options] [ source | - ]
 
  Options:
    -v, --version                 print version
    -h, --help                    print this help
    -p, --precision               precision for float output
-   -c, --comments                enable source debug comments
-   -s, --source_map=file         create and write source map to file
-       --omit_source_map_url     disable adding source map url comment
+   -t, --output-style=style      output style [nested|compressed]
+   -I, --include-path=path       sass include path (repeatable)
+   -c, --source-comments         enable source debug comments
+   -m, --source-map-file=file    create and write source map to file
+       --omit-source-map-url     omit sourceMappingUrl from output
 
 =head1 OPTIONS
 

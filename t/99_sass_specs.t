@@ -9,7 +9,7 @@ BEGIN
 {
 
 	our $todo = 0;
-	my $skip_todo = 0;
+	my $skip_todo = 1;
 
 	@dirs = ('t/sass-spec/spec');
 
