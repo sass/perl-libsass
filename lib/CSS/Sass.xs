@@ -1,4 +1,5 @@
 // Copyright © 2013 David Caldwell.
+// Copyright © 2014 Marcel Greter.
 //
 // This library is free software; you can redistribute it and/or modify
 // it under the same terms as Perl itself, either Perl version 5.12.4 or,

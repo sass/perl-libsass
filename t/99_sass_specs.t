@@ -1,15 +1,15 @@
 # -*- perl -*-
 
-# Usefult for debugging the xs with prints:
-# cd text-sass-xs && ./Build && perl -Mlib=blib/arch -Mlib=blib/lib t/04_perl_functions.t
-
 use strict;
 use warnings;
 
-my (@dirs, @tests);
+my (@dirs, @tests, @todos);
 
 BEGIN
 {
+
+	our $todo = 0;
+	my $skip_todo = 0;
 
 	@dirs = ('t/sass-spec/spec');
 
@@ -18,12 +18,19 @@ BEGIN
 		opendir(my $dh, $dir) or die "error opening specs dir $dir";
 		while (my $ent = readdir($dh))
 		{
+			local $todo = $todo;
 			next if $ent eq ".";
 			next if $ent eq "..";
-			next if $ent eq "todo";
+			$todo = $todo || $ent eq "todo" ||
+				$ent eq "libsass-todo-tests" ||
+				$ent eq "libsass-todo-issues";
 			my $path = join("/", $dir, $ent);
+			next if($skip_todo && $todo);
 			push @dirs, $path if -d $path;
-			push @tests, [$dir, $ent] if $ent =~ m/^input/;
+			if ($ent =~ m/^input\./)
+			{
+				push @tests, [$dir, $ent];
+			}
 		}
 		closedir($dh);
 	}
@@ -32,7 +39,7 @@ BEGIN
 
 }
 
-use Test::More tests => scalar(@tests) * 2;
+use Test::More tests => scalar @tests;
 
 use CSS::Sass;
 
@@ -48,25 +55,74 @@ my ($r, $err);
 my ($src, $expect);
 my $ignore_whitespace = 1;
 
+my @false_negatives;
+
 foreach my $test (@tests)
 {
 	my $input_file = join("/", @{$test});
 	my $expected_file = join("/", $test->[0], 'expected_output.css');
 
-	$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
-	$r = eval { $sass->compile_file($input_file) };
-	warn $@ if $@;
-	$expect = read_file($expected_file);
-	$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
-	$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
-	# output format seems to be off by some newlines
-	# ignore for now as the meaning does not change
-	$expect =~ s/[\s]+//g if $ignore_whitespace;
-	$r =~ s/[\s]+//g if $ignore_whitespace;
-	chomp($expect) if $ignore_whitespace;
-	chomp($r) if $ignore_whitespace;
+	die "no expected file" unless defined $expected_file;
 
-	is    ($r, $expect,                                    "sass-spec " . $input_file);
-	is    ($err, undef,                                    "sass-spec " . $input_file);
+	if ($input_file =~ m/todo/)
+	{
+		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
+		$r = eval { $sass->compile_file($input_file) };
+		$err = $@;
+		$expect = read_file($expected_file);
+		$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+		$expect =~ s/[\s]+//g if $ignore_whitespace;
+		chomp($expect) if $ignore_whitespace;
+		if (defined $r)
+		{
+			$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+			$r =~ s/[\s]+//g if $ignore_whitespace;
+			chomp($r) if $ignore_whitespace;
+		}
+
+		my $is_expected = defined $r && $r eq $expect && !$err ? 1 : 0;
+		is    ($is_expected, 0,   "sass todo text unexpectedly passed: " . $input_file);
+		push @false_negatives, $input_file if $is_expected;
+
+	}
+	else
+	{
+		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
+		$r = eval { $sass->compile_file($input_file) };
+		$err = $@; warn $@ if $@;
+		$expect = read_file($expected_file);
+		$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+		$expect =~ s/[\s]+//g if $ignore_whitespace;
+		chomp($expect) if $ignore_whitespace;
+		if (defined $r)
+		{
+			$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
+			$r =~ s/[\s]+//g if $ignore_whitespace;
+			chomp($r) if $ignore_whitespace;
+		}
+
+		is    ($r, $expect,       "sass-spec " . $input_file);
+
+	}
 
 }
+
+__DATA__
+
+require File::Basename;
+require File::Spec::Functions;
+
+# print git mv commands
+warn join "\n", (map {
+	$_ =~ s/\/+/\\/g;
+	$_ =~ s /\\input\.[a-z]+$//;
+	my $org = $_;
+	my $root = File::Basename::dirname($org);
+	$_ =~ s /\\libsass\-todo\-(?:tests|issues)//;
+	sprintf("pushd \"%s\"\n", $root).
+	sprintf("git mv %s %s\n",
+		File::Spec->rel2abs($org, $root),
+		File::Spec->abs2rel($_, $root)
+	).
+	sprintf("popd\n");
+} @false_negatives), "\n";

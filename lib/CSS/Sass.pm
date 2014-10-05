@@ -1,4 +1,5 @@
 # Copyright © 2013 David Caldwell.
+# Copyright © 2013 Marcel Greter.
 #
 # This library is free software; you can redistribute it and/or modify
 # it under the same terms as Perl itself, either Perl version 5.12.4 or,
@@ -308,17 +309,19 @@ L<CSS::Sass::Type>
 
 L<The Sass Home Page|http://sass-lang.com/>
 
-L<The libsass Home Page|https://github.com/hcatlin/libsass>
+L<The libsass Home Page|https://github.com/sass/libsass>
 
-L<The CSS::Sass Home Page|https://github.com/caldwell/CSS-Sass>
+L<The CSS::Sass Home Page|https://github.com/sass/perl-libsass>
 
 =head1 AUTHOR
 
 David Caldwell E<lt>david@porkrind.orgE<gt>
+Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2013 by David Caldwell
+Copyright (C) 2014 by Marcel Greter
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.12.4 or,

@@ -1,4 +1,6 @@
-#  Copyright (c) 2013 David Caldwell,  All Rights Reserved. -*- cperl -*-
+#  Copyright (c) 2013 David Caldwell,
+#  Copyright (c) 2013 Marcel Greter,
+#  All Rights Reserved. -*- cperl -*-
 
 use strict; use warnings;
 
