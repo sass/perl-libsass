@@ -225,7 +225,7 @@ feature parity. It can compile .scss and .sass files.
 
 	Convert single-line comments to mutli-line comments.
 
-- `sass2scss`
+- `sass2scss($sass, $options)`
 
     We expose the `sass2scss` function, which can be used to convert indented sass
     syntax to the newer scss syntax. You may need this, since `libsass` will not

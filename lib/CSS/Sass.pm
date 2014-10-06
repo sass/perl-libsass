@@ -363,7 +363,7 @@ Strip all source code (single- and multi-line) comments.
 
 Convert single-line comments to mutli-line comments.
 
-=item C<sass2scss>
+=item C<sass2scss($sass, $options)>
 
 We expose the C<sass2scss> function, which can be used to convert indented sass
 syntax to the newer scss syntax. You may need this, since C<libsass> will not
