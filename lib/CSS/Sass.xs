@@ -59,6 +59,41 @@ SV *sv_from_sass_value(union Sass_Value val)
             for (i=0; i<val.list.length; i++)
                 av_push(perl, sv_from_sass_value(val.list.values[i]));
         }   break;
+        case SASS_MAP: {
+            int i;
+            HV *map = newHV();
+            for (i=0; i<val.map.length; i++) {
+                // this returns an AV inside an SV
+                SV* sv = sv_from_sass_value(val.map.pairs[i].key);
+                // we expect an array to access the sass value
+                if (!SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVAV) {
+                    av_push(perl, newSVpvf("BUG: Expect array for sass value"));
+                    break;
+                }
+                // get basic type from the sass type variable
+                SV** sv_type_ptr = av_fetch((AV*) SvRV(sv), 0, 0);
+                // we only support string types as keys
+                if (!sv_type_ptr || !SvOK(*sv_type_ptr) || !(
+                    SvIV(*sv_type_ptr) == SASS_NUMBER ||
+                    SvIV(*sv_type_ptr) == SASS_STRING
+                )) {
+                    av_push(perl, newSVpvf("BUG: Key must be int or string"));
+                    break;
+                }
+                // now get the key which is a number or a string
+                SV** sv_key_ptr = av_fetch((AV*) SvRV(sv), 1, 0);
+                // check for valid pointer
+                if (!sv_key_ptr) {
+                    av_push(perl, newSVpvf("BUG: Could not access value"));
+                    break;
+                }
+                // call us recursive if needed to get sass values
+                SV* sv_value = sv_from_sass_value(val.map.pairs[i].value);
+                // finally store the result inside the hash
+                hv_store_ent(map, *sv_key_ptr, sv_value, 0);
+              }
+              av_push(perl, newRV_noinc((SV*) map));
+            } break;
         case SASS_ERROR:
             av_push(perl, newSVpv(val.error.message, 0));
             break;
@@ -83,6 +118,10 @@ union Sass_Value sass_value_from_sv(SV *sv)
     if (!SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVAV)
         return make_sass_error_f("perl type must be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(sv)));
 
+    // we expect an array to access the sass value
+    if (!SvROK(sv) || SvTYPE(SvRV(sv)) != SVt_PVAV) {
+        return make_sass_error_f("BUG: Expect array for sass value");
+    }
     AV *av = (AV*)SvRV(sv);
     switch (sviv(*av_fetch(av, 0, false))) {
         case SASS_BOOLEAN:    return make_sass_boolean(sviv(*av_fetch(av, 1, false)));
@@ -103,6 +142,25 @@ union Sass_Value sass_value_from_sv(SV *sv)
                 list.list.values[i] = sass_value_from_sv(*av_fetch(av, i+2, false));
             return list;
         }
+        case SASS_MAP: {
+            SV* sv_hash = *av_fetch(av, 1, false);
+            // we expect an array to access the sass value
+            if (!SvROK(sv_hash) || SvTYPE(SvRV(sv_hash)) != SVt_PVHV) {
+                return make_sass_error_f("BUG: Expect hash for sass map value");
+            }
+            HV* hv = (HV*)SvRV(sv_hash);
+            union Sass_Value map = make_sass_map(HvUSEDKEYS(hv));
+            int i = 0;
+            HE *key;
+            hv_iterinit(hv);
+            while (NULL != (key = hv_iternext(hv))) {
+                map.map.pairs[i].key = sass_value_from_sv(HeSVKEY_force(key));
+                map.map.pairs[i].value = sass_value_from_sv(HeVAL(key));
+                i++;
+            }
+            return map;
+        }
+        default: make_sass_error_f("BUG: This Sass_Value is not handled yet (tag=%d).", sviv(*av_fetch(av, 0, false)));
     }
 
     return make_sass_error_f("Unknown sass_type (tag=%u)", (unsigned)sviv(*av_fetch(av, 0, false)));
@@ -157,6 +215,8 @@ BOOT:
     Constant(SASS_COLOR);
     Constant(SASS_STRING);
     Constant(SASS_LIST);
+    Constant(SASS_MAP);
+    Constant(SASS_NULL);
     Constant(SASS_ERROR);
 
     Constant(SASS_COMMA);

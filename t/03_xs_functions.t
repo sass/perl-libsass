@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 42;
+use Test::More tests => 45;
 
 use CSS::Sass;
 
@@ -119,3 +119,9 @@ is    ($r->{error_status},  1,                                      "sass_functi
 like  ($r->{error_message}, qr/perl type.*arrayref/,                "sass_function bad perl type error_message explains itself");
 is    ($r->{output_string}, undef,                                  "sass_function bad perl type fails");
 
+$r = CSS::Sass::compile_sass('$map: (key1: value1, 2: value2, color: rgba(1,1,1,0.4)); A { color: map-get($map, color); }', {
+    sass_functions => [ [ 'test($map)' => sub { $_[1] } ] ] });
+
+is    ($r->{error_status},  0,                                      "sass_function map handling no error_status");
+is    ($r->{error_message}, undef,                                  "sass_function map handling error_message is undef");
+like  ($r->{output_string}, qr@\Qcolor: rgba(1, 1, 1, 0.4)\E@,          "sass_function map handling works");
