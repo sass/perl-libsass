@@ -23,7 +23,8 @@ BEGIN
 			next if $ent eq "..";
 			$todo = $todo || $ent eq "todo" ||
 				$ent eq "libsass-todo-tests" ||
-				$ent eq "libsass-todo-issues";
+				$ent eq "libsass-todo-issues" ||
+				$ent eq "libsass-closed-issues";
 			my $path = join("/", $dir, $ent);
 			next if($skip_todo && $todo);
 			push @dirs, $path if -d $path;

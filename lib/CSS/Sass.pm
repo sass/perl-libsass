@@ -16,9 +16,22 @@ require Exporter;
 our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(
+	quote
+	unquote
 	sass2scss
+	import_sv
 	sass_compile
 	sass_compile_file
+	SASS_COMMA
+	SASS_SPACE
+	SASS_ERROR
+	SASS_NULL
+	SASS_BOOLEAN
+	SASS_NUMBER
+	SASS_STRING
+	SASS_COLOR
+	SASS_LIST
+	SASS_MAP
 );
 
 our @EXPORT = qw(
@@ -107,12 +120,31 @@ sub compile_file {
 
 sub sass_function_callback {
     my $cb = shift;
-    my $ret = eval { $cb->(map { CSS::Sass::Type->new_from_xs_rep($_) } @_) };
-    return CSS::Sass::Type::Error->new("$@")->xs_rep if $@;
-    return CSS::Sass::Type::String->new('')->xs_rep if !defined $ret;
-    return CSS::Sass::Type::Error->new("Perl Sass function returned something that wasn't a CSS::Sass::Type")->xs_rep
-        unless ref $ret && $ret->isa("CSS::Sass::Type");
-    $ret->xs_rep;
+    my $ret = eval { $cb->(@_) };
+    use Data::Dumper;
+
+
+    unless (UNIVERSAL::isa($ret, "CSS::Sass::Type")) {
+        if (UNIVERSAL::isa($ret, "HASH")) {
+            bless $ret, "CSS::Sass::Type::Map"
+        } elsif (UNIVERSAL::isa($ret, "ARRAY")) {
+            bless $ret, "CSS::Sass::Type::List"
+        } elsif (UNIVERSAL::isa($ret, "REF")) {
+        	die "got refg";
+        }
+    } else {
+    	# we are a sass type, sweet
+    	# warn "pass only by $ret";
+    }
+
+    # warn Dumper $ret;
+
+    return CSS::Sass::Type::Error->new("$@") if $@;
+
+#    return CSS::Sass::Type::Error->new("Perl Sass function returned something that wasn't a CSS::Sass::Type")
+#        unless ref $ret && $ret->isa("CSS::Sass::Type");
+
+    $ret;
 }
 
 1;
@@ -185,11 +217,18 @@ CSS::Sass - Compile .scss files using libsass
   # convert indented syntax
   my $scss = sass2scss($sass);
 
+  # Import quoting functions
+  use CSS::Sass qw(quote unquote);
+
+  # Exchange quoted strings
+  my $string = unquote($from_sass);
+  my $to_sass = quote($string, '"');
+
 =head1 DESCRIPTION
 
 CSS::Sass provides a perl interface to libsass, a fairly complete Sass
-compiler written in C++. It is currently somewhere around ruby sass 3.2
-feature parity. It can compile .scss and .sass files.
+compiler written in C++.  It is currently somewhere around ruby sass 3.2/3.3
+feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
 =head1 OBJECT ORIENTED INTERFACE
 
@@ -238,10 +277,9 @@ Allows you to inspect or change the options after a call to C<new>.
 
 =item C<($css, $err, $srcmap) = sass_compile(source_code, options)>
 
-This compiles the Sass string that is passed in the first parameter. It
-returns both the CSS and the error in list context and just the CSS in
-scalar context. One of the returned values will always be C<undef>, but
-never both.
+Compiles the given Sass source code. It returns CSS, error and source map in
+list context or just the CSS in scalar context. Either CSS or error will be
+C<undef>, but never both.
 
 =back
 
@@ -305,12 +343,12 @@ This is a hash of Sass functions implemented in Perl. The key for each
 function should be the function's Sass signature and the value should be a
 Perl subroutine reference. This subroutine will be called whenever the
 function is used in the Sass being compiled. The arguments to the subroutine
-are L<CSS::Sass::Type> objects and the return value I<must> also be one of
-those types. It may also return C<undef> which is just a shortcut for
-CSS::Sass::Type::String->new('').
+are L<CSS::Sass::Type> objects, which map to native perl types if possible.
+You can return either L<CSS::Sass::Type> objects or supported native perl data
+structures. C<undef> is an equivalent of CSS::Sass::Type::Null->new.
 
 The function is called with an C<eval> statement so you may use "die" to
-throw errors back to libsass.
+throw errors back to libsass (C<CSS::Sass::Type::Error>).
 
 A simple example:
 
@@ -319,6 +357,7 @@ A simple example:
             my ($str) = @_;
             die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
             return CSS::Sass::Type::String->new($str->value . " hello");
+            # equivalent to return $str->value . " hello";
         }
     }
 
@@ -330,9 +369,53 @@ Then the ouput would be:
 
     some_rule: Well, hello;
 
+=item C<Sass_Value> Types
+
+Sass knowns various C<Sass_Value> types. We export the constants for completeness.
+Each type is mapped to a package inside the C<CSS::Sass::Type> namespace.
+
+    # Value types
+    SASS_ERROR
+    SASS_NULL
+    SASS_BOOLEAN
+    SASS_NUMBER
+    SASS_STRING
+    SASS_COLOR
+    SASS_LIST
+    SASS_MAP
+    # List styles
+    SASS_COMMA
+    SASS_SPACE
+
+=item Autodetection for value types returned by custom function
+
+Many C<Sass_Value> types can be mapped directly to perl data structures.
+C<maps> and C<lists> map directly to C<hashes> and C<arrays>. Scalars are
+mapped to C<string>, C<number> or C<null>. You can directly return these
+native data types from your custom functions or use the datastructures
+to access maps and lists.
+
+    undef; # same as CSS::Sass::Type::Null->new;
+    42; # same as CSS::Sass::Type::Number->new(42);
+    "foobar"; # same as CSS::Sass::Type::String->new("foobar");
+    [ 'foo', 'bar' ]; # same as CSS::Sass::Type::List->new('foo', 'bar');
+    { key => 'value' }; # same as CSS::Sass::Type::Map->new(key => 'value');
+
+We bless native return values from custom functions into the correct package.
+
+    # sub get-map { return { key: "value" } };
+    .class { content: map-get(get-map(), key); }
+
+    # sub get-list { return [ 'foo', 42, 'bar' ] };
+    .class { content: nth(get-list(), 2); }
+
+
+
 =back
 
 =head1 MISCELLANEOUS
+
+=over 4
 
 =item C<SASS2SCSS_PRETTIFY_0>
 
@@ -387,12 +470,12 @@ L<The CSS::Sass Home Page|https://github.com/sass/perl-libsass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>
+David Caldwell E<lt>david@porkrind.orgE<gt>  
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by David Caldwell
+Copyright (C) 2013 by David Caldwell  
 Copyright (C) 2014 by Marcel Greter
 
 This library is free software; you can redistribute it and/or modify

@@ -1,127 +1,399 @@
-#  Copyright (c) 2013 David Caldwell,
-#  Copyright (c) 2014 Marcel Greter,
-#  All Rights Reserved. -*- cperl -*-
+# Copyright (c) 2013 David Caldwell,
+# Copyright (c) 2014 Marcel Greter,
+# All Rights Reserved. -*- cperl -*-
 
-use strict; use warnings;
+# internal representation
+# accepted from functions
+# are blessed automatically
 
+# \% -> map
+# \undef -> null
+# \"foobar" -> string
+# \@ -> list (comma sep)
+# \42 -> number (no unit)
+# \4.2 -> number (no unit)
+
+# internal representations differ slightly
+
+# for list only the blessed class is important
+
+# missing: error, boolean, color, number with unit
+
+
+
+use strict;
+use warnings;
 use CSS::Sass;
 
+################################################################################
 package CSS::Sass::Type;
-use base 'Class::Accessor::Fast';
+################################################################################
+use CSS::Sass qw(import_sv);
+################################################################################
+sub new { import_sv($_[1]) }
 
-my %field;
-my %index;
-my %default;
-my %tag_from_class;
-my %class_from_tag;
 
-sub add_field {
-    my ($class, $tag, @new_field) = @_;
-    $class->mk_accessors(@new_field);
-    push @{$field{$class}}, @new_field;
-    $tag_from_class{$class} = $tag if defined $tag;
-    $class_from_tag{$tag} = $class if defined $tag;
-    @{$index{$class}}{@new_field} = (0..$#new_field);
-}
-sub add_default {
-    my ($class, $field, $value) = @_;
-    $default{$class}->{$field} = $value;
-}
-sub xs_rep {
-    my $self = shift;
-    [ $tag_from_class{ref $self}, map { $self->{$_} } @{$field{ref $self}} ];
-}
-sub new_from_xs_rep {
-    my ($baseclass, $xsrep) = @_;
-    my $tag = shift @$xsrep;
-    my $class = $class_from_tag{$tag};
-    die "Couldn't find class for tag $tag!" unless $class;
-    $class->new(@$xsrep);
-}
+################################################################################
+package CSS::Sass::Type::Null;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
 sub new {
-    my $class = shift;
-    my %param;
-    foreach my $field (keys %{$default{$class}}) {
-      my $idx = $index{$class}->{$field};
-      $param{$field{$class}->[$idx]} = $default{$class}->{$field};
-    }
-    $param{$field{$class}->[$_]} = $_[$_] for (0..$#_);
-    # warn Data::Dumper->Dump([\%param], ['param']);
-    bless \%param, $class;
-}
-__PACKAGE__->add_field(undef, qw());
-
-package CSS::Sass::Type::Boolean;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_BOOLEAN, qw(value));
-
-package CSS::Sass::Type::Number;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_NUMBER, qw(value unit));
-__PACKAGE__->add_default('unit', '');
-
-package CSS::Sass::Type::Color;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_COLOR, qw(r g b a));
-
-package CSS::Sass::Type::String;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_STRING, qw(value));
-sub value {
-    # libsass adds quotes around the strings for some reason, but works fine without them. So we just strip them in the accessor.
-    my $self = shift;
-    my $rep = $self->{value};
-    $rep =~ s/([\"\'])(.*)\1/$2/;
-    $rep;
+	my ($class) = @_;
+	my $null = undef;
+	bless \\ $null, $class;
 }
 
-package CSS::Sass::Type::List;
-use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_LIST, qw(separator values));
-sub xs_rep {
-    # Need to recurse for lists.
-    my $self = shift;
-    [ CSS::Sass::SASS_LIST, $self->separator, map { $_->xs_rep } @{$self->values} ];
-}
+sub value { undef }
 
+sub stringify { "null" }
+
+sub equals { ! defined $_[0] }
+
+################################################################################
 package CSS::Sass::Type::Error;
+################################################################################
 use base 'CSS::Sass::Type';
-__PACKAGE__->add_field(CSS::Sass::SASS_ERROR, qw(message));
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my ($class, @msg) = @_;
+	bless \\ [ @msg ], $class;
+}
+
+sub message {
+	wantarray ? @{${${$_[0]}}} :
+	            join "", @{${${$_[0]}}};
+}
+
+sub stringify {
+	scalar(@{${${$_[0]}}}) ?
+	  join "", @{${${$_[0]}}}
+	  : "error";
+}
+
+sub equals {
+	shift->stringify eq $_[0]
+}
+
+################################################################################
+package CSS::Sass::Type::Boolean;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my ($class, $bool) = @_;
+	$bool = $bool ? 1 : 0;
+	bless \\ $bool, $class;
+}
+
+sub value {
+	if (scalar(@_) > 1) {
+		${${$_[0]}} = $_[1] ? 1 : 0;
+	}
+	${${$_[0]}};
+}
+
+sub stringify {
+	shift->value ? "true" : "false";
+}
+
+sub equals {
+	shift->stringify eq $_[0]
+}
+
+################################################################################
+package CSS::Sass::Type::String;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use CSS::Sass qw(quote unquote);
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my ($class, $string) = @_;
+	$string = "" unless defined $string;
+	# we may can unquote the string!
+	# should we really do this here?
+	bless \ $string, $class;
+}
+
+sub value {
+	if (scalar(@_) > 1) {
+		${$_[0]} = defined $_[1] ? $_[1] : "";
+	}
+	defined ${$_[0]} ? unquote(${$_[0]}) : "";
+}
+
+sub stringify {
+	$_ = shift->value;
+	m/^\w*$/ ? $_ : quote($_);
+}
+
+sub equals {
+	shift->stringify eq $_[0]
+}
+
+################################################################################
+package CSS::Sass::Type::Number;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my ($class, $number, $unit) = @_;
+	$unit = '' unless defined $unit;
+	$number = 0 unless defined $number;
+	bless \ [ $number, $unit ], $class;
+}
+
+sub value {
+	if (scalar(@_) > 1) {
+		${$_[0]}->[0] = defined $_[1] ? $_[1] : 0;
+	}
+	${$_[0]}->[0];
+}
+
+sub unit {
+	if (scalar(@_) > 1) {
+		${$_[0]}->[1] = defined $_[1] ? $_[1] : "";
+	}
+	${$_[0]}->[1];
+}
+
+sub stringify {
+	join '', @{${$_[0]}}
+}
+
+sub equals {
+	shift->stringify eq $_[0]
+}
+
+################################################################################
+package CSS::Sass::Type::Color;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my ($class, $r, $g, $b, $a) = @_;
+	$a = 1 unless defined $a;
+	bless \ { r => $r, g => $g, b => $b, a => $a }, $class;
+}
+
+my $accessor = sub {
+	if (scalar(@_) > 2) {
+		${$_[1]}->{$_[0]} = $_[2];
+	}
+	${$_[1]}->{$_[0]}
+};
+
+sub r { $accessor->('r', @_) }
+sub g { $accessor->('g', @_) }
+sub b { $accessor->('b', @_) }
+sub a { $accessor->('a', @_) }
+
+sub stringify {
+	my $r = ${$_[0]}->{'r'};
+	my $g = ${$_[0]}->{'g'};
+	my $b = ${$_[0]}->{'b'};
+	my $a = ${$_[0]}->{'a'};
+	unless (defined $a && $a != 0) {
+		"transparent"
+	} elsif (defined $a && $a != 1) {
+		sprintf("rgba(%s, %s, %s, %s)", $r, $g, $b, $a)
+	} elsif ($r || $g || $b) {
+		sprintf("rgb(%s, %s, %s)", $r, $g, $b)
+	} else {
+		"null"
+	}
+}
+
+sub equals {
+	shift->stringify eq $_[0]
+}
+
+
+################################################################################
+package CSS::Sass::Type::Map;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my $class = shift;
+	my $hash = { @_ };
+	foreach (values %{$hash}) {
+		$_ = CSS::Sass::Type->new($_);
+	}
+	bless $hash , $class;
+}
+
+sub keys { CORE::keys %{$_[0]} }
+sub values { CORE::values %{$_[0]} }
+
+sub stringify {
+	join ', ', map { join ": ", $_, $_[0]->{$_} } CORE::keys %{$_[0]};
+}
+
+sub equals {
+	shift->stringify eq $_[0]
+}
+
+
+################################################################################
+package CSS::Sass::Type::List;
+################################################################################
+use base 'CSS::Sass::Type';
+################################################################################
+use overload '""' => 'stringify';
+use overload 'eq' => 'equals';
+################################################################################
+
+sub new {
+	my $class = shift;
+	my $list = [ map { CSS::Sass::Type->new($_) } @_ ];
+	bless $list, $class;
+}
+
+sub values { @{$_[0]} }
+
+sub stringify { join ', ', @{$_[0]} }
+sub equals { shift->stringify eq $_[0] }
+
+################################################################################
+package CSS::Sass::Type::List::Comma;
+################################################################################
+use base 'CSS::Sass::Type::List';
+################################################################################
+use CSS::Sass qw(SASS_COMMA);
+################################################################################
+sub new { shift->SUPER::new(@_) }
+sub separator { return SASS_COMMA }
+sub stringify { join ', ', @{$_[0]} }
+
+################################################################################
+package CSS::Sass::Type::List::Space;
+################################################################################
+use base 'CSS::Sass::Type::List';
+################################################################################
+use CSS::Sass qw(SASS_SPACE);
+################################################################################
+sub new { shift->SUPER::new(@_) }
+sub separator { return SASS_SPACE }
+sub stringify { join ' ', @{$_[0]} }
+
+
+################################################################################
+################################################################################
 1;
+
 __END__
 
 =head1 NAME
 
-CSS::Sass::Types - Types for implementing Sass Functions in Perl
+CSS::Sass::Types - Data Types for custom Sass Functions
 
-=head1 SYNOPSIS
+=head1 Mapping C<Sass_Values> to perl data structures
 
- # Creating:                                         # Sass representation:
- my $b = CSS::Sass::Type::Boolean->new(1);           # 1
- my $n = CSS::Sass::Type::Number->new(42);           # 42
- my $d = CSS::Sass::Type::Number->new(20, 'px');     # 20px
- my $p = CSS::Sass::Type::Number->new(15.5, '%');    # 15.5%
- my $c = CSS::Sass::Type::Color->new(255,128,255,1); # rbga(255,128,255,1)
- my $s = CSS::Sass::Type::String->new("A string");   # A string  /*with quotes!*/
+You can use C<maps> and C<lists> like normal C<hash> or C<array> references. Lists
+can have two different separators used for stringification. This is detected by
+checking if the object is derived from C<CSS::Sass::Type::List::Space>. The default
+is a comma separated list, which you get by instantiating C<CSS::Sass::Type::List>
+or C<CSS::Sass::Type::List::Comma>.
 
- my $l = CSS::Sass::Type::List->new(CSS::Sass::SASS_SPACE, # or SASS_COMMA
-                                    CSS::Sass::Type::Number->new(1),
-                                    CSS::Sass::Type::Number->new(2),
-                                    CSS::Sass::Type::Number->new(3, '%'));
-                                                     # 1 2 3%   /*SASS_SPACE*/
-                                                     # 1, 2, 3% /*SASS_COMMA*/
+    my $null = CSS::Sass::Type->new(undef); # => 'null'
+    my $number = CSS::Sass::Type->new(42.35); # => 42.35
+    my $string = CSS::Sass::Type->new("foobar"); # => 'foobar'
+    my $map = CSS::Sass::Type::Map->new("key" => "foobar"); # 'key: foobar'
+    my $list = CSS::Sass::Type::List->new("foo", 42, "bar"); # 'foo, 42, bar'
+    my $space = CSS::Sass::Type::List::Space->new("foo", "bar"); # 'foo bar'
+    my $comma = CSS::Sass::Type::List::Comma->new("foo", "bar"); # 'foo, bar'
 
- my $e = CSS::Sass::Type::Error->new("some error message");
+You can also return these native perl types from custom functions. They will
+automatically be upgraded to real C<CSS::Sass::Type> objects. All types
+overload the C<stringify> and C<eq> operators (so far).
 
- # Accessing:
- $b->value;
- $n->value;
- $p->value;
- $d->value; $d->unit;
- $c->r; $c->g; $c->b; $c->a;
- $s->value;
- $l->separator; @{$l->values};
- $e->message;
+=head2 C<CSS::Sass::Type>
+
+Acts as a base class for all other types and is mainly an abstract class.
+It only implements a generic constructor, which accepts native perl data types
+(undef, numbers, strings, array-refs and hash-refs) and C<CSS::Sass::Type> objects.
+
+=head2 C<CSS::Sass::Type::Null>
+
+    my $null = CSS::Sass::Type::Null->new;
+    my $string = "$null"; # eq 'null'
+    my $value = $null->value; # == undef
+
+=head2 C<CSS::Sass::Type::Boolean>
+
+    my $bool = CSS::Sass::Type::Boolean->new(42);
+    my $string = "$bool"; # eq 'true'
+    my $value = $bool->value; # == 1
+
+=head2 C<CSS::Sass::Type::Number>
+
+    my $number = CSS::Sass::Type::Boolean->new(42, 'px');
+    my $string = "$number"; # eq '42px'
+    my $value = $number->value; # == 42
+    my $unit = $number->unit; # eq 'px'
+
+=head2 C<CSS::Sass::Type::String>
+
+    my $string = CSS::Sass::Type->new("foo bar"); # => "foo bar"
+    my $quoted = "$string"; # eq '"foo bar"'
+    my $unquoted = $string->value; # eq 'foo bar'
+
+=head2 C<CSS::Sass::Type::Color>
+
+    my $color = CSS::Sass::Type::Color->new(64, 128, 32, 0.25);
+    my $string = "$color"; # eq 'rgba(64, 128, 32, 0.25)'
+    my $r = $color->r; # == 64
+    my $g = $color->g; # == 128
+    my $b = $color->b; # == 32
+    my $a = $color->a; # == 0.25
+
+=head2 C<CSS::Sass::Type::Map>
+
+    my $map = CSS::Sass::Type::Map->new(key => 'value');
+    my $string = "$map"; # eq 'key: value'
+    my $value = $map->{'key'}; # eq 'value'
+
+=head2 C<CSS::Sass::Type::List::Comma>
+
+    my $list = CSS::Sass::List::Comma->new('foo', 'bar');
+    my $string = "$list"; # eq 'foo, bar'
+    my $value = $list->[0]; # eq 'foo'
+
+=head2 C<CSS::Sass::Type::List::Space>
+
+    my $list = CSS::Sass::List::Space->new('foo', 'bar');
+    my $string = "$list"; # eq 'foo bar'
+    my $value = $list->[-1]; # eq 'bar'
 
 =head1 SEE ALSO
 
@@ -129,12 +401,12 @@ L<CSS::Sass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>
+David Caldwell E<lt>david@porkrind.orgE<gt>  
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2013 by David Caldwell
+Copyright (C) 2013 by David Caldwell  
 Copyright (C) 2014 by Marcel Greter
 
 This library is free software; you can redistribute it and/or modify

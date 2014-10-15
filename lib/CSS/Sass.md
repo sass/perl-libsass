@@ -65,11 +65,18 @@ CSS::Sass - Compile .scss files using libsass
     # convert indented syntax
     my $scss = sass2scss($sass);
 
+    # Import quoting functions
+    use CSS::Sass qw(quote unquote);
+
+    # Exchange quoted strings
+    my $string = unquote($from_sass);
+    my $to_sass = quote($string, '"');
+
 # DESCRIPTION
 
 CSS::Sass provides a perl interface to libsass, a fairly complete Sass
-compiler written in C++. It is currently somewhere around ruby sass 3.2
-feature parity. It can compile .scss and .sass files.
+compiler written in C++.  It is currently somewhere around ruby sass 3.2/3.3
+feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
 # OBJECT ORIENTED INTERFACE
 
@@ -111,10 +118,9 @@ feature parity. It can compile .scss and .sass files.
 - `$css = sass_compile(source_code, options)`
 - `($css, $err, $srcmap) = sass_compile(source_code, options)`
 
-    This compiles the Sass string that is passed in the first parameter. It
-    returns both the CSS and the error in list context and just the CSS in
-    scalar context. One of the returned values will always be `undef`, but
-    never both.
+    Compiles the given Sass source code. It returns CSS, error and source map in
+    list context or just the CSS in scalar context. Either CSS or error will be
+    `undef`, but never both.
 
 # OPTIONS
 
@@ -169,12 +175,11 @@ feature parity. It can compile .scss and .sass files.
     function should be the function's Sass signature and the value should be a
     Perl subroutine reference. This subroutine will be called whenever the
     function is used in the Sass being compiled. The arguments to the subroutine
-    are [CSS::Sass::Type](https://metacpan.org/pod/CSS::Sass::Type) objects and the return value _must_ also be one of
-    those types. It may also return `undef` which is just a shortcut for
-    CSS::Sass::Type::String->new('').
-
+    are [CSS::Sass::Type](https://metacpan.org/pod/CSS::Sass::Type) objects, which map to native perl types if possible.
+    You can return either [CSS::Sass::Type](https://metacpan.org/pod/CSS::Sass::Type) objects or supported native perl data
+    structures. `undef` is an equivalent of CSS::Sass::Type::Null->new.
     The function is called with an `eval` statement so you may use "die" to
-    throw errors back to libsass.
+    throw errors back to libsass (`CSS::Sass::Type::Error`).
 
     A simple example:
 
@@ -183,6 +188,7 @@ feature parity. It can compile .scss and .sass files.
                 my ($str) = @_;
                 die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
                 return CSS::Sass::Type::String->new($str->value . " hello");
+                # equivalent to return $str->value . " hello";
             }
         }
 
@@ -194,36 +200,76 @@ feature parity. It can compile .scss and .sass files.
 
         some_rule: Well, hello;
 
+- `Sass_Value` Types
+
+    Sass knowns various `Sass_Value` types. We export the constants for completeness.
+    Each type is mapped to a package inside the `CSS::Sass::Type` namespace.
+
+        # Value types
+        SASS_ERROR
+        SASS_NULL
+        SASS_BOOLEAN
+        SASS_NUMBER
+        SASS_STRING
+        SASS_COLOR
+        SASS_LIST
+        SASS_MAP
+        # List styles
+        SASS_COMMA
+        SASS_SPACE
+
+- Autodetection for value types returned by custom function
+
+    Many `Sass_Value` types can be mapped directly to perl data structures.
+    `maps` and `lists` map directly to `hashes` and `arrays`. Scalars are
+    mapped to `string`, `number` or `null`. You can directly return these
+    native data types from your custom functions or use the datastructures
+    to access maps and lists.
+
+        undef; # same as CSS::Sass::Type::Null->new;
+        42; # same as CSS::Sass::Type::Number->new(42);
+        "foobar"; # same as CSS::Sass::Type::String->new("foobar");
+        [ 'foo', 'bar' ]; # same as CSS::Sass::Type::List->new('foo', 'bar');
+        { key => 'value' }; # same as CSS::Sass::Type::Map->new(key => 'value');
+
+    We bless native return values from custom functions into the correct package.
+
+        # sub get-map { return { key: "value" } };
+        .class { content: map-get(get-map(), key); }
+
+        # sub get-list { return [ 'foo', 42, 'bar' ] };
+        .class { content: nth(get-list(), 2); }
+
 # MISCELLANEOUS
 
 - `SASS2SCSS_PRETTIFY_0`
 
-	Write everything on one line (minimized)
+    Write everything on one line (minimized)
 
 - `SASS2SCSS_PRETTIFY_1`
 
-	Add lf after opening bracket (lisp style)
+    Add lf after opening bracket (lisp style)
 
 - `SASS2SCSS_PRETTIFY_2`
 
-	Add lf after opening and before closing bracket (1TBS style)
+    Add lf after opening and before closing bracket (1TBS style)
 
 - `SASS2SCSS_PRETTIFY_3`
 
-	Add lf before/after opening and before closing (allman style)
+    Add lf before/after opening and before closing (allman style)
 
 - `SASS2SCSS_KEEP_COMMENT`
 
-	Keep multi-line source code comments.
-	Single-line comments are removed by default.
+    Keep multi-line source code comments.
+    Single-line comments are removed by default.
 
 - `SASS2SCSS_STRIP_COMMENT`
 
-	Strip all source code (single- and multi-line) comments.
+    Strip all source code (single- and multi-line) comments.
 
 - `SASS2SCSS_CONVERT_COMMENT`
 
-	Convert single-line comments to mutli-line comments.
+    Convert single-line comments to mutli-line comments.
 
 - `sass2scss($sass, $options)`
 
@@ -258,11 +304,3 @@ Copyright (C) 2014 by Marcel Greter
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.12.4 or,
 at your option, any later version of Perl 5 you may have available.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 217:
-
-    '=item' outside of any '=over'

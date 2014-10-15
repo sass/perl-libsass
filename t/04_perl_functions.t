@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use Test::More tests => 29;
 
 use CSS::Sass;
 
@@ -59,27 +59,24 @@ like  ($err, qr/Perl Error/,                           "Sass function die return
 
 # List output
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(5%); }",
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::List->new(CSS::Sass::SASS_COMMA,
-                                                                       [ CSS::Sass::Type::Number->new($_[0]->value * 2, '%'),
-                                                                         CSS::Sass::Type::Number->new($_[0]->value * 3, '%'),
-                                                                         CSS::Sass::Type::Number->new($_[0]->value * 4, '%') ])
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::List->new(CSS::Sass::Type::Number->new($_[0]->value * 2, '%'),
+                                                                       CSS::Sass::Type::Number->new($_[0]->value * 3, '%'),
+                                                                       CSS::Sass::Type::Number->new($_[0]->value * 4, '%'))
                                           } } );
 like  ($r,   qr/color: 10%, 15%, 20%;/,                "Sass function comma list works");
 is    ($err, undef,                                    "Sass function comma list returns no errors");
 
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(5%); }",
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::List->new(CSS::Sass::SASS_SPACE,
-                                                                       [ CSS::Sass::Type::Number->new($_[0]->value * 2, '%'),
-                                                                         CSS::Sass::Type::Number->new($_[0]->value * 3, '%'),
-                                                                         CSS::Sass::Type::Number->new($_[0]->value * 4, '%') ])
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::List::Space->new(CSS::Sass::Type::Number->new($_[0]->value * 2, '%'),
+                                                                              CSS::Sass::Type::Number->new($_[0]->value * 3, '%'),
+                                                                              CSS::Sass::Type::Number->new($_[0]->value * 4, '%'))
                                           } } );
 like  ($r,   qr/color: 10% 15% 20%;/,                  "Sass function space list works");
 is    ($err, undef,                                    "Sass function space list returns no errors");
 
 # List input/output
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(5%,40in,rgba(4,3,2,.5)); }",
-    sass_functions => { 'test($x,$y,$z)' => sub { CSS::Sass::Type::List->new(CSS::Sass::SASS_SPACE,
-                                                                       [ $_[2], $_[1], $_[0] ]) } });
+    sass_functions => { 'test($x,$y,$z)' => sub { CSS::Sass::Type::List::Space->new($_[2], $_[1], $_[0]) } });
 like  ($r,   qr/color: rgba\(4, 3, 2, 0.5\) 40in 5%;/, "Sass function list i/o works");
 is    ($err, undef,                                    "Sass function list i/o returns no errors");
 
@@ -88,12 +85,6 @@ is    ($err, undef,                                    "Sass function list i/o r
     sass_functions => { 'test()' => sub { } } );
 like  ($r,   qr//,                                     "Sass function undef works");
 is    ($err, undef,                                    "Sass function undef returns no errors");
-
-# Returning a non CSS::Sass::Type
-($r, $err) = CSS::Sass::sass_compile('.valid { color: test("x"); }',
-    sass_functions => { 'test($x)' => sub { return $_[0]->value } } );
-is    ($r,   undef,                                    "Sass function die returns no css");
-like  ($err, qr/CSS::Sass::Type/,                      "Sass function die returns informative error message");
 
 
 # Testing my example code
