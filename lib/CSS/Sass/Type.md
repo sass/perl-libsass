@@ -13,8 +13,8 @@ or `CSS::Sass::Type::List::Comma`.
     my $null = CSS::Sass::Type->new(undef); # => 'null'
     my $number = CSS::Sass::Type->new(42.35); # => 42.35
     my $string = CSS::Sass::Type->new("foobar"); # => 'foobar'
-    my $map = CSS::Sass::Type::Map->new("key" => "foobar"); # 'key: foobar'
-    my $list = CSS::Sass::Type::List->new("foo", 42, "bar"); # 'foo, 42, bar'
+    my $map = CSS::Sass::Type->new({ key => "foobar" }); # 'key: foobar'
+    my $list = CSS::Sass::Type->new([ "foo", 42, "bar" ]); # 'foo, 42, bar'
     my $space = CSS::Sass::Type::List::Space->new("foo", "bar"); # 'foo bar'
     my $comma = CSS::Sass::Type::List::Comma->new("foo", "bar"); # 'foo, bar'
 
@@ -70,13 +70,13 @@ It only implements a generic constructor, which accepts native perl data types
 
 ## `CSS::Sass::Type::List::Comma`
 
-    my $list = CSS::Sass::List::Comma->new('foo', 'bar');
+    my $list = CSS::Sass::Type::List::Comma->new('foo', 'bar');
     my $string = "$list"; # eq 'foo, bar'
     my $value = $list->[0]; # eq 'foo'
 
 ## `CSS::Sass::Type::List::Space`
 
-    my $list = CSS::Sass::List::Space->new('foo', 'bar');
+    my $list = CSS::Sass::Type::List::Space->new('foo', 'bar');
     my $string = "$list"; # eq 'foo bar'
     my $value = $list->[-1]; # eq 'bar'
 
