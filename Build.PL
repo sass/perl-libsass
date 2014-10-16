@@ -79,7 +79,7 @@ my $cover = $ARGV[0] && $ARGV[0] eq "cover=1" ? 1 : 0;
 
 my %config = (
     module_name         => 'CSS::Sass',
-    license             => 'perl',
+    license             => 'MIT',
     dist_author         => [q{David Caldwell <david@porkrind.org>},
                             q{Marcel Greter <perl-libsass@ocbnet.ch>}],
     dist_version_from   => 'lib/CSS/Sass.pm',
