@@ -13,7 +13,6 @@ BEGIN {
 	}
 }
 
-use Encode::Locale;
 use Test::More tests => 9;
 
 BEGIN { use_ok('CSS::Sass') };
@@ -26,10 +25,12 @@ require Win32::Unicode::File if $^O eq "MSWin32";
 
 unless ($^O eq "MSWin32") { open($fh, ">", 't/inc/unicode_äöü.scss'); }
 else { $fh = Win32::Unicode::File->new(">", 't/inc/unicode_äöü.scss'); }
+binmode($fh, ":utf8"); # allow utf8 output on handle
 print $fh '.class { content: "[umlaut] äöü"; }'; close $fh;
 
 unless ($^O eq "MSWin32") { open($fh, ">", 't/inc/unicode_тра.scss'); }
 else { $fh = Win32::Unicode::File->new(">", 't/inc/unicode_тра.scss'); }
+binmode($fh, ":utf8"); # allow utf8 output on handle
 print $fh '.class { content: "тра"; }'; close $fh;
 
 $sass = CSS::Sass->new(include_paths => ['t/inc'], %options);
