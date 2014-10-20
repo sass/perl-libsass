@@ -107,7 +107,7 @@ my %config = (
         extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
                                 ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : ''),
     ) : (),
-    extra_cpp_compiler_flags => [ '-std=c++11' ],
+    extra_cpp_compiler_flags => [ '-std=c++0x' ],
     extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
     c_source => { 'libsass' => [ qw(
         sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp
