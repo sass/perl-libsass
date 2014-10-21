@@ -1,3 +1,25 @@
+CSS::Sass (3.0.1)
+
+  * Adds latest libsass changes (3.0.0)
+  * Reimplemented and improved CSS::Sass::Type
+  * Fixes memory leaks introduced in 3.0.0
+  * Fixes building on various platforms
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Sat Oct 25 14:04:37 2014 +0200
+
+CSS::Sass (3.0.0)
+
+  * Updates to latest libsass (3.0.0)
+  * Implements libsass source maps options
+  * Exports libsass sass2scss function
+  * Adds minimal command line utility
+  * Adds complete sass-spec test suite
+  * Adds CSS::Sass::Type::Map for maps
+  * Adds Travis CI (continous integration)
+  * Adds coveralls.io (code coverage metrics)
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Sat Oct 25 14:00:47 2014 +0200
+
 CSS::Sass (0.8.1)
 
   * Add requirement for Class::Accessor::Fast to Build.PL. One day it will

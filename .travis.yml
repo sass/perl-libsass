@@ -11,12 +11,11 @@ perl:
 
 before_install:
    - git submodule update --init --recursive
-   - cpanm File::Slurp
-   - cpanm Devel::Cover
-   - cpanm -n Devel::Cover::Report::Coveralls
 install:
-   # Deal with all of the dependencies, quickly and quietly
-   - cpanm --quiet --notest --skip-satisfied Class::Accessor::Fast
+   # Deal with dependencies
+   - cpanm -n File::Slurp
+   - cpanm -n Devel::Cover
+   - cpanm -n Devel::Cover::Report::Coveralls
 before_script:
    # initialize libsass, sass2scss and sass-spec
    # - git submodule update --init --recursive

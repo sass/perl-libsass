@@ -18,6 +18,8 @@
 
 #define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
 
+#undef free
+
 char *safe_svpv(SV *sv, char *_default)
 {
     size_t length;
@@ -145,19 +147,19 @@ union Sass_Value sv_to_sass_value(SV *sv)
 }
 
 SV* new_sv_sass_null () {
-    SV* sv = newRV(newRV(newSV(0)));
+    SV* sv = newRV_noinc(newRV_noinc(newSV(0)));
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::Null", GV_ADD));
     return sv;
 }
 
 SV* new_sv_sass_string (SV* string) {
-    SV* sv = newRV(string);
+    SV* sv = newRV_noinc(string);
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::String", GV_ADD));
     return sv;
 }
 
 SV* new_sv_sass_boolean (SV* boolean) {
-    SV* sv = newRV(newRV(boolean));
+    SV* sv = newRV_noinc(newRV_noinc(boolean));
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::Boolean", GV_ADD));
     return sv;
 }
@@ -166,7 +168,7 @@ SV* new_sv_sass_number (SV* number, SV* unit) {
     AV* array = newAV();
     av_push(array, number);
     av_push(array, unit);
-    SV* sv = newRV(newRV((SV*) array));
+    SV* sv = newRV_noinc(newRV_noinc((SV*) array));
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::Number", GV_ADD));
     return sv;
 }
@@ -177,7 +179,7 @@ SV* new_sv_sass_color (SV* r, SV* g, SV* b, SV* a) {
     hv_store(hash, "g", 1, g, 0);
     hv_store(hash, "b", 1, b, 0);
     hv_store(hash, "a", 1, a, 0);
-    SV* sv = newRV(newRV((SV*) hash));
+    SV* sv = newRV_noinc(newRV_noinc((SV*) hash));
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::Color", GV_ADD));
     return sv;
 }
@@ -185,7 +187,7 @@ SV* new_sv_sass_color (SV* r, SV* g, SV* b, SV* a) {
 SV* new_sv_sass_error (SV* msg) {
     AV* error = newAV();
     av_push(error, msg);
-    SV* sv = newRV(newRV(newRV((SV*) error)));
+    SV* sv = newRV_noinc(newRV_noinc(newRV_noinc((SV*) error)));
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::Error", GV_ADD));
     return sv;
 }
@@ -195,33 +197,33 @@ SV *sass_value_to_sv(union Sass_Value val)
 {
     SV* sv;
     switch(val.unknown.tag) {
-        case SASS_NULL:
+        case SASS_NULL: {
             sv = new_sv_sass_null();
-            break;
-        case SASS_BOOLEAN:
+        }   break;
+        case SASS_BOOLEAN: {
             sv = new_sv_sass_boolean(
                      newSViv(val.boolean.value)
                  );
-            break;
-        case SASS_NUMBER:
+        }   break;
+        case SASS_NUMBER: {
             sv = new_sv_sass_number(
                      newSVnv(val.number.value),
                      newSVpv(val.number.unit, 0)
                  );
-            break;
-        case SASS_COLOR:
+        }   break;
+        case SASS_COLOR: {
             sv = new_sv_sass_color(
                      newSVnv(val.color.r),
                      newSVnv(val.color.g),
                      newSVnv(val.color.b),
                      newSVnv(val.color.a)
                  );
-            break;
-        case SASS_STRING:
+        }   break;
+        case SASS_STRING: {
             sv = new_sv_sass_string(
                      newSVpv(val.string.value, 0)
                  );
-            break;
+        }   break;
         case SASS_LIST: {
             int i;
             AV* list = newAV();
@@ -252,6 +254,8 @@ SV *sass_value_to_sv(union Sass_Value val)
                 { fprintf(stderr, "Warning: Expected scalar for map value\n"); }
                 // store the key/value pair on the hash
                 hv_store_ent(map, sv_key, sv_value, 0);
+                // make key sv mortal
+                sv_2mortal(sv_key);
             }
         }   break;
         case SASS_ERROR: {
@@ -270,7 +274,7 @@ SV *sass_value_to_sv(union Sass_Value val)
 }
 
 // we are called by libsass to dispatch to registered functions
-union Sass_Value sass_function_callback(union Sass_Value s_args, void *cookie)
+union Sass_Value sass_function_callback(const union Sass_Value s_args, void *cookie)
 {
 
     dSP;
@@ -290,6 +294,9 @@ union Sass_Value sass_function_callback(union Sass_Value s_args, void *cookie)
         XPUSHs(sv_2mortal(sass_value_to_sv(arg)));
     }
     PUTBACK;
+
+    // free input values
+    free_sass_value(s_args);
 
     // call the static function by soft name reference
     int count = call_pv("CSS::Sass::sass_function_callback", GIMME_V);
@@ -441,20 +448,10 @@ compile_sass(input_string, options)
                                               ctx->error_message ? newSVpv(ctx->error_message, 0) : newSV(0));
 
         sass_free_context(ctx);
-    }
+   }
     OUTPUT:
              RETVAL
 
-
-HV*
-sv_report_used()
-    CODE:
-        RETVAL = newHV();
-    {
-        sv_report_used();
-    }
-    OUTPUT:
-             RETVAL
 
 HV*
 compile_sass_file(input_path, options)
@@ -538,45 +535,48 @@ compile_sass_file(input_path, options)
     OUTPUT:
              RETVAL
 
-const char*
+SV*
 sass2scss(sass, options = SASS2SCSS_PRETTIFY_1)
-             char *sass
+             const char* sass
              int options
     CODE:
-        sv_2mortal((SV*)RETVAL);
     {
 
-        RETVAL = sass2scss(sass, options);
-
-        // seems to be removed automatically
-        // if enabled I get "double free" error
-        // safefree (sass);
+        char* css = sass2scss(sass, options);
+        RETVAL = newSVpv(css, strlen(css));
+        free (css);
 
     }
     OUTPUT:
              RETVAL
 
-const char*
+SV*
 quote(str)
-             SV *str
+             char *str
     CODE:
-        sv_2mortal((SV*)RETVAL);
     {
 
-        RETVAL = quote(SvPV_nolen(str), '"');
+        char* quoted = quote(str, '"');
+
+        RETVAL = newSVpv(quoted, strlen(quoted));
+
+        free (quoted);
 
     }
     OUTPUT:
              RETVAL
 
-const char*
+SV*
 unquote(str)
              char *str
     CODE:
-        sv_2mortal((SV*)RETVAL);
     {
 
-        RETVAL = unquote(str);
+        char* unquoted = unquote(str);
+
+        RETVAL = newSVpv(unquoted, strlen(unquoted));
+
+        free (unquoted);
 
     }
     OUTPUT:
@@ -586,10 +586,13 @@ SV*
 import_sv(sv)
              SV* sv
     CODE:
-        sv_2mortal((SV*)RETVAL);
     {
 
-        RETVAL = sass_value_to_sv(sv_to_sass_value(sv));
+        union Sass_Value value = sv_to_sass_value(sv);
+
+        RETVAL = sass_value_to_sv(value);
+
+        free_sass_value(value);
 
     }
     OUTPUT:

@@ -12,6 +12,8 @@ if (-d ".git") {
     my @modules = ('.');
     my $base = getcwd;
     my ($dir, $manifest);
+	system "git submodule init";
+	system "git submodule update";
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
     while (my $module = shift @modules)
@@ -83,8 +85,8 @@ my %config = (
     dist_author         => [q{David Caldwell <david@porkrind.org>},
                             q{Marcel Greter <perl-libsass@ocbnet.ch>}],
     dist_version_from   => 'lib/CSS/Sass.pm',
-    release_status      => 'stable',
-    create_license      => 1,
+    release_status      => 'unstable',
+    create_license      => 0,
     configure_requires => {
         'Module::Build' => 0,
     },
@@ -92,8 +94,8 @@ my %config = (
         'Test::More' => 0,
     },
     requires => {
+        'perl' => '5.008',
         'File::Slurp' => 0,
-        'Class::Accessor::Fast' => 0,
     },
     meta_merge => {
       resources => {
@@ -116,7 +118,7 @@ my %config = (
         extend.cpp file.cpp functions.cpp inspect.cpp output_compressed.cpp
         output_nested.cpp parser.cpp prelexer.cpp sass.cpp sass_interface.cpp
         source_map.cpp to_c.cpp to_string.cpp units.cpp utf8_string.cpp util.cpp
-    ) ] #, "sass2scss" => [ qw(sass2scss.cpp) ]
+    ) ]
     },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)
 );

@@ -19,4 +19,6 @@ CSS-Sass-*.tar.gz
 lib/**/*.o
 lib/**/*.c
 lib/**/*.xs
+lib/**/*.pod
+lib/**/*/*.pod
 *~

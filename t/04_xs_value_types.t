@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 269;
+use Test::More tests => 277;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -118,8 +118,18 @@ test_map(CSS::Sass::Type->new({ "foo" => "bar" }));
 
 # force stringification
 is "" . CSS::Sass::Type->new(undef), "null", "null stringify ok";
-is "" . CSS::Sass::Type->new(42.35), "42.35", "null stringify ok";
-is "" . CSS::Sass::Type->new("foobar"), "foobar", "null stringify ok";
+is "" . CSS::Sass::Type->new(42.35), "42.35", "number stringify ok";
+is "" . CSS::Sass::Type->new(42.35)->unit, "", "number unit ok";
+is "" . CSS::Sass::Type->new(42.35)->value, "42.35", "number value ok";
+is "" . CSS::Sass::Type->new("foobar"), "foobar", "string stringify ok";
+is "" . CSS::Sass::Type->new({ "key" => "foobar" }), "key: foobar", "map stringify ok";
+is "" . CSS::Sass::Type->new([ "foo baz", 42, "bar" ]), "\"foo baz\", 42, bar", "list stringify ok";
+is "" . CSS::Sass::Type->new(["foo", "bar"]), "foo, bar", "list comma stringify ok";
+
+# force stringification
+is "" . CSS::Sass::Type::Null->new(undef), "null", "null stringify ok";
+is "" . CSS::Sass::Type::Number->new(42.35), "42.35", "null stringify ok";
+is "" . CSS::Sass::Type::String->new("foobar"), "foobar", "null stringify ok";
 is "" . CSS::Sass::Type::Map->new("key" => "foobar"), "key: foobar", "map stringify ok";
 is "" . CSS::Sass::Type::List->new("foo baz", 42, "bar"), "\"foo baz\", 42, bar", "list stringify ok";
 is "" . CSS::Sass::Type::List::Comma->new("foo", "bar"), "foo, bar", "list comma stringify ok";
