@@ -75,6 +75,72 @@ sub process_support_files {
   }
 
 }
+
+my $re_version = qr/our\s+\$VERSION\s*=\s*[\"\']
+                    v?([0-9]+\.[0-9]+\.[0-9]+(?:\-.+?)?)
+                   [\"\']\s*\;/x;
+
+# ./Build versions
+sub ACTION_versions {
+    if (-d ".git") {
+        require File::Slurp;
+        @files = grep { m/.pm$/i } split /\r?\n/, `git ls-files`;
+        for(my $i = 0; $i < scalar(@ARGV) - 1; $i++) {
+            if ($ARGV[$i] eq "versionize") {
+                $tag = $ARGV[$i+1]; last;
+            }
+        }
+        my $file_opt = { binmode => ':raw' };
+        foreach my $filename (@files) {
+            my $data = File::Slurp::read_file($filename, $file_opt);
+            if ($data =~ m/$re_version/i) {
+                print "  $filename ($1)\n";
+            } else {
+                print "  $filename ([NA])\n";
+            }
+        }
+    } else {
+      die "git directory not found";
+    }
+}
+
+# ./Build versionize [2.4.6]
+sub ACTION_versionize {
+    if (-d ".git") {
+        my $tag;
+        require File::Slurp;
+        @files = grep { m/.pm$/i } split /\r?\n/, `git ls-files`;
+        for(my $i = 0; $i < scalar(@ARGV) - 1; $i++) {
+            if ($ARGV[$i] eq "versionize") {
+                $tag = $ARGV[$i+1]; last;
+            }
+        }
+        unless ($tag) {
+            $tag = `git describe --abbrev=0 --always`;
+            $tag =~ s/(?:\A\s+|\Av|\s+\z)//g;
+            unless ( $tag =~ m/(\d+\.\d+\.)(\d+)(?:\-|\z)/ )
+            { die "tag <$tag> invalid (\\d+.\\d+.\\d+)\n"; }
+            # increment patch level
+            else { $tag = $1 . ($2 + 1); }
+        }
+        $tag =~ s/(?:\A\s+|\Av|\s+\z)//g;
+        my $file_opt = { binmode => ':raw' };
+        print "update *.pm with new version <$tag>\n";
+        unless ( $tag =~ m/(\d+\.\d+\.)(\d+)(?:\-|\z)/ )
+        { die "tag <$tag> invalid (\\d+.\\d+.\\d+)\n"; }
+        foreach my $filename (@files) {
+            my $data = File::Slurp::read_file($filename, $file_opt);
+            if ($data =~ s/$re_version/our \$VERSION = \"v$tag\";/i) {
+                next if $tag eq $1;
+                print "  update version $filename (was $1)\n";
+                File::Slurp::write_file($filename, $file_opt, $data);
+            }
+        }
+    } else {
+      die "git directory not found";
+    }
+}
+
 SUBCLASS
 
 my $cover = $ARGV[0] && $ARGV[0] eq "cover=1" ? 1 : 0;
@@ -85,7 +151,7 @@ my %config = (
     dist_author         => [q{David Caldwell <david@porkrind.org>},
                             q{Marcel Greter <perl-libsass@ocbnet.ch>}],
     dist_version_from   => 'lib/CSS/Sass.pm',
-    release_status      => 'unstable',
+    release_status      => 'stable',
     create_license      => 0,
     configure_requires => {
         'Module::Build' => 0,
