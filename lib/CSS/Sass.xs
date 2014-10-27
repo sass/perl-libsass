@@ -100,9 +100,15 @@ union Sass_Value sv_to_sass_value(SV *sv)
             // an array means we have a number
             else if (SvTYPE(sv) == SVt_PVAV) {
                 AV* number = (AV*) sv;
-                double val = SvNV(*av_fetch(number, 0, false));
-                char* unit = SvPV_nolen(*av_fetch(number, 1, false));
-                return make_sass_number(val, unit);
+                size_t len = av_len(number);
+                if (len >= 0) {
+                  SV* num = *av_fetch(number, 0, false);
+                  if (SvIOK(num) || SvNOK(num)) {
+                    double val = SvNV(num);
+                    char* unit = len > 0 ? SvPV_nolen(*av_fetch(number, 1, false)) : "";
+                    return make_sass_number(val, unit);
+                  }
+                }
             }
             // a hash means we have a color
             else if (SvTYPE(sv) == SVt_PVHV) {
@@ -144,9 +150,13 @@ union Sass_Value sv_to_sass_value(SV *sv)
         return map;
     }
 
+    // if scalar is undef we return a null type
+    if (!SvOK(sv)) return make_sass_null();
+
     // stringify anything else
     // can be usefull for soft-refs
     return make_sass_string(SvPV_nolen(sv));
+    // return make_sass_error_f("could not convert value");
 
 }
 
@@ -441,7 +451,7 @@ compile_sass(input_string, options)
             }
         }
 
-       sass_compile(ctx); // Always returns zero. What's the point??
+        sass_compile(ctx); // Always returns zero. What's the point??
 
       fail:
         hv_stores(RETVAL, "error_status", newSViv(ctx->error_status || !!*error));
@@ -451,7 +461,7 @@ compile_sass(input_string, options)
                                               ctx->error_message ? newSVpv(ctx->error_message, 0) : newSV(0));
 
         sass_free_context(ctx);
-   }
+    }
     OUTPUT:
              RETVAL
 

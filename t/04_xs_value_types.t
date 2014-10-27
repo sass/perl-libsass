@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 285;
+use Test::More tests => 297;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -115,6 +115,10 @@ test_number(CSS::Sass::Type->new(42));
 test_string(CSS::Sass::Type->new("foobar"));
 test_list(CSS::Sass::Type->new([ "foo", "bar" ]));
 test_map(CSS::Sass::Type->new({ "foo" => "bar" }));
+test_null(CSS::Sass::Type->new(\[ "foobar" ]));
+test_error(CSS::Sass::Type->new(\\[ "foobar" ]));
+my $err = CSS::Sass::Type->new(\\[ "foobar" ]);
+is $err->message, "foobar", "error correctly parsed";
 
 # force stringification
 is "" . CSS::Sass::Type->new(undef), "null", "null stringify ok";
@@ -303,7 +307,7 @@ is $error_msg->message, 'message', "error message method return ok";
 
 test_string($regex);
 
-is $regex, '"(?^:regex)"', "regex stringify value is correct";
+is $regex, '"'.qr/regex/.'"', "regex stringify value is correct";
 
 ################################################################################
 ################################################################################
@@ -433,7 +437,7 @@ is $sass->compile('$err: test-err(var-pl-new-error()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 
 is $sass->compile('$rgx: test-str(var-pl-regex()); A { value: $rgx; }'),
-   "A{value:(?^:foobar)}", 'test returned blessed variable of type "regex"';
+   "A{value:".qr/foobar/."}", 'test returned blessed variable of type "regex"';
 
 ################################################################################
 $sass->options->{'dont_die'} = 0;
@@ -486,30 +490,19 @@ is $number_px->unit, '', "number_px unit regetter works";
 
 $sass->options->{'dont_die'} = 1;
 require IO::Handle; my $fh = new IO::Handle;
-__DATA__
-$sass->options->{'sass_functions'}->{'error_no_return()'} = sub { return (3); };
+
+$sass->options->{'sass_functions'}->{'error_no_return()'} = sub { return (1,99); };
 is $sass->compile('$nul: error_no_return(); A { key: $nul; }'),
-   'A{}', 'error_invalid_key returned undef';
-
-__DATA__
-
-
-$sass->options->{'sass_functions'}->{'error_invalid_value()'} = sub { return { error => qr/regex/ }; };
-
-my @a = $sass->compile('$nul: error_invalid_value(); A { value: $nul; }');
-
-is $sass->compile('$nul: error_invalid_value(); A { value: $nul; }'),
-   undef, 'error_invalid_value returned undef';
-like $sass->last_error, qr/Could not convert sv to Sass_Value/,
+   undef, 'error_invalid_key returned undef';
+like $sass->last_error, qr/Perl sub must not return a list of values/,
   'error_invalid_value was correctly captured';
 
-__DATA__
+is $sass->compile('$err: test-err(var-pl-new-error()); A { value: $err; }'),
+   undef, 'test returned blessed variable of type error';
+like $sass->last_error, qr/error in C function var-pl-new-error: message/,
+  'error_invalid_value was correctly captured';
 
-$sass->options->{'sass_functions'}->{'error_too_many_args()'} = sub { return \"qwe"; };
-no warnings 'redefine';
-eval 'sub CSS::Sass::sass_function_callback { return die "dumm"; }';
+################################################################################
+# specific edge case test
+################################################################################
 
-
-is $sass->compile('$nul: error_too_many_args(); A { value: $nul; }'),
-   undef, 'error <too_many_args> was thrown';
-die $sass->last_error;

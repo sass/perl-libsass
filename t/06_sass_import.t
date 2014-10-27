@@ -21,6 +21,8 @@ my $ignore_whitespace = 0;
 
 my %mapopt = (source_map_file => 'test.map', omit_source_map => 1);
 
+$mapopt{'sass_functions'}->{'custom()'} = sub { 'red' };
+
 $sass = CSS::Sass->new(include_paths => ['t/inc'], %mapopt);
 ($r, $map) = $sass->compile_file('t/inc/sass/test-incs.sass');
 $expect = read_file('t/inc/scss/test-incs.scss');
