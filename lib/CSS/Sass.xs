@@ -91,9 +91,11 @@ union Sass_Value sv_to_sass_value(SV *sv)
                     if (SvTYPE(SvRV(sv)) == SVt_PVAV) {
                         return make_sass_error(SvPV_nolen(*av_fetch((AV*)SvRV(sv), 0, false)));
                     }
+                // if we have a scalar
+                } else if (!SvROK(sv)) {
+                    // then it is a boolean type
+                    return make_sass_boolean(SvTRUE(sv));
                 }
-                // otherwise it is a boolean type
-                return make_sass_boolean(SvTRUE(sv));
             }
             // an array means we have a number
             else if (SvTYPE(sv) == SVt_PVAV) {
@@ -142,7 +144,9 @@ union Sass_Value sv_to_sass_value(SV *sv)
         return map;
     }
 
-    return make_sass_error_f("BUG: Could not convert sv to Sass_Value");
+    // stringify anything else
+    // can be usefull for soft-refs
+    return make_sass_string(SvPV_nolen(sv));
 
 }
 
@@ -244,14 +248,8 @@ SV *sass_value_to_sv(union Sass_Value val)
             for (i=0; i<val.map.length; i++) {
                 // this should return a scalar sv
                 SV* sv_key = sass_value_to_sv(val.map.pairs[i].key);
-                // just a warning for now if we have strange keys
-                if (!SvROK(sv_key) || SvTYPE(SvRV(sv_key)) >= SVt_PVAV)
-                { fprintf(stderr, "Warning: Expected scalar for map key\n"); }
                 // call us recursive if needed to get sass values
                 SV* sv_value = sass_value_to_sv(val.map.pairs[i].value);
-                // just a warning for now if we have strange keys
-                if (!SvROK(sv_value) || SvTYPE(SvRV(sv_value)) > SVt_PVHV)
-                { fprintf(stderr, "Warning: Expected scalar for map value\n"); }
                 // store the key/value pair on the hash
                 hv_store_ent(map, sv_key, sv_value, 0);
                 // make key sv mortal
@@ -274,19 +272,20 @@ SV *sass_value_to_sv(union Sass_Value val)
 }
 
 // we are called by libsass to dispatch to registered functions
-union Sass_Value sass_function_callback(const union Sass_Value s_args, void *cookie)
+union Sass_Value call_sass_function(const union Sass_Value s_args, void *cookie)
 {
 
     dSP;
-    // get perl sub_sv pointer
-    SV *perl_callback = cookie;
+    // value from perl function
+    SV *perl_value = NULL;
+    // value to return to libsass
+    union Sass_Value sass_value;
     int i;
 
     ENTER;
     SAVETMPS;
 
     PUSHMARK(SP);
-    XPUSHs(perl_callback);
     for (i=0; i<s_args.list.length; i++) {
         // get the Sass_Value from libsass
         union Sass_Value arg = s_args.list.values[i];
@@ -299,32 +298,36 @@ union Sass_Value sass_function_callback(const union Sass_Value s_args, void *coo
     free_sass_value(s_args);
 
     // call the static function by soft name reference
-    int count = call_pv("CSS::Sass::sass_function_callback", GIMME_V);
+    // force array context since we want to check for errors
+    // in scalar context it would take the last value from list
+    // also enable eval context to catch any major problems
+    int count = call_sv(cookie, G_EVAL | G_ARRAY);
 
     SPAGAIN;
-    SV *ret_sv = NULL;
-    if (count == 1)
-        ret_sv = POPs;
-    PUTBACK;
-
-    union Sass_Value ret_val;
-
-    if (ret_sv == NULL) {
-        // perl function did not return anything
-        ret_val = make_sass_error_f("%s:%d %s: Perl sub did not return a sass value!\n", __FILE__, __LINE__, __func__);
-    } else if (count != 1) {
-        // perl function returned a list of values
-        ret_val = make_sass_error_f("%s:%d %s: Perl sub returned a list of values!\n", __FILE__, __LINE__, __func__);
-    } else {
-        // convert returned sv to Sass_Value
-        ret_val = sv_to_sass_value(ret_sv);
+    if (!SvTRUE(ERRSV)) {
+        if (count == 0)
+            perl_value = &PL_sv_undef;
+        else if (count == 1)
+            perl_value = POPs;
     }
 
+    if (SvTRUE(ERRSV)) {
+        // perl function died or had some other major problem
+        sass_value = make_sass_error_f("%s:%d %s: Perl sub died with message: %s!\n", __FILE__, __LINE__, __func__, SvPV_nolen(ERRSV));
+    } else if (count > 1) {
+        // perl function returned a list of values (undefined behaviour)
+        sass_value = make_sass_error_f("%s:%d %s: Perl sub must not return a list of values!\n", __FILE__, __LINE__, __func__);
+    } else {
+        // convert returned sv to Sass_Value
+        sass_value = sv_to_sass_value(perl_value);
+    }
+
+    PUTBACK;
     FREETMPS;
     LEAVE;
 
     // union Sass_Value
-    return ret_val;
+    return sass_value;
 
 }
 
@@ -433,7 +436,7 @@ compile_sass(input_string, options)
                 SV **sub_sv = av_fetch(entry_av, 1, false);
 
                 ctx->c_functions[i].signature = safe_svpv(*sig_sv, "");
-                ctx->c_functions[i].function = sass_function_callback;
+                ctx->c_functions[i].function = call_sass_function;
                 ctx->c_functions[i].cookie = *sub_sv;
             }
         }
@@ -516,7 +519,7 @@ compile_sass_file(input_path, options)
                 SV **sub_sv = av_fetch(entry_av, 1, false);
 
                 ctx->c_functions[i].signature = safe_svpv(*sig_sv, "");
-                ctx->c_functions[i].function = sass_function_callback;
+                ctx->c_functions[i].function = call_sass_function;
                 ctx->c_functions[i].cookie = *sub_sv;
             }
         }

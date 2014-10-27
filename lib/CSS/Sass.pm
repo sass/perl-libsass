@@ -118,35 +118,6 @@ sub compile_file {
     wantarray ? ($compiled, $srcmap) : $compiled
 }
 
-sub sass_function_callback {
-    my $cb = shift;
-    my $ret = eval { $cb->(@_) };
-    use Data::Dumper;
-
-
-    unless (UNIVERSAL::isa($ret, "CSS::Sass::Type")) {
-        if (UNIVERSAL::isa($ret, "HASH")) {
-            bless $ret, "CSS::Sass::Type::Map"
-        } elsif (UNIVERSAL::isa($ret, "ARRAY")) {
-            bless $ret, "CSS::Sass::Type::List"
-        } elsif (UNIVERSAL::isa($ret, "REF")) {
-        	die "got refg";
-        }
-    } else {
-    	# we are a sass type, sweet
-    	# warn "pass only by $ret";
-    }
-
-    # warn Dumper $ret;
-
-    return CSS::Sass::Type::Error->new("$@") if $@;
-
-#    return CSS::Sass::Type::Error->new("Perl Sass function returned something that wasn't a CSS::Sass::Type")
-#        unless ref $ret && $ret->isa("CSS::Sass::Type");
-
-    $ret;
-}
-
 1;
 __END__
 
