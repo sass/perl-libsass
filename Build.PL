@@ -12,8 +12,8 @@ if (-d ".git") {
     my @modules = ('.');
     my $base = getcwd;
     my ($dir, $manifest);
-	system "git submodule init";
-	system "git submodule update";
+    system "git submodule init";
+    system "git submodule update";
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
     while (my $module = shift @modules)

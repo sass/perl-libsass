@@ -46,7 +46,7 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = "v3.0.1";
+our $VERSION = "v3.0.2";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);

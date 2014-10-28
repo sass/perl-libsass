@@ -24,7 +24,6 @@ BEGIN
 			$todo = $todo || $ent eq "todo" ||
 				$ent eq "libsass-todo-tests" ||
 				$ent eq "libsass-todo-issues" ||
-				$ent eq "libsass-closed-issues" ||
 				$ent =~ m/input\.disabled\.scss$/;
 			my $path = join("/", $dir, $ent);
 			next if($skip_todo && $todo);
@@ -41,6 +40,9 @@ BEGIN
 
 }
 
+# uncomment to debug a single test case
+# @tests = grep { $_->[0] =~ m/199/ } @tests;
+
 use Test::More tests => scalar @tests;
 
 use CSS::Sass;
@@ -55,7 +57,18 @@ sub read_file
 my $sass;
 my ($r, $err);
 my ($src, $expect);
-my $ignore_whitespace = 1;
+
+# work directly on arg
+# lib/sass_spec/test_case.rb
+sub clean_output {
+	$_[0] =~ s/\s+/ /g;
+	$_[0] =~ s/[\s\t]*\{/ {\n/g;
+	$_[0] =~ s/([;,])[\s\t]*\{/$1\n/g;
+	$_[0] =~ s/[\s\t]*\}[\s\t]*/ }\n/g;
+	$_[0] =~ s/[\s\t]+\Z//g;
+	$_[0] =~ s/\A[\s\t]+//g;
+	chomp($_[0]);
+}
 
 my @false_negatives;
 
@@ -71,17 +84,8 @@ foreach my $test (@tests)
 		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
 		$r = eval { $sass->compile_file($input_file) };
 		$err = $@;
-		$expect = read_file($expected_file);
-		$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
-		$expect =~ s/[\s]+//g if $ignore_whitespace;
-		chomp($expect) if $ignore_whitespace;
-		if (defined $r)
-		{
-			$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
-			$r =~ s/[\s]+//g if $ignore_whitespace;
-			chomp($r) if $ignore_whitespace;
-		}
-
+		clean_output($expect = read_file($expected_file));
+		clean_output($r) if (defined $r);
 		my $is_expected = defined $r && $r eq $expect && !$err ? 1 : 0;
 		is    ($is_expected, 0,   "sass todo text unexpectedly passed: " . $input_file);
 		push @false_negatives, $input_file if $is_expected;
@@ -92,17 +96,8 @@ foreach my $test (@tests)
 		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
 		$r = eval { $sass->compile_file($input_file) };
 		$err = $@; warn $@ if $@;
-		$expect = read_file($expected_file);
-		$expect =~ s/[\r\n]+/\n/g if $ignore_whitespace;
-		$expect =~ s/[\s]+//g if $ignore_whitespace;
-		chomp($expect) if $ignore_whitespace;
-		if (defined $r)
-		{
-			$r =~ s/[\r\n]+/\n/g if $ignore_whitespace;
-			$r =~ s/[\s]+//g if $ignore_whitespace;
-			chomp($r) if $ignore_whitespace;
-		}
-
+		clean_output($expect = read_file($expected_file));
+		clean_output($r) if (defined $r);
 		is    ($r, $expect,       "sass-spec " . $input_file);
 
 	}
