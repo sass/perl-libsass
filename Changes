@@ -1,3 +1,12 @@
+CSS::Sass (3.0.2)
+
+  * Updates to latest libsass version (3.0.2)
+  * Add new source map embedding features
+  * Implements source-map-embed option
+  * Implements source-map-contents option
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Wed, 05 Nov 2014 02:46:05 +0100
+
 CSS::Sass (3.0.1)
 
   * Adds latest libsass changes (3.0.0)
@@ -5,7 +14,7 @@ CSS::Sass (3.0.1)
   * Fixes memory leaks introduced in 3.0.0
   * Fixes building on various platforms
 
- -- Marcel Greter <perl-libsass@ocbnet.ch>  Sat Oct 25 14:04:37 2014 +0200
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Sat, 25 Oct 2014 14:04:37 +0200
 
 CSS::Sass (3.0.0)
 
@@ -18,7 +27,7 @@ CSS::Sass (3.0.0)
   * Adds Travis CI (continous integration)
   * Adds coveralls.io (code coverage metrics)
 
- -- Marcel Greter <perl-libsass@ocbnet.ch>  Sat Oct 25 14:00:47 2014 +0200
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Sat, 25 Oct 2014 14:00:47 +0200
 
 CSS::Sass (0.8.1)
 

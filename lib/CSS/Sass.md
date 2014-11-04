@@ -18,7 +18,7 @@ CSS::Sass - Compile .scss files using libsass
     sub foobar { CSS::Sass::Type::String->new('blue') }
     $sass->options->{sass_functions}->{'foobar'} = \ &foobar;
 
-    # Compile string and get css output and source map json
+    # Compile string and get css output and source-map json
     $sass->options->{source_map_file} = 'output.css.map';
     ($css, $srcmap) = $sass->compile('A { color: foobar(); }');
 
@@ -44,7 +44,7 @@ CSS::Sass - Compile .scss files using libsass
     # Functional API
     use CSS::Sass qw(:Default sass_compile);
 
-    # Functional API, with error messages and source map
+    # Functional API, with error messages and source-map
     my ($css, $err, $srcmap) = sass_compile('A { color: red; }');
     die $err if defined $err;
 
@@ -118,7 +118,7 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 - `$css = sass_compile(source_code, options)`
 - `($css, $err, $srcmap) = sass_compile(source_code, options)`
 
-    Compiles the given Sass source code. It returns CSS, error and source map in
+    Compiles the given Sass source code. It returns CSS, error and source-map in
     list context or just the CSS in scalar context. Either CSS or error will be
     `undef`, but never both.
 
@@ -139,13 +139,25 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
 - `source_map_file`
 
-    Setting this option enables the source map generating. The file will not
+    Setting this option enables the source-map generating. The file will not
     actually be created, but its content will be returned to the caller. It
-    will also enable sourceMappingUrl comment by default. See `omit_src_map_url`.
+    will also enable sourceMappingURL comment by default. See `omit_src_map_url`.
+
+- `source_map_embed`
+
+    Embeds the complete source-map content into the sourceMappingURL, by using
+    base64 encoded data uri (sourceMappingURL=data:application/json;base64,XXXX)
+
+- `source_map_contents`
+
+    Embeds the content of each source inside a `sourcesContent` property in the
+    source-map json. Setting this option along with `source_map_embed` allows
+    for a completely self-contained source-map.
 
 - `omit_src_map_url`
 
-    Set to `true` to omit the sourceMappingUrl comment from the output css.
+    Set to `true` to omit the sourceMappingURL comment from the output css.
+    Setting this options makes `source_map_embed` useless.
 
 - `include_paths`
 

@@ -29,7 +29,9 @@ my $precision;
 my $output_style;
 my $source_comments;
 my $source_map_file;
-my $omit_src_map_url;
+my $source_map_embed;
+my $source_map_contents;
+my $omit_source_map_url;
 
 # define a sub to print out the version (mimic behaviour of node.js blessc)
 # this script has it's own version numbering as it's not dependent on any libs
@@ -46,7 +48,9 @@ GetOptions (
 	'output-style|t=s' => \ $output_style,
 	'source-comments|c!' => \ $source_comments,
 	'source-map-file|m=s' => \ $source_map_file,
-	'omit-source-map_url|M!' => \ $omit_src_map_url,
+	'source-map-embed|e!' => \ $source_map_embed,
+	'source-map-contents|s!' => \ $source_map_contents,
+	'omit-source-map_url|o!' => \ $omit_source_map_url,
 	'include-path|I=s' => sub { push @include_paths, $_[1] }
 );
 
@@ -55,7 +59,7 @@ unless (defined $output_style)
 { $output_style = SASS_STYLE_NESTED }
 
 # parse string to constant
-if ($output_style =~ m/^n/i)
+elsif ($output_style =~ m/^n/i)
 { $output_style = SASS_STYLE_NESTED }
 elsif ($output_style =~ m/^c/i)
 { $output_style = SASS_STYLE_COMPRESSED }
@@ -80,7 +84,9 @@ if (defined $ARGV[0] && $ARGV[0] ne '-')
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
 		source_map_file => $source_map_file,
-		omit_source_map_url => $omit_src_map_url,
+		source_map_embed => $source_map_embed,
+		source_map_contents => $source_map_contents,
+		omit_source_map_url => $omit_source_map_url
 	);
 }
 # or use standard input
@@ -93,7 +99,9 @@ else
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
 		source_map_file => $source_map_file,
-		omit_source_map_url => $omit_src_map_url,
+		source_map_embed => $source_map_embed,
+		source_map_contents => $source_map_contents,
+		omit_source_map_url => $omit_source_map_url
 	);
 }
 
