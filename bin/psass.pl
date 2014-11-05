@@ -26,6 +26,7 @@ use CSS::Sass qw(SASS_STYLE_COMPRESSED);
 
 # init options
 my $precision;
+my $output_file;
 my $output_style;
 my $source_comments;
 my $source_map_file;
@@ -45,12 +46,13 @@ GetOptions (
 	'help|h' => sub { pod2usage(1); },
 	'version|v' => \ &version,
 	'precision|p=s' => \ $precision,
+	'output-file|o=s' => \ $output_file,
 	'output-style|t=s' => \ $output_style,
 	'source-comments|c!' => \ $source_comments,
 	'source-map-file|m=s' => \ $source_map_file,
 	'source-map-embed|e!' => \ $source_map_embed,
 	'source-map-contents|s!' => \ $source_map_contents,
-	'omit-source-map_url|o!' => \ $omit_source_map_url,
+	'no-source-map-url!' => \ $omit_source_map_url,
 	'include-path|I=s' => sub { push @include_paths, $_[1] }
 );
 
@@ -80,6 +82,7 @@ if (defined $ARGV[0] && $ARGV[0] ne '-')
 	($css, $err, $smap) = sass_compile_file(
 		$ARGV[0],
 		precision => $precision,
+		output_path => $output_file,
 		output_style  => $output_style,
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
@@ -95,6 +98,7 @@ else
 	($css, $err, $smap) = sass_compile(
 		join('', <STDIN>),
 		precision => $precision,
+		output_path => $output_file,
 		output_style  => $output_style,
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
@@ -106,15 +110,21 @@ else
 }
 
 # process return status values
-if (defined $css) { print $css; }
+if (defined $css)
+{
+	# by default we just print to standard out
+	unless (defined $output_file) { print $css; }
+	# or if output_file is defined via options we write it there
+	else { write_file($output_file, { binmode => ':utf8' }, $css ); }
+}
 elsif (defined $err) { die $err; }
 else { die "fatal error - aborting"; }
 
-# output source map
+# output source-map
 if ($source_map_file)
 {
-	unless ($smap) { warn "source map not generated <$source_map_file>" }
-	else { write_file($source_map_file, {binmode => ':utf8'}, $smap ); }
+	unless ($smap) { warn "source-map not generated <$source_map_file>" }
+	else { write_file($source_map_file, { binmode => ':utf8' }, $smap ); }
 }
 
 ####################################################################################################
@@ -134,11 +144,14 @@ psass [options] [ source | - ]
    -v, --version                 print version
    -h, --help                    print this help
    -p, --precision               precision for float output
+   -o, --output-file=file        output file to write result to
    -t, --output-style=style      output style [nested|compressed]
    -I, --include-path=path       sass include path (repeatable)
    -c, --source-comments         enable source debug comments
-   -m, --source-map-file=file    create and write source map to file
-       --omit-source-map-url     omit sourceMappingUrl from output
+   -e, --source-map-embed        embed source-map in mapping url
+   -s, --source-map-contents     include original contents
+   -m, --source-map-file=file    create and write source-map to file
+       --no-source-map-url       omit sourceMappingUrl from output
 
 =head1 OPTIONS
 
