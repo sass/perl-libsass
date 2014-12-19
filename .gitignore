@@ -21,4 +21,5 @@ lib/**/*.c
 lib/**/*.xs
 lib/**/*.pod
 lib/**/*/*.pod
+.libsass.version
 *~

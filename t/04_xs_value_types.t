@@ -411,7 +411,7 @@ is $sass->compile('$dbl: test-dbl(var-pl-dbl()); A { value: $dbl; }'),
 is $sass->compile('$str: test-str(var-pl-str()); A { value: $str; }'),
    'A{value:foobar}', 'test returned blessed variable of type string';
 is $sass->compile('$map: test-map(var-pl-map()); A { value: $map; }'),
-   'A{value:}', 'test returned blessed variable of type map';
+   'A{value:(foo: bar)}', 'test returned blessed variable of type map';
 is $sass->compile('$err: test-err(var-pl-die()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 is $sass->compile('$lst: test-lst(var-pl-list()); A { value: $lst; }'),
@@ -426,7 +426,7 @@ is $sass->compile('$dbl: test-dbl(var-pl-new-dbl()); A { value: $dbl; }'),
 is $sass->compile('$str: test-str(var-pl-new-str()); A { value: $str; }'),
    'A{value:foobar}', 'test returned blessed variable of type string';
 is $sass->compile('$map: test-map(var-pl-new-map()); A { value: $map; }'),
-   'A{value:}', 'test returned blessed variable of type map';
+   'A{value:(foo: bar)}', 'test returned blessed variable of type map';
 is $sass->compile('$lst: test-lst(var-pl-new-list-comma()); A { value: $lst; }'),
    'A{value:foo,bar}', 'test returned blessed variable of type comma list';
 is $sass->compile('$lst: test-lst(var-pl-new-list-space()); A { value: $lst; }'),

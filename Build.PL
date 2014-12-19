@@ -6,6 +6,9 @@ use Config;
 use File::Spec;
 use Cwd;
 
+my $libsass_version = '[na]';
+my $file_opt = { binmode => ':raw' };
+
 # Are we in our development tree?
 # If so, create the MANIFEST file.
 if (-d ".git") {
@@ -31,6 +34,20 @@ if (-d ".git") {
         grep { -d } @items;
       chdir ($cwd) or die "popd: $!";
     }
+}
+
+if (-f "libsass/.git") {
+  chdir "libsass";
+  my $libsass_version = `git describe --abbrev=4 --dirty --always --tags`;
+  chdir "..";
+  require File::Slurp;
+  chomp $libsass_version;
+  File::Slurp::write_file(".libsass.version", $file_opt, $libsass_version);
+}
+if (-f ".libsass.version") {
+  require File::Slurp;
+  $libsass_version = File::Slurp::read_file(".libsass.version", $file_opt);
+  print "using libsass version $libsass_version\n";
 }
 
 my $class = Module::Build->subclass(
@@ -90,7 +107,6 @@ sub ACTION_versions {
                 $tag = $ARGV[$i+1]; last;
             }
         }
-        my $file_opt = { binmode => ':raw' };
         foreach my $filename (@files) {
             my $data = File::Slurp::read_file($filename, $file_opt);
             if ($data =~ m/$re_version/i) {
@@ -116,7 +132,7 @@ sub ACTION_versionize {
             }
         }
         unless ($tag) {
-            $tag = `git describe --abbrev=0 --always`;
+            $tag = `git describe --abbrev=0 --always --tag`;
             $tag =~ s/(?:\A\s+|\Av|\s+\z)//g;
             unless ( $tag =~ m/(\d+\.\d+\.)(\d+)(?:\-|\z)/ )
             { die "tag <$tag> invalid (\\d+.\\d+.\\d+)\n"; }
@@ -124,7 +140,6 @@ sub ACTION_versionize {
             else { $tag = $1 . ($2 + 1); }
         }
         $tag =~ s/(?:\A\s+|\Av|\s+\z)//g;
-        my $file_opt = { binmode => ':raw' };
         print "update *.pm with new version <$tag>\n";
         unless ( $tag =~ m/(\d+\.\d+\.)(\d+)(?:\-|\z)/ )
         { die "tag <$tag> invalid (\\d+.\\d+.\\d+)\n"; }
@@ -144,6 +159,9 @@ sub ACTION_versionize {
 SUBCLASS
 
 my $cover = $ARGV[0] && $ARGV[0] eq "cover=1" ? 1 : 0;
+
+# create compile flags to include the libsass version (escape correctly)
+my $version = qq( -DLIBSASS_VERSION=\\"\\\\\\"$libsass_version\\\\\\"\\");
 
 my %config = (
     module_name         => 'CSS::Sass',
@@ -169,20 +187,20 @@ my %config = (
       },
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
-    extra_compiler_flags => ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : ''),
+    extra_compiler_flags => ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '') . ' -Wall' . $version,
     $Config{cc} eq 'clang' ? (
         # clang has a bunch of asinine warnings on by default:
         extra_compiler_flags => '-Wno-parentheses -Wno-tautological-compare -Wno-unused-value' .
-                                ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : ''),
+                                ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '') . $version,
     ) : (),
     extra_cpp_compiler_flags => [ '-std=c++0x' ],
     extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
     c_source => { 'libsass' => [ sort qw(
-        sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp
-        ast.cpp base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp
-        copy_c_str.cpp error_handling.cpp eval.cpp expand.cpp cencode.c json.cpp
-        extend.cpp file.cpp functions.cpp inspect.cpp output_compressed.cpp
-        output_nested.cpp parser.cpp prelexer.cpp sass.cpp sass_interface.cpp
+        ast.cpp sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp json.cpp
+        base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp copy_c_str.cpp
+        error_handling.cpp eval.cpp expand.cpp cencode.c functions.cpp inspect.cpp
+        extend.cpp file.cpp output_compressed.cpp output_nested.cpp parser.cpp prelexer.cpp
+        sass.cpp sass_interface.cpp sass_functions.cpp sass_values.cpp sass_context.cpp
         source_map.cpp to_c.cpp to_string.cpp units.cpp utf8_string.cpp util.cpp
     ) ]
     },

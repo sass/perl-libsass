@@ -5,6 +5,8 @@ use warnings;
 
 my (@dirs, @tests, @todos);
 
+my $redo_sass = 0;
+
 BEGIN
 {
 
@@ -21,10 +23,11 @@ BEGIN
 			local $todo = $todo;
 			next if $ent eq ".";
 			next if $ent eq "..";
+			next if $ent =~ m/^\./;
+			next if $ent =~ m/input\.disabled\.scss$/;
 			$todo = $todo || $ent eq "todo" ||
 				$ent eq "libsass-todo-tests" ||
-				$ent eq "libsass-todo-issues" ||
-				$ent =~ m/input\.disabled\.scss$/;
+				$ent eq "libsass-todo-issues";
 			my $path = join("/", $dir, $ent);
 			next if($skip_todo && $todo);
 			push @dirs, $path if -d $path;
@@ -79,6 +82,11 @@ foreach my $test (@tests)
 
 	die "no expected file" unless defined $expected_file;
 
+	if ($redo_sass)
+	{
+		system "sass -C $input_file > $expected_file";
+	}
+
 	if ($input_file =~ m/todo/)
 	{
 		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
@@ -87,13 +95,21 @@ foreach my $test (@tests)
 		clean_output($expect = read_file($expected_file));
 		clean_output($r) if (defined $r);
 		my $is_expected = defined $r && $r eq $expect && !$err ? 1 : 0;
-		is    ($is_expected, 0,   "sass todo text unexpectedly passed: " . $input_file);
+		is    ($is_expected, 0,   "sass todo test unexpectedly passed: " . $input_file);
 		push @false_negatives, $input_file if $is_expected;
 
 	}
 	else
 	{
-		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED);
+		my $last_error; my $on_error;
+		$sass = CSS::Sass->new(include_paths => ['t/inc'], output_style => SASS_STYLE_NESTED, sass_functions => {
+				'reset-error()' => sub { $last_error = undef; },
+				'last-error()' => sub { return ${$last_error || \ undef}; },
+				'mock-errors($on)' => sub { $on_error = $_[0]; return undef; },
+				'@error' => sub {
+				$last_error = $_[0]; return "thrown"; },
+			}
+		);
 		$r = eval { $sass->compile_file($input_file) };
 		$err = $@; warn $@ if $@;
 		clean_output($expect = read_file($expected_file));

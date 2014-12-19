@@ -36,7 +36,11 @@ my $omit_source_map_url;
 
 # define a sub to print out the version (mimic behaviour of node.js blessc)
 # this script has it's own version numbering as it's not dependent on any libs
-sub version { print "psass 0.3.0 (perl sass (scss) compiler)"; exit 0; };
+sub version {
+	printf "psass %s (perl sass/scss compiler)\n", "0.3.0";
+	printf "  libsass: %s\n", CSS::Sass::libsass_version();
+	printf "  sass2scss: %s\n", CSS::Sass::sass2scss_version();
+exit 0 };
 
 # include paths
 my @include_paths;

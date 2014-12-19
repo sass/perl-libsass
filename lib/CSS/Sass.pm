@@ -22,6 +22,8 @@ our @EXPORT_OK = qw(
 	import_sv
 	sass_compile
 	sass_compile_file
+	libsass_version
+	sass2scss_version
 	SASS_COMMA
 	SASS_SPACE
 	SASS_ERROR
@@ -83,7 +85,7 @@ sub sass_compile {
                                                                 : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
                                                                                          @{$options{include_paths}})),
                                      });
-    wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
+    wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
 sub sass_compile_file {
@@ -99,23 +101,23 @@ sub sass_compile_file {
                                                                      : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
                                                                                               @{$options{include_paths}})),
                                           });
-    wantarray ? ($r->{output_string}, $r->{error_message}, $r->{source_map_string}) : $r->{output_string}
+    wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
 sub compile {
     my ($self, $sass_code) = @_;
-    my ($compiled, $srcmap);
-    ($compiled, $self->{last_error}, $srcmap) = sass_compile($sass_code, %{$self->options});
+    my ($compiled, $stats);
+    ($compiled, $self->{last_error}, $stats) = sass_compile($sass_code, %{$self->options});
     croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
-    wantarray ? ($compiled, $srcmap) : $compiled
+    wantarray ? ($compiled, $stats) : $compiled
 }
 
 sub compile_file {
     my ($self, $sass_file) = @_;
-    my ($compiled, $srcmap);
-    ($compiled, $self->{last_error}, $srcmap) = sass_compile_file($sass_file, %{$self->options});
+    my ($compiled, $stats);
+    ($compiled, $self->{last_error}, $stats) = sass_compile_file($sass_file, %{$self->options});
     croak $self->{last_error} if $self->{last_error} && !$self->options->{dont_die};
-    wantarray ? ($compiled, $srcmap) : $compiled
+    wantarray ? ($compiled, $stats) : $compiled
 }
 
 1;

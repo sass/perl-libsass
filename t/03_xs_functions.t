@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 29;
+use Test::More tests => 33;
 
 use CSS::Sass;
 
@@ -112,3 +112,21 @@ like  ($err, qr/should be a string/,                   "Sass function bad exampl
 like  ($r,   qr/foo:\s*true;/,                         "First function worked");
 like  ($r,   qr/bar:\s*false;/,                        "Second function worked");
 is    ($err, undef,                                    "Sass multiple functions test returns no errors");
+
+# One argument
+($r, $err) = CSS::Sass::sass_compile(".valid { color: test('a'); }",
+    sass_functions => { 'test($x, $y: 42)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+like  ($r,   qr/color: a_42;/,                          "Sass function string works");
+is    ($err, undef,                                    "Sass function string returns no errors");
+
+# List arguments
+($r, $err) = CSS::Sass::sass_compile(".valid { color: test('a', 'b'); }",
+    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+like  ($r,   qr/color: a_b;/,                          "Sass function string works");
+is    ($err, undef,                                    "Sass function string returns no errors");
+
+# Mapped arguments
+#($r, $err) = CSS::Sass::sass_compile(".valid { color: test(x: 'a', y: 'b'); }",
+#    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+#like  ($r,   qr/color: a_b;/,                          "Sass function string works");
+#is    ($err, undef,                                    "Sass function string returns no errors");
