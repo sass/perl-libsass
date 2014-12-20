@@ -13,7 +13,9 @@ before_install:
    - git submodule update --init --recursive
 install:
    # Deal with dependencies
-   - cpanm --quiet --installdeps --notest .
+   - cpanm -n File::Slurp
+   - cpanm -n Devel::Cover
+   # - cpanm --quiet --installdeps --notest .
    - cpanm -n Devel::Cover::Report::Coveralls
 before_script:
    # initialize libsass, sass2scss and sass-spec
