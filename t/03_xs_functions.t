@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 33;
+use Test::More tests => 37;
 
 use CSS::Sass;
 
@@ -125,8 +125,15 @@ is    ($err, undef,                                    "Sass function string ret
 like  ($r,   qr/color: a_b;/,                          "Sass function string works");
 is    ($err, undef,                                    "Sass function string returns no errors");
 
+
 # Mapped arguments
-#($r, $err) = CSS::Sass::sass_compile(".valid { color: test(x: 'a', y: 'b'); }",
-#    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
-#like  ($r,   qr/color: a_b;/,                          "Sass function string works");
-#is    ($err, undef,                                    "Sass function string returns no errors");
+($r, $err) = CSS::Sass::sass_compile(".valid { color: test(\$x : 'a', \$y: 'b'); }",
+    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+like  ($r,   qr/color: a_b;/,                          "Sass function with mapped arguments works");
+is    ($err, undef,                                    "Sass function with mapped arguments returns no errors");
+
+# Mapped arguments (https://github.com/sass/libsass/issues/708)
+($r, $err) = CSS::Sass::sass_compile(".valid { color: sprite-map(\$spacing: 2px, \$glob: \"*.png\"); }",
+    sass_functions => { 'sprite-map($glob, $spacing: 0px)' => sub { CSS::Sass::Type::String->new($_[0]->value . "::" . $_[1]->value) } } );
+like  ($r,   qr/color: \*\.png::2;/,                          "Sass function with mapped arguments and defaults works");
+is    ($err, undef,                                    "Sass function with mapped arguments and defaults returns no errors");
