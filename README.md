@@ -63,7 +63,7 @@ psass [options] [ source | - ]
 -I, --include-path=path       sass include path (repeatable)
 -c, --source-comments         enable source debug comments
 -m, --source-map-file=file    create and write source map to file
-    --omit-source-map-url     omit sourceMappingUrl from output
+    --no-source-map-url       omit sourceMappingUrl from output
 ```
 
 Copyright And Licence

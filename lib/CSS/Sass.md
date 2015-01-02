@@ -141,7 +141,7 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
     Setting this option enables the source-map generating. The file will not
     actually be created, but its content will be returned to the caller. It
-    will also enable sourceMappingURL comment by default. See `omit_src_map_url`.
+    will also enable sourceMappingURL comment by default. See `no_src_map_url`.
 
 - `source_map_embed`
 
@@ -154,7 +154,7 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
     source-map json. Setting this option along with `source_map_embed` allows
     for a completely self-contained source-map.
 
-- `omit_src_map_url`
+- `no_src_map_url`
 
     Set to `true` to omit the sourceMappingURL comment from the output css.
     Setting this options makes `source_map_embed` useless.
@@ -212,6 +212,27 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
     Then the ouput would be:
 
         some_rule: Well, hello;
+
+- Custom `importer`
+
+    This is a function implemented in Perl that gets called for every @import statement. This
+    feature is in an experimental stage and you have to be careful to return the expected
+    structure. You can return multiple imports from one call to make it possible to
+    implement globbing importers etc. If you omit $data, libsass will try to load the
+    given path itself. It will go through the normal lockup algorithm as it would had
+    encountered the "virtual" import statement on its own. $scope holds the current
+    import path. Imports in css are meant to be relative to the parent scope, so you
+    can use it to create absolute urls or paths within the context your working with.
+
+    A simple example:
+
+        importer => sub {
+          my ($import, $scope) = @_;
+          return [
+            # [ $real_path ] or [ $virtual_path, $data ],
+            [ "http://xyz/file", "div { color: red; }" ],
+          ];
+        }
 
 - `Sass_Value` Types
 

@@ -1,3 +1,12 @@
+CSS::Sass (3.1.0)
+
+  * Updates to latest libsass version (3.1.0)
+  * Changed to use new C-API (sass_context.h)
+  * Changed omit_src_map_url to no_src_map_url
+  * Implement custom importers (experimental)
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Fri, 02 Jan 2015 04:10:28 +0100
+
 CSS::Sass (3.0.2)
 
   * Updates to latest libsass version (3.0.2)
