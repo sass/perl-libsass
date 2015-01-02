@@ -78,12 +78,12 @@ use CSS::Sass qw(sass_compile_file sass_compile);
 ####################################################################################################
 
 # variables
-my ($css, $err, $smap);
+my ($css, $err, $stats);
 
 # open filehandle if path is given
 if (defined $ARGV[0] && $ARGV[0] ne '-')
 {
-	($css, $err, $smap) = sass_compile_file(
+	($css, $err, $stats) = sass_compile_file(
 		$ARGV[0],
 		precision => $precision,
 		output_path => $output_file,
@@ -99,7 +99,7 @@ if (defined $ARGV[0] && $ARGV[0] ne '-')
 # or use standard input
 else
 {
-	($css, $err, $smap) = sass_compile(
+	($css, $err, $stats) = sass_compile(
 		join('', <STDIN>),
 		precision => $precision,
 		output_path => $output_file,
@@ -127,6 +127,7 @@ else { die "fatal error - aborting"; }
 # output source-map
 if ($source_map_file)
 {
+	my $smap = $stats->{'source_map_string'};
 	unless ($smap) { warn "source-map not generated <$source_map_file>" }
 	else { write_file($source_map_file, { binmode => ':utf8' }, $smap ); }
 }

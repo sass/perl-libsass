@@ -341,7 +341,7 @@ $sass->options->{'sass_functions'}->{'var-pl-new-boolean'} = sub { return CSS::S
 ################################################################################
 
 my $css_nil = $sass->compile('$nil: var-pl-nil(); A { color: $nil; }');
-is $css_nil, 'A{}', "function returned native null type";
+is $css_nil, '', "function returned native null type";
 
 my $css_int = $sass->compile('$int: var-pl-int(); A { color: $int; }');
 is $css_int, 'A{color:42}', "function returned native integer type";
@@ -403,7 +403,7 @@ $sass->compile('$lst: test-lst(( foo, bar ));');
 ################################################################################
 $sass->options->{'dont_die'} = 1;
 is $sass->compile('$nul: test-nul(var-pl-nil()); A { value: $nul; }'),
-   'A{}', 'test returned blessed variable of type null';
+   '', 'test returned blessed variable of type null';
 is $sass->compile('$int: test-int(var-pl-int()); A { value: $int; }'),
    'A{value:42}', 'test returned blessed variable of type integer number';
 is $sass->compile('$dbl: test-dbl(var-pl-dbl()); A { value: $dbl; }'),
@@ -418,7 +418,7 @@ is $sass->compile('$lst: test-lst(var-pl-list()); A { value: $lst; }'),
    'A{value:foo,bar,baz}', 'test returned blessed variable of type comma list';
 
 is $sass->compile('$nul: test-nul(var-pl-new-nil()); A { value: $nul; }'),
-   'A{}', 'test returned blessed variable of type null';
+   '', 'test returned blessed variable of type null';
 is $sass->compile('$int: test-int(var-pl-new-int()); A { value: $int; }'),
    'A{value:42}', 'test returned blessed variable of type integer number';
 is $sass->compile('$dbl: test-dbl(var-pl-new-dbl()); A { value: $dbl; }'),
