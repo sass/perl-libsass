@@ -14,6 +14,7 @@ before_install:
 install:
    # Deal with dependencies
    - cpanm -n File::Slurp
+   - cpanm -n File::chdir
    - cpanm -n Devel::Cover
    # - cpanm --quiet --installdeps --notest .
    - cpanm -n Devel::Cover::Report::Coveralls

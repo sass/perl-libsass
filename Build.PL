@@ -7,7 +7,6 @@ use File::Spec;
 use Cwd;
 
 my $libsass_version = '[na]';
-my $file_opt = { binmode => ':raw' };
 
 # Are we in our development tree?
 # If so, create the MANIFEST file.
@@ -19,6 +18,7 @@ if (-d ".git") {
     system "git submodule update";
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
+    print $manifest ".libsass.version\n";
     while (my $module = shift @modules)
     {
       my $cwd = getcwd;
@@ -36,17 +36,17 @@ if (-d ".git") {
     }
 }
 
-if (-f "libsass/.git") {
+if (-e "libsass/.git") {
   chdir "libsass";
   my $libsass_version = `git describe --abbrev=4 --dirty --always --tags`;
   chdir "..";
   require File::Slurp;
   chomp $libsass_version;
-  File::Slurp::write_file(".libsass.version", $file_opt, $libsass_version);
+  File::Slurp::write_file(".libsass.version", { 'binmode' => ':raw' }, $libsass_version);
 }
 if (-f ".libsass.version") {
   require File::Slurp;
-  $libsass_version = File::Slurp::read_file(".libsass.version", $file_opt);
+  $libsass_version = File::Slurp::read_file(".libsass.version", { 'binmode' => ':raw' });
   print "using libsass version $libsass_version\n";
 }
 
@@ -108,7 +108,7 @@ sub ACTION_versions {
             }
         }
         foreach my $filename (@files) {
-            my $data = File::Slurp::read_file($filename, $file_opt);
+            my $data = File::Slurp::read_file($filename, { 'binmode' => ':raw' });
             if ($data =~ m/$re_version/i) {
                 print "  $filename ($1)\n";
             } else {
@@ -144,11 +144,11 @@ sub ACTION_versionize {
         unless ( $tag =~ m/(\d+\.\d+\.)(\d+)(?:\-|\z)/ )
         { die "tag <$tag> invalid (\\d+.\\d+.\\d+)\n"; }
         foreach my $filename (@files) {
-            my $data = File::Slurp::read_file($filename, $file_opt);
+            my $data = File::Slurp::read_file($filename, { 'binmode' => ':raw' });
             if ($data =~ s/$re_version/our \$VERSION = \"v$tag\";/i) {
                 next if $tag eq $1;
                 print "  update version $filename (was $1)\n";
-                File::Slurp::write_file($filename, $file_opt, $data);
+                File::Slurp::write_file($filename, { 'binmode' => ':raw' }, $data);
             }
         }
     } else {
@@ -176,6 +176,7 @@ my %config = (
     },
     build_requires => {
         'Test::More' => 0,
+        'File::chdir' => 0,
     },
     requires => {
         'perl' => '5.008',
