@@ -1,0 +1,10 @@
+{
+	"version": 3,
+	"file": "output.css",
+	"sources": [
+		"input.scss"
+	],
+	"sourcesContent": [],
+	"mappings": "AAIA,MAAM,EAAL,AAAA,SAAS,AAAA,EAAE,KAAK;EAEf,AAAA,CAAC,AAAA;IACC,AAAA,KAAK,AAAA,EAAE,AAAA,MAAO,AAAA",
+	"names": []
+}

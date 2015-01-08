@@ -1,0 +1,8 @@
+@function foobar($a, $b) {
+  @return $a + $b
+}
+
+foo {
+  margin: foobar(4px, 2px);
+  color: darken(red, 2);
+}

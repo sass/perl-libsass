@@ -47,6 +47,7 @@ BEGIN
 # @tests = grep { $_->[0] =~ m/199/ } @tests;
 
 use Test::More tests => scalar @tests;
+use Test::Differences;
 
 use CSS::Sass;
 
@@ -95,7 +96,7 @@ foreach my $test (@tests)
 		clean_output($expect = read_file($expected_file));
 		clean_output($r) if (defined $r);
 		my $is_expected = defined $r && $r eq $expect && !$err ? 1 : 0;
-		is    ($is_expected, 0,   "sass todo test unexpectedly passed: " . $input_file);
+		fail ("sass todo test unexpectedly passed: " . $input_file);
 		push @false_negatives, $input_file if $is_expected;
 
 	}
@@ -114,7 +115,7 @@ foreach my $test (@tests)
 		$err = $@; warn $@ if $@;
 		clean_output($expect = read_file($expected_file));
 		clean_output($r) if (defined $r);
-		is    ($r, $expect,       "sass-spec " . $input_file);
+		eq_or_diff ($r, $expect,       "sass-spec " . $input_file);
 
 	}
 

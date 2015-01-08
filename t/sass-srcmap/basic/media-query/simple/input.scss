@@ -1,0 +1,10 @@
+@function foobar($a, $b) {
+  @return $a + $b
+}
+$a: 600px;
+@media (max-width: foobar(2 * 100px, 30px))
+{
+  A {
+    color: foobar;
+  }
+}
