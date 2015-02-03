@@ -43,11 +43,21 @@ BEGIN
 
 }
 
+use Test::More;
+
+if (eval { require Test::Differences; 1 })
+{
+	plan(tests => 1 + @tests);
+}
+else
+{
+	plan(skip_all => 'Test::Differences not installed');
+}
+
+use_ok('Test::Differences');
+
 # uncomment to debug a single test case
 # @tests = grep { $_->[0] =~ m/199/ } @tests;
-
-use Test::More tests => scalar @tests;
-use Test::Differences;
 
 use CSS::Sass;
 

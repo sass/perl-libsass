@@ -178,6 +178,10 @@ my %config = (
         'Test::More' => 0,
         'File::chdir' => 0,
     },
+    test_requires => {
+        'File::chdir' => 0,
+        'Test::Differences' => 0,
+    },
     requires => {
         'perl' => '5.008',
         'File::Slurp' => 0,
