@@ -106,7 +106,8 @@ foreach my $test (@tests)
 		clean_output($expect = read_file($expected_file));
 		clean_output($r) if (defined $r);
 		my $is_expected = defined $r && $r eq $expect && !$err ? 1 : 0;
-		fail ("sass todo test unexpectedly passed: " . $input_file);
+		if ($is_expected) { fail("sass todo test unexpectedly passed: " . $input_file); }
+		else { pass("sass todo test failed as expected"); }
 		push @false_negatives, $input_file if $is_expected;
 
 	}
