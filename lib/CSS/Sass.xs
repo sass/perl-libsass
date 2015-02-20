@@ -493,7 +493,6 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     SV** source_map_embed_sv    = hv_fetchs(perl_options, "source_map_embed",     false);
     SV** include_paths_sv       = hv_fetchs(perl_options, "include_paths",        false);
     SV** precision_sv           = hv_fetchs(perl_options, "precision",            false);
-    SV** image_path_sv          = hv_fetchs(perl_options, "image_path",           false);
     SV** source_map_file_sv     = hv_fetchs(perl_options, "source_map_file",      false);
     SV** sass_functions_sv      = hv_fetchs(perl_options, "sass_functions",       false);
     SV** importer_sv            = hv_fetchs(perl_options, "importer",             false);
@@ -508,7 +507,6 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     if (source_map_embed_sv)    sass_option_set_source_map_embed    (sass_options, SvTRUE(*source_map_embed_sv));
     if (include_paths_sv)       sass_option_set_include_path        (sass_options, safe_svpv(*include_paths_sv, ""));
     if (precision_sv)           sass_option_set_precision           (sass_options, SvUV(*precision_sv));
-    if (image_path_sv)          sass_option_set_image_path          (sass_options, safe_svpv(*image_path_sv, ""));
     if (source_map_file_sv)     sass_option_set_source_map_file     (sass_options, safe_svpv(*source_map_file_sv, ""));
 
     if (importer_sv) { sass_option_set_importer(sass_options, sass_make_importer(sass_importer, *importer_sv)); }

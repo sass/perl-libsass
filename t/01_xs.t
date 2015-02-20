@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 48;
+use Test::More tests => 40;
 BEGIN { use_ok('CSS::Sass') };
 
 my $r;
@@ -76,21 +76,6 @@ $r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { incl
 is    ($r->{error_status},  1,           "import w/ bad type sets error_status but doesn't crash");
 like  ($r->{error_message}, qr/^stdin:1:/,  "import w/ bad type sets error_message");
 
-
-# $options->{image_path}
-$r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { });
-is    ($r->{error_status},  0,                        "image_path default no error_status");
-is    ($r->{error_message}, undef,                    "image_path default error_message is undef");
-like  ($r->{output_string}, qr@url\("/path"\)@,       "image_path defaults to /");
-
-$r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { image_path => "/a/b/c" });
-is    ($r->{error_status},  0,                        "image_path paths no error_status");
-is    ($r->{error_message}, undef,                    "image_path paths error_message is undef");
-like  ($r->{output_string}, qr@url\("/a/b/c/path"\)@, "image_path works");
-
-$r = CSS::Sass::compile_sass('.valid { color: image-url("path"); }', { image_path => { wrong_type => 1 } });
-is    ($r->{error_status},  0,                        "image_path w/ bad type no error_status and doesn't crash");
-is    ($r->{error_message}, undef,                    "image_path w/ bad type error_message is undef");
 
 $r = CSS::Sass::compile_sass('.valid { width: #{(1/3)}; }', { });
 is    ($r->{error_status},  0,                        "import no error_status");

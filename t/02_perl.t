@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 43;
+use Test::More tests => 39;
 BEGIN { use_ok('CSS::Sass', qw(:DEFAULT sass_compile sass_compile_file)) };
 
 my $r;
@@ -181,25 +181,5 @@ close $fh;
 ($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, precision => 10);
 is    ($err,                undef,       "custom precision works without error");
 like  ($r,                  qr/padding\:0.3333333333\W/,     "custom precision has correct output");
-
-close($fh);
-
-($fh, $filename) = tempfile( SUFFIX => '.scss');
-$fh->autoflush(); binmode $fh;
-print $fh "\n.valid {\n color: image-url('path'); }";
-close $fh;
-($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, precision => 10);
-is    ($err, undef,                    "image_path default error_message is undef");
-like  ($r, qr@url\("/path"\)@,         "image_path defaults to /");
-
-close($fh);
-
-($fh, $filename) = tempfile( SUFFIX => '.scss');
-$fh->autoflush(); binmode $fh;
-print $fh "\n.valid {\n color: image-url('path'); }";
-close $fh;
-($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, image_path => "/a/b/c");
-is    ($err, undef,                    "image_path default error_message is undef");
-like  ($r, qr@url\("/a/b/c/path"\)@,   "image_path defaults to /");
 
 close($fh);
