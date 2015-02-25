@@ -76,6 +76,9 @@ p {
     }
 );
 
+chomp ($r); $r =~ s/(?:\r?\n)+/\n/g;
+chomp ($expected); $expected =~ s/(?:\r?\n)+/\n/g;
+
 is  ($err, undef,                         "Custom importer has no error");
 is  ($r,   $expected,                     "Custom importer yields expected result");
 

@@ -579,8 +579,8 @@ BOOT:
     HV* stash = gv_stashpv("CSS::Sass", 0);
 
     Constant(SASS_STYLE_NESTED);
-    //Constant(stash, SASS_STYLE_EXPANDED); // not implemented in libsass yet
-    //Constant(stash, SASS_STYLE_COMPACT);  // not implemented in libsass yet
+    Constant(SASS_STYLE_EXPANDED);
+    Constant(SASS_STYLE_COMPACT);
     Constant(SASS_STYLE_COMPRESSED);
 
     Constant(SASS_BOOLEAN);
