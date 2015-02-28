@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 28;
 
 BEGIN { use_ok('CSS::Sass') };
 
@@ -86,3 +86,71 @@ is    (scalar(@{$stat->{'included_files'}}), 3,     "included_files has correct 
 is    ($stat->{'included_files'}->[0], "bar.scss",  "included_files[0] has correct url");
 is    ($stat->{'included_files'}->[1], "bar2.scss", "included_files[1] has correct url");
 is    ($stat->{'included_files'}->[2], "foo.scss",  "included_files[2] has correct url");
+
+
+####### load handling #######
+
+($r, $err, $stat) = CSS::Sass::sass_compile(
+    '@import "foobar";',
+    importer => sub {
+      return [
+        "t/inc/_colors.scss",
+        [ "t/inc/_colors.scss", undef, undef ],
+        [ "non-existing-import", 'foo { color: $red; }', undef ]
+      ];
+    }
+);
+
+is ($r, "foo {\n  color: #ff1111; }\n", "correctly report error file");
+
+####### load handling #######
+
+($r, $err, $stat) = CSS::Sass::sass_compile(
+    '@import "foobar";',
+    importer => sub {
+      return "t/inc/simple"
+    }
+);
+
+is ($r, "foo {\n  color: red; }\n", "correctly report error file");
+
+####### error handling #######
+
+my $err_msg = "my error msg";
+
+($r, $err, $stat) = CSS::Sass::sass_compile(
+    $files{'index.scss'},
+    input_file => "index.scss",
+    output_file => "index.css",
+    source_map_file => "index.css.map",
+    importer => sub {
+      if ($_[0] ne "bar2.scss") { return [ [ $_[0], $files{$_[0]}, "" ] ]; }
+      else { return [ [ $_[0], $files{$_[0]}, "", $err_msg, 42, 84 ] ]; }
+    }
+);
+
+is ($stat->{'error_file'}, "foo.scss", "correctly report error file");
+is ($stat->{'error_status'}, 1, "correctly report error status");
+is ($stat->{'error_line'}, 42+1, "correctly report error line");
+is ($stat->{'error_column'}, 84+1, "correctly report error column");
+is ($stat->{'error_text'}, $err_msg, "correctly report error text");
+
+####### die handling #######
+
+$err_msg = "sudden death\n";
+
+($r, $err, $stat) = CSS::Sass::sass_compile(
+    $files{'index.scss'},
+    input_file => "index.scss",
+    output_file => "index.css",
+    source_map_file => "index.css.map",
+    importer => sub {
+      die $err_msg;
+    }
+);
+
+is ($stat->{'error_file'}, "stdin", "correctly report error file");
+is ($stat->{'error_status'}, 1, "correctly report error status");
+is ($stat->{'error_line'}, 2, "correctly report error line");
+is ($stat->{'error_column'}, 13, "correctly report error column");
+is ($stat->{'error_text'}, $err_msg, "correctly report error text");

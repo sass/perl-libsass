@@ -100,8 +100,13 @@ my ($src, $expect);
 # work directly on arg
 # lib/sass_spec/test_case.rb
 sub clean_output ($) {
-		$_[0] =~ s/(?:\r?\n)+/\n/g;
-		$_[0] =~ s/(?:\r?\n)+$/\n/g;
+	$_[0] =~ s/[\r\n\s	 ]+/ /g;
+	$_[0] =~ s/,[\r\n\s	 ]+/,/g;
+}
+sub norm_output ($) {
+	$_[0] =~ s/\r//g;
+	$_[0] =~ s/(?:\r?\n)+/\n/g;
+	$_[0] =~ s/(?:\r?\n)+$/\n/g;
 }
 
 my @false_negatives;
@@ -117,8 +122,8 @@ foreach my $test (@tests)
 	my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
 	my $output_compressed = join("/", $test->[0], 'expected.compressed.css');
 
-	use Win32::Process;
-	use Win32;
+	eval('use Win32::Process;');
+	eval('use Win32;');
 
 	if ($redo_sass)
 	{
@@ -139,14 +144,13 @@ foreach my $test (@tests)
 
 my @running; my $i = 0;
 foreach my $cmd (@cmds) {
-# warn "generating $cmd->[1]\n";
 
     my $ProcessObj;
     Win32::Process::Create($ProcessObj,
                                 "C:\\Ruby\\193\\bin\\sass.bat",
                                 $cmd->[0],
                                 0,
-                                NORMAL_PRIORITY_CLASS,
+                                Win32::Process::NORMAL_PRIORITY_CLASS(),
                                 ".")|| die "error $!";
 
     push @running, $ProcessObj;
@@ -183,7 +187,15 @@ foreach my $test (@tests)
 
 	# warn $input_file;
 
-	my $comp_nested = CSS::Sass->new(output_style => SASS_STYLE_NESTED);
+	my $last_error; my $on_error;
+	$options{"sass_functions"} = {
+		'reset-error()' => sub { $last_error = undef; },
+		'last-error()' => sub { return ${$last_error || \ undef}; },
+		'mock-errors($on)' => sub { $on_error = $_[0]; return undef; },
+		'@error' => sub { $last_error = $_[0]; return "thrown"; }
+	};
+
+	my $comp_nested = CSS::Sass->new(%options, output_style => SASS_STYLE_NESTED);
 	my $comp_compact = CSS::Sass->new(%options, output_style => SASS_STYLE_COMPACT);
 	my $comp_expanded = CSS::Sass->new(%options, output_style => SASS_STYLE_EXPANDED);
 	my $comp_compressed = CSS::Sass->new(%options, output_style => SASS_STYLE_COMPRESSED);
@@ -217,36 +229,23 @@ foreach my $test (@tests)
 	utf8::decode($css_expanded) if ($css_expanded) ;
 	utf8::decode($css_compressed) if ($css_compressed);
 
-	clean_output $css_nested;
-	clean_output $sass_nested;
-	clean_output $css_compact;
-	clean_output $sass_compact;
-	clean_output $css_expanded;
-	clean_output $sass_expanded;
+	utf8::decode($sass_nested) if ($sass_nested) ;
+	utf8::decode($sass_compact) if ($sass_compact) ;
+	utf8::decode($sass_expanded) if ($sass_expanded) ;
+	utf8::decode($sass_compressed) if ($sass_compressed);
 
-	#sub clean_comments {
-	#	my $str = $_[0];
-	#	$str =~ s/\n+/ /g;
-	#	$str =~ s/\s+/ /g;
-	#	return '/* ' . $str . ' */';
-	#}
+	if (-e substr($output_nested, 0, -4) . ".clean")
+	{ clean_output $css_nested; clean_output $sass_nested; }
+	if (-e substr($output_compact, 0, -4) . ".clean")
+	{ clean_output $css_compact; clean_output $sass_compact; }
+	if (-e substr($output_expanded, 0, -4) . ".clean")
+	{ clean_output $css_expanded; clean_output $sass_expanded; }
+	if (-e substr($output_compressed, 0, -4) . ".clean")
+	{ clean_output $css_compressed; clean_output $sass_compressed; }
 
-	# $css_nested =~ s/^\s*\/\*(.*?)\*\//clean_comments($1)/egms;
-	# $sass_nested =~ s/^\s*\/\*(.*?)\*\//clean_comments($1)/egms;
-	# $css_compact =~ s/^\s*\/\*(.*?)\*\//clean_comments($1)/egms;
-	# $sass_compact =~ s/^\s*\/\*(.*?)\*\//clean_comments($1)/egms;
-	# $css_expanded =~ s/^\s*\/\*(.*?)\*\//clean_comments($1)/egms;
-	# $sass_expanded =~ s/^\s*\/\*(.*?)\*\//clean_comments($1)/egms;
-
-	# $css_nested =~ s/(?<=[^\n\r])  / /g;
-	# $sass_nested =~ s/(?<=[^\n\r])  / /g;
-	# $css_compact =~ s/(?<=[^\n\r])  / /g;
-	# $sass_compact =~ s/(?<=[^\n\r])  / /g;
-	# $css_expanded =~ s/(?<=[^\n\r])  / /g;
-	# $sass_expanded =~ s/(?<=[^\n\r])  / /g;
-
-	# $css_expanded =~ s/\\\\x\{/\\x{/g;
-	# $sass_expanded =~ s/\\\\x\{/\\x{/g;
+	norm_output $css_nested; norm_output $sass_nested;
+	norm_output $css_compact; norm_output $sass_compact;
+	norm_output $css_expanded; norm_output $sass_expanded;
 
 	unless ($input_file =~ m/todo/)
 	{

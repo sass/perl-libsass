@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 297;
+use Test::More tests => 339;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -42,6 +42,13 @@ sub test_null
 	ok UNIVERSAL::isa($_[0], 'REF'), "null type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'SCALAR'), "null type points to a scalar";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Null'), "null has correct package";
+
+	is $_[0] eq undef, 1, "null equals to undef";
+	is $_[0] ne undef, 0, "null not equals undef";
+	is $_[0] == undef, 1, "null is numeric equal to undef";
+	is $_[0] != undef, 0, "null is numeric equal to undef";
+	is $_[0] == 0, 0, "null equals to undef";
+	is $_[0] != 0, 1, "null equals to undef";
 
 	# test the representation of the value (must always be undef)
 	ok ! defined ${${$_[0]}}, "null value matches specified type";

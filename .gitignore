@@ -21,5 +21,9 @@ lib/**/*.c
 lib/**/*.xs
 lib/**/*.pod
 lib/**/*/*.pod
+lib/CSS/Sass.base
+lib/CSS/Sass.def
+lib/CSS/Sass.exp
+lib/CSS/Sass.lds
 .libsass.version
 *~

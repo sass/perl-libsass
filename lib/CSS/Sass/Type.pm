@@ -27,7 +27,7 @@ use CSS::Sass;
 
 ################################################################################
 package CSS::Sass::Type;
-our $VERSION = "v3.1.1";
+our $VERSION = "v3.2.0";
 ################################################################################
 use CSS::Sass qw(import_sv);
 ################################################################################
@@ -41,6 +41,9 @@ use base 'CSS::Sass::Type';
 ################################################################################
 use overload '""' => 'stringify';
 use overload 'eq' => 'equals';
+use overload '==' => 'equals';
+use overload 'ne' => 'nequals';
+use overload '!=' => 'nequals';
 ################################################################################
 
 sub new {
@@ -53,7 +56,8 @@ sub value { undef }
 
 sub stringify { "null" }
 
-sub equals { ! defined $_[0] }
+sub equals { defined $_[1] ? 0 : 1 }
+sub nequals { defined $_[1] ? 1 : 0 }
 
 ################################################################################
 package CSS::Sass::Type::Error;
@@ -402,7 +406,7 @@ L<CSS::Sass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>  
+David Caldwell E<lt>david@porkrind.orgE<gt>
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE

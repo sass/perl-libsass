@@ -21,6 +21,17 @@ use CSS::Sass qw(SASS_STYLE_NESTED);
 use CSS::Sass qw(SASS_STYLE_COMPRESSED);
 
 ####################################################################################################
+# normalize command arguments to utf8
+####################################################################################################
+
+# get cmd arg encoding
+use Encode::Locale qw();
+# convert cmd args to utf8
+use Encode qw(decode encode);
+# now just decode every command arguments
+@ARGV = map { decode(locale => $_, 1) } @ARGV;
+
+####################################################################################################
 # config variables
 ####################################################################################################
 
@@ -42,7 +53,8 @@ sub version {
 	printf "  sass2scss: %s\n", CSS::Sass::sass2scss_version();
 exit 0 };
 
-# include paths
+# paths arrays
+my @plugin_paths;
 my @include_paths;
 
 # get options
@@ -57,6 +69,7 @@ GetOptions (
 	'source-map-embed|e!' => \ $source_map_embed,
 	'source-map-contents|s!' => \ $source_map_contents,
 	'no-source-map-url!' => \ $omit_source_map_url,
+	'plugin-path|L=s' => sub { push @plugin_paths, $_[1] },
 	'include-path|I=s' => sub { push @include_paths, $_[1] }
 );
 
@@ -88,6 +101,7 @@ if (defined $ARGV[0] && $ARGV[0] ne '-')
 		precision => $precision,
 		output_path => $output_file,
 		output_style  => $output_style,
+		plugin_paths => \ @plugin_paths,
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
 		source_map_file => $source_map_file,
@@ -104,6 +118,7 @@ else
 		precision => $precision,
 		output_path => $output_file,
 		output_style  => $output_style,
+		plugin_paths => \ @plugin_paths,
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
 		source_map_file => $source_map_file,
@@ -151,6 +166,7 @@ psass [options] [ source | - ]
    -p, --precision               precision for float output
    -o, --output-file=file        output file to write result to
    -t, --output-style=style      output style [nested|compressed]
+   -L, --plugin-path=path        plugin load path (repeatable)
    -I, --include-path=path       sass include path (repeatable)
    -c, --source-comments         enable source debug comments
    -e, --source-map-embed        embed source-map in mapping url

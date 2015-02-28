@@ -324,15 +324,22 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
     }
 
     // dereference if possible
-    if (SvROK(perl_value)) {
+    if (perl_value && SvROK(perl_value)) {
         perl_value = SvRV(perl_value);
     }
 
     size_t len = 0;
     struct Sass_Import** incs = 0;
 
+    if (SvTRUE(ERRSV)) {
+        char* message = SvPV_nolen(ERRSV);
+        incs = sass_make_import_list(1);
+        incs[0] = sass_make_import_entry(0, 0, 0);
+        sass_import_set_error(incs[0], message, -1, -1);
+    }
+
     // do nothing if we got undef retuned
-    if (SvTYPE(perl_value) == SVt_NULL) { }
+    else if (SvTYPE(perl_value) == SVt_NULL) { }
     // we may have gotten a single path
     else if (SvTYPE(perl_value) < SVt_PVAV) {
 
@@ -356,6 +363,9 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
             char* path = 0;
             char* source = 0;
             char* mapjson = 0;
+            char* error_msg = 0;
+            size_t error_line = 0;
+            size_t error_column = 0;
 
             // get the entry from the array
             // can either be another array or a path string
@@ -381,9 +391,15 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
                 SV** path_sv = av_fetch(import_av, 0, false);
                 SV** source_sv = av_fetch(import_av, 1, false);
                 SV** mapjson_sv = av_fetch(import_av, 2, false);
-                if (path_sv) path = SvPV_nolen(*path_sv);
-                if (source_sv) source = SvPV_nolen(*source_sv);
-                if (mapjson_sv) mapjson = SvPV_nolen(*mapjson_sv);
+                SV** error_msg_sv = av_fetch(import_av, 3, false);
+                SV** error_line_sv = av_fetch(import_av, 4, false);
+                SV** error_column_sv = av_fetch(import_av, 5, false);
+                if (path_sv && SvOK(*path_sv)) path = SvPV_nolen(*path_sv);
+                if (source_sv && SvOK(*source_sv)) source = SvPV_nolen(*source_sv);
+                if (mapjson_sv && SvOK(*mapjson_sv)) mapjson = SvPV_nolen(*mapjson_sv);
+                if (error_msg_sv && SvOK(*error_msg_sv)) error_msg = SvPV_nolen(*error_msg_sv);
+                if (error_line_sv && SvOK(*error_line_sv)) error_line = SvNV(*error_line_sv);
+                if (error_column_sv && SvOK(*error_column_sv)) error_column = SvNV(*error_column_sv);
             }
             // error
             else {
@@ -398,8 +414,11 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
             // need to make copy of blobs handled by perl
             char* cp_source = source ? strdup(source) : 0;
             char* cp_mapjson = mapjson ? strdup(mapjson) : 0;
-            incs[len++] = sass_make_import_entry(path, cp_source, cp_mapjson);
-
+            incs[len] = sass_make_import_entry(path, cp_source, cp_mapjson);
+            if (error_msg && strlen(error_msg) > 0) {
+              sass_import_set_error(incs[len], error_msg, error_line, error_column);
+            }
+            ++len;
         }
         // EO each SV in AV
 
@@ -492,7 +511,9 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     SV** source_map_contents_sv = hv_fetchs(perl_options, "source_map_contents",  false);
     SV** source_map_embed_sv    = hv_fetchs(perl_options, "source_map_embed",     false);
     SV** include_paths_sv       = hv_fetchs(perl_options, "include_paths",        false);
+    SV** plugin_paths_sv        = hv_fetchs(perl_options, "plugin_paths",         false);
     SV** precision_sv           = hv_fetchs(perl_options, "precision",            false);
+    SV** source_map_root_sv     = hv_fetchs(perl_options, "source_map_root",      false);
     SV** source_map_file_sv     = hv_fetchs(perl_options, "source_map_file",      false);
     SV** sass_functions_sv      = hv_fetchs(perl_options, "sass_functions",       false);
     SV** importer_sv            = hv_fetchs(perl_options, "importer",             false);
@@ -506,7 +527,9 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     if (source_map_contents_sv) sass_option_set_source_map_contents (sass_options, SvTRUE(*source_map_contents_sv));
     if (source_map_embed_sv)    sass_option_set_source_map_embed    (sass_options, SvTRUE(*source_map_embed_sv));
     if (include_paths_sv)       sass_option_set_include_path        (sass_options, safe_svpv(*include_paths_sv, ""));
+    if (plugin_paths_sv)        sass_option_set_plugin_path         (sass_options, safe_svpv(*plugin_paths_sv, ""));
     if (precision_sv)           sass_option_set_precision           (sass_options, SvUV(*precision_sv));
+    if (source_map_root_sv)     sass_option_set_source_map_root     (sass_options, safe_svpv(*source_map_root_sv, ""));
     if (source_map_file_sv)     sass_option_set_source_map_file     (sass_options, safe_svpv(*source_map_file_sv, ""));
 
     if (importer_sv) { sass_option_set_importer(sass_options, sass_make_importer(sass_importer, *importer_sv)); }
@@ -551,6 +574,10 @@ void finalize_sass_context(struct Sass_Context* ctx, HV* RETVAL, SV* err)
 
     const int error_status = sass_context_get_error_status(ctx);
     const char* error_json = sass_context_get_error_json(ctx);
+    const char* error_file = sass_context_get_error_file(ctx);
+    size_t error_line = sass_context_get_error_line(ctx);
+    size_t error_column = sass_context_get_error_column(ctx);
+    const char* error_text = sass_context_get_error_text(ctx);
     const char* error_message = sass_context_get_error_message(ctx);
     const char* output_string = sass_context_get_output_string(ctx);
     const char* source_map_string = sass_context_get_source_map_string(ctx);
@@ -566,8 +593,12 @@ void finalize_sass_context(struct Sass_Context* ctx, HV* RETVAL, SV* err)
     hv_stores(RETVAL, "error_status",      newSViv(error_status || SvOK(err)));
     hv_stores(RETVAL, "output_string",     output_string ? newSVpv(output_string, 0) : newSV(0));
     hv_stores(RETVAL, "source_map_string", source_map_string ? newSVpv(source_map_string, 0) : newSV(0));
+    hv_stores(RETVAL, "error_line",        SvOK(err) ? err : error_line ? newSViv(error_line) : newSViv(0));
+    hv_stores(RETVAL, "error_column",      SvOK(err) ? err : error_column ? newSViv(error_column) : newSViv(0));
+    hv_stores(RETVAL, "error_text",        SvOK(err) ? err : error_text ? newSVpv(error_text, 0) : newSV(0));
     hv_stores(RETVAL, "error_message",     SvOK(err) ? err : error_message ? newSVpv(error_message, 0) : newSV(0));
     hv_stores(RETVAL, "error_json",        SvOK(err) ? err : error_json ? newSVpv(error_json, 0) : newSV(0));
+    hv_stores(RETVAL, "error_file",        SvOK(err) ? err : error_file ? newSVpv(error_file, 0) : newSV(0));
     hv_stores(RETVAL, "included_files",    newRV_noinc((SV*) sv_included_files));
 
 }
@@ -617,7 +648,7 @@ compile_sass(input_string, options)
         sv_2mortal((SV*)RETVAL);
     {
 
-        struct Sass_Data_Context* data_ctx = sass_make_data_context(input_string);
+        struct Sass_Data_Context* data_ctx = sass_make_data_context(strdup(input_string));
         struct Sass_Context* ctx = sass_data_context_get_context(data_ctx);
         struct Sass_Options* ctx_opt = sass_context_get_options(ctx);
         SV* err = init_sass_options(ctx_opt, options);
@@ -683,7 +714,7 @@ quote(str)
     CODE:
     {
 
-        char* quoted = sass_string_quote(str, '"');
+        char* quoted = sass_string_quote(str, '*');
 
         RETVAL = newSVpv(quoted, 0);
 

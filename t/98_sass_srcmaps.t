@@ -29,9 +29,6 @@ BEGIN
 }
 
 use Test::More;
-plan(tests => 1);
-SKIP: { skip("deactivated", 1); }
-exit(0);
 
 
 if (eval { require OCBNET::SourceMap; 1 })
