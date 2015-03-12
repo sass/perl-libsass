@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 43;
+use Test::More tests => 39;
 BEGIN { use_ok('CSS::Sass', qw(:DEFAULT sass_compile sass_compile_file)) };
 
 my $r;
@@ -14,7 +14,7 @@ $r = $sass->compile(".valid { color: red; }");
 isnt  ($r,                undef,       "Successful compile returns something");
 
 $r = eval { $sass->compile("this is invalid sass source") };
-like  ($@,                qr/^stdin:1:/, "Failed compile dies with error message");
+like  ($@,                qr/on line 1 of stdin/, "Failed compile dies with error message");
 
 $sass->options->{dont_die} = 1;
 eval {
@@ -23,12 +23,12 @@ eval {
 };
 fail  (                               "dont_die option doesn't die") if $@;
 is    ($r,                undef,      "dont_die option returns undef on error");
-like  ($sass->last_error, qr/^stdin:1:/, "Failed compile saves error message in last_error");
+like  ($sass->last_error, qr/on line 1 of stdin/, "Failed compile saves error message in last_error");
 
 
 $sass->options->{dont_die} = 0;
 $r = eval { $sass->compile('@import "colors"; .valid { color: $red; }') };
-like  ($@,                  qr/^stdin:1:/,  "failed import dies with error message");
+like  ($@,                  qr/on line 1 of stdin/,  "failed import dies with error message");
 
 $sass = CSS::Sass->new(include_paths => ['t/inc']);
 $r = eval { $sass->compile('@import "colors"; .valid { color: $red; }') };
@@ -47,7 +47,7 @@ is    ($err,                undef,       "Successful compile returns no errors")
 
 ($r, $err) = sass_compile("this is invalid sass source");
 is    ($r,                  undef,       "Failed compile returns no code");
-like  ($err,                qr/^stdin:1:/,  "Failed compile returns an error");
+like  ($err,                qr/on line 1 of stdin/,  "Failed compile returns an error");
 
 $r = sass_compile(".valid { color: red; }");
 isnt  ($r,                  undef,       "Successful compile scalar context returns something");
@@ -84,7 +84,7 @@ $fh->autoflush(); binmode $fh;
 print $fh "this is invalid sass source";
 close $fh;
 $r = eval { $sass->compile_file($filename) };
-like  ($@,                qr/\.scss:1:/, "Failed compile dies with error message");
+like  ($@,                qr/on line 1 of .*\.scss/, "Failed compile dies with error message");
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
 $fh->autoflush(); binmode $fh;
@@ -97,7 +97,7 @@ eval {
 };
 fail  (                               "dont_die option doesn't die") if $@;
 is    ($r,                undef,      "dont_die option returns undef on error");
-like  ($sass->last_error, qr/\.scss:1:/, "Failed compile saves error message in last_error");
+like  ($sass->last_error, qr/on line 1 of .*\.scss/, "Failed compile saves error message in last_error");
 
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
@@ -106,7 +106,7 @@ print $fh '@import "colors"; .valid { color: $red; }';
 close $fh;
 $sass->options->{dont_die} = 0;
 $r = eval { $sass->compile_file($filename) };
-like  ($@,                  qr/\.scss:1:/,  "failed import dies with error message");
+like  ($@,                  qr/on line 1 of .*\.scss/,  "failed import dies with error message");
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
 $fh->autoflush(); binmode $fh;
@@ -140,7 +140,7 @@ print $fh "this is invalid sass source";
 close $fh;
 ($r, $err) = sass_compile_file($filename);
 is    ($r,                  undef,       "Failed compile returns no code");
-like  ($err,                qr/\.scss:1:/,  "Failed compile returns an error");
+like  ($err,                qr/on line 1 of .*\.scss/,  "Failed compile returns an error");
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
 $fh->autoflush(); binmode $fh;
@@ -181,25 +181,5 @@ close $fh;
 ($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, precision => 10);
 is    ($err,                undef,       "custom precision works without error");
 like  ($r,                  qr/padding\:0.3333333333\W/,     "custom precision has correct output");
-
-close($fh);
-
-($fh, $filename) = tempfile( SUFFIX => '.scss');
-$fh->autoflush(); binmode $fh;
-print $fh "\n.valid {\n color: image-url('path'); }";
-close $fh;
-($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, precision => 10);
-is    ($err, undef,                    "image_path default error_message is undef");
-like  ($r, qr@url\("/path"\)@,         "image_path defaults to /");
-
-close($fh);
-
-($fh, $filename) = tempfile( SUFFIX => '.scss');
-$fh->autoflush(); binmode $fh;
-print $fh "\n.valid {\n color: image-url('path'); }";
-close $fh;
-($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, image_path => "/a/b/c");
-is    ($err, undef,                    "image_path default error_message is undef");
-like  ($r, qr@url\("/a/b/c/path"\)@,   "image_path defaults to /");
 
 close($fh);

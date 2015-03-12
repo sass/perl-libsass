@@ -59,17 +59,21 @@ psass [options] [ source | - ]
 -v, --version                 print version
 -h, --help                    print this help
 -p, --precision               precision for float output
+-o, --output-file=file        output file to write result to
 -t, --output-style=style      output style [nested|compressed]
+-L, --plugin-path=path        plugin load path (repeatable)
 -I, --include-path=path       sass include path (repeatable)
 -c, --source-comments         enable source debug comments
--m, --source-map-file=file    create and write source map to file
+-e, --source-map-embed        embed source-map in mapping url
+-s, --source-map-contents     include original contents
+-m, --source-map-file=file    create and write source-map to file
     --no-source-map-url       omit sourceMappingUrl from output
 ```
 
 Copyright And Licence
 ---------------------
 
-Copyright © 2013 by David Caldwell  
+Copyright © 2013 by David Caldwell
 Copyright © 2014 by Marcel Greter
 
 This library is released under the MIT license.

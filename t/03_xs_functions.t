@@ -116,7 +116,7 @@ is    ($err, undef,                                    "Sass multiple functions 
 # One argument
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test('a'); }",
     sass_functions => { 'test($x, $y: 42)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
-like  ($r,   qr/color: a_42;/,                          "Sass function string works");
+like  ($r,   qr/color: a_42;/,                         "Sass function string works");
 is    ($err, undef,                                    "Sass function string returns no errors");
 
 # List arguments
@@ -135,5 +135,5 @@ is    ($err, undef,                                    "Sass function with mappe
 # Mapped arguments (https://github.com/sass/libsass/issues/708)
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: sprite-map(\$spacing: 2px, \$glob: \"*.png\"); }",
     sass_functions => { 'sprite-map($glob, $spacing: 0px)' => sub { CSS::Sass::Type::String->new($_[0]->value . "::" . $_[1]->value) } } );
-like  ($r,   qr/color: \*\.png::2;/,                          "Sass function with mapped arguments and defaults works");
+like  ($r,   qr/color: \*\.png::2;/,                   "Sass function with mapped arguments and defaults works");
 is    ($err, undef,                                    "Sass function with mapped arguments and defaults returns no errors");

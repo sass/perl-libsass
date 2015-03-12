@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 297;
+use Test::More tests => 339;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -42,6 +42,13 @@ sub test_null
 	ok UNIVERSAL::isa($_[0], 'REF'), "null type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'SCALAR'), "null type points to a scalar";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Null'), "null has correct package";
+
+	is $_[0] eq undef, 1, "null equals to undef";
+	is $_[0] ne undef, 0, "null not equals undef";
+	is $_[0] == undef, 1, "null is numeric equal to undef";
+	is $_[0] != undef, 0, "null is numeric equal to undef";
+	is $_[0] == 0, 0, "null equals to undef";
+	is $_[0] != 0, 1, "null equals to undef";
 
 	# test the representation of the value (must always be undef)
 	ok ! defined ${${$_[0]}}, "null value matches specified type";
@@ -344,18 +351,18 @@ my $css_nil = $sass->compile('$nil: var-pl-nil(); A { color: $nil; }');
 is $css_nil, '', "function returned native null type";
 
 my $css_int = $sass->compile('$int: var-pl-int(); A { color: $int; }');
-is $css_int, 'A{color:42}', "function returned native integer type";
+is $css_int, "A{color:42}\n", "function returned native integer type";
 
 my $css_dbl = $sass->compile('$dbl: var-pl-dbl(); A { color: $dbl; }');
-is $css_dbl, 'A{color:4.2}', "function returned native double type";
+is $css_dbl, "A{color:4.2}\n", "function returned native double type";
 
 my $css_str = $sass->compile('$str: var-pl-str(); A { color: $str; }');
-is $css_str, 'A{color:foobar}', "function returned native string type";
+is $css_str, "A{color:foobar}\n", "function returned native string type";
 
 my $css_list = $sass->compile('$list: var-pl-list(); A { color: nth($list, 1); }');
-is $css_list, 'A{color:foo}', "function returned native array type";
+is $css_list, "A{color:foo}\n", "function returned native array type";
 $css_list = $sass->compile('$list: var-pl-list(); A { color: nth($list, -1); }');
-is $css_list, 'A{color:baz}', "function returned native array type";
+is $css_list, "A{color:baz}\n", "function returned native array type";
 
 my $css_map = $sass->compile('$map: var-pl-map(); A { color: map-get($map, foo); }');
 #is $css_map, 'A{color:bar}', "function returned native hash type";
@@ -364,15 +371,15 @@ my $css_map = $sass->compile('$map: var-pl-map(); A { color: map-get($map, foo);
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "foo bar" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, 'A{color:foo bar}', "function returned native string type";
+is $css_str, "A{color:foo bar}\n", "function returned native string type";
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "\"foo\\\"s\"" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, 'A{color:"foo\\"s"}', "function returned native string type";
+is $css_str, "A{color:\"foo\\\"s\"}\n", "function returned native string type";
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "\'foo\\'s\'" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, 'A{color:\'foo\\\'s\'}', "function returned native string type";
+is $css_str, "A{color:\'foo\\\'s\'}\n", "function returned native string type";
 
 ################################################################################
 # test if functions get passed correct var structures
@@ -405,39 +412,39 @@ $sass->options->{'dont_die'} = 1;
 is $sass->compile('$nul: test-nul(var-pl-nil()); A { value: $nul; }'),
    '', 'test returned blessed variable of type null';
 is $sass->compile('$int: test-int(var-pl-int()); A { value: $int; }'),
-   'A{value:42}', 'test returned blessed variable of type integer number';
+   "A{value:42}\n", 'test returned blessed variable of type integer number';
 is $sass->compile('$dbl: test-dbl(var-pl-dbl()); A { value: $dbl; }'),
-   'A{value:4.2}', 'test returned blessed variable of type double number';
+   "A{value:4.2}\n", 'test returned blessed variable of type double number';
 is $sass->compile('$str: test-str(var-pl-str()); A { value: $str; }'),
-   'A{value:foobar}', 'test returned blessed variable of type string';
+   "A{value:foobar}\n", 'test returned blessed variable of type string';
 is $sass->compile('$map: test-map(var-pl-map()); A { value: $map; }'),
-   'A{value:(foo: bar)}', 'test returned blessed variable of type map';
+   "A{value:(foo:bar)}\n", 'test returned blessed variable of type map';
 is $sass->compile('$err: test-err(var-pl-die()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 is $sass->compile('$lst: test-lst(var-pl-list()); A { value: $lst; }'),
-   'A{value:foo,bar,baz}', 'test returned blessed variable of type comma list';
+   "A{value:foo,bar,baz}\n", 'test returned blessed variable of type comma list';
 
 is $sass->compile('$nul: test-nul(var-pl-new-nil()); A { value: $nul; }'),
    '', 'test returned blessed variable of type null';
 is $sass->compile('$int: test-int(var-pl-new-int()); A { value: $int; }'),
-   'A{value:42}', 'test returned blessed variable of type integer number';
+   "A{value:42}\n", 'test returned blessed variable of type integer number';
 is $sass->compile('$dbl: test-dbl(var-pl-new-dbl()); A { value: $dbl; }'),
-   'A{value:4.2}', 'test returned blessed variable of type double number';
+   "A{value:4.2}\n", 'test returned blessed variable of type double number';
 is $sass->compile('$str: test-str(var-pl-new-str()); A { value: $str; }'),
-   'A{value:foobar}', 'test returned blessed variable of type string';
+   "A{value:foobar}\n", 'test returned blessed variable of type string';
 is $sass->compile('$map: test-map(var-pl-new-map()); A { value: $map; }'),
-   'A{value:(foo: bar)}', 'test returned blessed variable of type map';
+   "A{value:(foo:bar)}\n", 'test returned blessed variable of type map';
 is $sass->compile('$lst: test-lst(var-pl-new-list-comma()); A { value: $lst; }'),
-   'A{value:foo,bar}', 'test returned blessed variable of type comma list';
+   "A{value:foo,bar}\n", 'test returned blessed variable of type comma list';
 is $sass->compile('$lst: test-lst(var-pl-new-list-space()); A { value: $lst; }'),
-   'A{value:foo bar}', 'test returned blessed variable of type space list';
+   "A{value:foo bar}\n", 'test returned blessed variable of type space list';
 is $sass->compile('$bol: test-bol(var-pl-new-boolean()); A { value: $bol; }'),
-   'A{value:true}', 'test returned blessed variable of type boolean';
+   "A{value:true}\n", 'test returned blessed variable of type boolean';
 is $sass->compile('$err: test-err(var-pl-new-error()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 
 is $sass->compile('$rgx: test-str(var-pl-regex()); A { value: $rgx; }'),
-   "A{value:".qr/foobar/."}", 'test returned blessed variable of type "regex"';
+   "A{value:".qr/foobar/."}\n", 'test returned blessed variable of type "regex"';
 
 ################################################################################
 $sass->options->{'dont_die'} = 0;

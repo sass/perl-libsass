@@ -18,7 +18,6 @@ if (-d ".git") {
     system "git submodule update";
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
-    print $manifest ".libsass.version\n";
     while (my $module = shift @modules)
     {
       my $cwd = getcwd;
@@ -36,17 +35,17 @@ if (-d ".git") {
     }
 }
 
-if (-e "libsass/.git") {
+if (-e "libsass/.git" && ! -f "libsass/VERSION") {
   chdir "libsass";
   my $libsass_version = `git describe --abbrev=4 --dirty --always --tags`;
   chdir "..";
   require File::Slurp;
   chomp $libsass_version;
-  File::Slurp::write_file(".libsass.version", { 'binmode' => ':raw' }, $libsass_version);
+  File::Slurp::write_file("libsass/VERSION", { 'binmode' => ':raw' }, $libsass_version);
 }
-if (-f ".libsass.version") {
+if (-f "libsass/VERSION") {
   require File::Slurp;
-  $libsass_version = File::Slurp::read_file(".libsass.version", { 'binmode' => ':raw' });
+  $libsass_version = File::Slurp::read_file("libsass/VERSION", { 'binmode' => ':raw' });
   print "using libsass version $libsass_version\n";
 }
 
@@ -161,7 +160,8 @@ SUBCLASS
 my $cover = $ARGV[0] && $ARGV[0] eq "cover=1" ? 1 : 0;
 
 # create compile flags to include the libsass version (escape correctly)
-my $version = qq( -DLIBSASS_VERSION=\\"\\\\\\"$libsass_version\\\\\\"\\");
+my $version = ($^O ne "MSWin32") ? qq( -DLIBSASS_VERSION=\\"$libsass_version\\") :
+                                   qq( -DLIBSASS_VERSION=\\"\\\\\\"$libsass_version\\\\\\"\\");
 
 my %config = (
     module_name         => 'CSS::Sass',
@@ -202,11 +202,11 @@ my %config = (
     extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
     c_source => { 'libsass' => [ sort qw(
         ast.cpp sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp json.cpp
-        base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp copy_c_str.cpp
+        base64vlq.cpp bind.cpp constants.cpp context.cpp contextualize.cpp plugins.cpp
         error_handling.cpp eval.cpp expand.cpp cencode.c functions.cpp inspect.cpp
-        extend.cpp file.cpp output_compressed.cpp output_nested.cpp parser.cpp prelexer.cpp
+        extend.cpp file.cpp output.cpp parser.cpp prelexer.cpp emitter.cpp position.cpp
         sass.cpp sass_interface.cpp sass_functions.cpp sass_values.cpp sass_context.cpp
-        source_map.cpp to_c.cpp to_string.cpp units.cpp utf8_string.cpp util.cpp cssize.cpp position.cpp
+        source_map.cpp to_c.cpp to_string.cpp units.cpp utf8_string.cpp util.cpp cssize.cpp
     ) ]
     },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)

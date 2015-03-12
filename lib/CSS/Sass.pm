@@ -38,6 +38,8 @@ our @EXPORT_OK = qw(
 
 our @EXPORT = qw(
 	SASS_STYLE_NESTED
+	SASS_STYLE_EXPANDED
+	SASS_STYLE_COMPACT
 	SASS_STYLE_COMPRESSED
 	SASS2SCSS_PRETTIFY_0
 	SASS2SCSS_PRETTIFY_1
@@ -48,7 +50,7 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = "v3.1.1";
+our $VERSION = "v3.2.0";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
@@ -57,6 +59,7 @@ require CSS::Sass::Type;
 sub new {
     my ($class, %options) = @_;
     # Ensure initial sub structures on options
+    $options{plugin_paths} = [] unless exists $options{plugin_paths};
     $options{include_paths} = [] unless exists $options{include_paths};
     $options{sass_functions} = {} unless exists $options{sass_functions};
     # Create and return new object with options
@@ -84,6 +87,10 @@ sub sass_compile {
                                        !$options{include_paths} ? ()
                                                                 : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
                                                                                          @{$options{include_paths}})),
+                                       # Override plugin_paths with a ':' separated list
+                                       !$options{plugin_paths} ? ()
+                                                               : (plugin_paths => join($^O eq 'MSWin32' ? ';' : ':',
+                                                                                       @{$options{plugin_paths}})),
                                      });
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
@@ -100,6 +107,10 @@ sub sass_compile_file {
                                             !$options{include_paths} ? ()
                                                                      : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
                                                                                               @{$options{include_paths}})),
+                                            # Override plugin_paths with a ':' separated list
+                                            !$options{plugin_paths} ? ()
+                                                                    : (plugin_paths => join($^O eq 'MSWin32' ? ';' : ':',
+                                                                                            @{$options{plugin_paths}})),
                                           });
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
@@ -149,8 +160,8 @@ CSS::Sass - Compile .scss files using libsass
 
 
   # Object Oriented API w/ options
-  my $sass = CSS::Sass->new(include_paths   => ['some/include/path'],
-                            image_path      => 'base_url',
+  my $sass = CSS::Sass->new(plugin_paths    => ['plugins'],
+                            include_paths   => ['some/include/path'],
                             output_style    => SASS_STYLE_COMPRESSED,
                             source_map_file => 'output.css.map',
                             source_comments => 1,
@@ -180,7 +191,6 @@ CSS::Sass - Compile .scss files using libsass
   # Functional API w/ options
   my ($css, $err, $srcmap) = sass_compile('A { color: red; }',
                                           include_paths   => ['some/include/path'],
-                                          image_path      => 'base_url',
                                           output_style    => SASS_STYLE_NESTED,
                                           source_map_file => 'output.css.map');
 
@@ -284,6 +294,10 @@ Setting this option enables the source-map generating. The file will not
 actually be created, but its content will be returned to the caller. It
 will also enable sourceMappingURL comment by default. See C<no_src_map_url>.
 
+=item C<source_map_root>
+
+A path (string) that is directly embedded in the source map as C<sourceRoot>.
+
 =item C<source_map_embed>
 
 Embeds the complete source-map content into the sourceMappingURL, by using
@@ -305,17 +319,11 @@ Setting this options makes C<source_map_embed> useless.
 This is an arrayref that holds the list a of paths to search (in addition to
 the current directory) when following Sass C<@import> directives.
 
-=item C<image_path>
+=item C<plugin_paths>
 
-This is a string that holds the base URL. This is only used in the
-(non-standard) C<image-url()> Sass function. For example, if C<image_path>
-is set to C<'file:///tmp/a/b/c'>, then the follwoing Sass code:
-
-  .something { background-image: image-url("my/path"); }
-
-...will compile to this:
-
-  .something { background-image: url("file:///tmp/a/b/c/my/path"); }
+This is an arrayref that holds a list of paths to search for third-party
+plugins. It will automatically load any <dll> or <so> library within that
+directory. This is currently a highly experimental libsass feature!
 
 =item C<dont_die>
 
