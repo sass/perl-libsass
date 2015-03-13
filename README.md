@@ -52,12 +52,13 @@ Command line utility
 --------------------
 
 ```
-psass [options] [ source | - ]
+psass [options] [ path_in | - ] [ path_out | - ]
 ```
 
 ```
 -v, --version                 print version
 -h, --help                    print this help
+-w, --watch                   start watchdog mode
 -p, --precision               precision for float output
 -o, --output-file=file        output file to write result to
 -t, --output-style=style      output style [nested|compressed]
@@ -73,7 +74,7 @@ psass [options] [ source | - ]
 Copyright And Licence
 ---------------------
 
-Copyright © 2013 by David Caldwell
+Copyright © 2013 by David Caldwell  
 Copyright © 2014 by Marcel Greter
 
 This library is released under the MIT license.

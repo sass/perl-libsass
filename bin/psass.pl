@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 ####################################################################################################
 # sass (scss) compiler
 ####################################################################################################
@@ -19,6 +20,7 @@ use File::Slurp qw(write_file);
 # load constants from libsass
 use CSS::Sass qw(SASS_STYLE_NESTED);
 use CSS::Sass qw(SASS_STYLE_COMPRESSED);
+use CSS::Sass::Watchdog qw(start_watchdog);
 
 ####################################################################################################
 # normalize command arguments to utf8
@@ -36,6 +38,7 @@ use Encode qw(decode encode);
 ####################################################################################################
 
 # init options
+my $watchdog;
 my $precision;
 my $output_file;
 my $output_style;
@@ -48,7 +51,7 @@ my $omit_source_map_url;
 # define a sub to print out the version (mimic behaviour of node.js blessc)
 # this script has it's own version numbering as it's not dependent on any libs
 sub version {
-	printf "psass %s (perl sass/scss compiler)\n", "0.3.0";
+	printf "psass %s (perl sass/scss compiler)\n", "0.4.0";
 	printf "  libsass: %s\n", CSS::Sass::libsass_version();
 	printf "  sass2scss: %s\n", CSS::Sass::sass2scss_version();
 exit 0 };
@@ -60,6 +63,7 @@ my @include_paths;
 # get options
 GetOptions (
 	'help|h' => sub { pod2usage(1); },
+	'watch|w' => \ $watchdog,
 	'version|v' => \ &version,
 	'precision|p=s' => \ $precision,
 	'output-file|o=s' => \ $output_file,
@@ -85,66 +89,93 @@ elsif ($output_style =~ m/^c/i)
 # die with message if style is unknown
 else { die "unknown output style: $output_style" }
 
+# do we have output path in second arg?
+if (defined $ARGV[1] && $ARGV[1] ne '-')
+{ $output_file = $ARGV[1]; }
+
+
+####################################################################################################
+# get sass standard option list
+####################################################################################################
+
+sub sass_options ()
+{
+	return (
+		dont_die => $watchdog,
+		precision => $precision,
+		output_path => $output_file,
+		output_style  => $output_style,
+		plugin_paths => \ @plugin_paths,
+		include_paths => \ @include_paths,
+		source_comments => $source_comments,
+		source_map_file => $source_map_file,
+		source_map_embed => $source_map_embed,
+		source_map_contents => $source_map_contents,
+		omit_source_map_url => $omit_source_map_url,
+	);
+}
 
 ####################################################################################################
 use CSS::Sass qw(sass_compile_file sass_compile);
 ####################################################################################################
 
-# variables
-my ($css, $err, $stats);
+# first run we always want to die on error
+# because we will not get any included files
+our $error = sub { die @_ };
 
-# open filehandle if path is given
-if (defined $ARGV[0] && $ARGV[0] ne '-')
+sub compile ()
 {
-	($css, $err, $stats) = sass_compile_file(
-		$ARGV[0],
-		precision => $precision,
-		output_path => $output_file,
-		output_style  => $output_style,
-		plugin_paths => \ @plugin_paths,
-		include_paths => \ @include_paths,
-		source_comments => $source_comments,
-		source_map_file => $source_map_file,
-		source_map_embed => $source_map_embed,
-		source_map_contents => $source_map_contents,
-		omit_source_map_url => $omit_source_map_url
-	);
-}
-# or use standard input
-else
-{
-	($css, $err, $stats) = sass_compile(
-		join('', <STDIN>),
-		precision => $precision,
-		output_path => $output_file,
-		output_style  => $output_style,
-		plugin_paths => \ @plugin_paths,
-		include_paths => \ @include_paths,
-		source_comments => $source_comments,
-		source_map_file => $source_map_file,
-		source_map_embed => $source_map_embed,
-		source_map_contents => $source_map_contents,
-		omit_source_map_url => $omit_source_map_url
-	);
+	# variables
+	my ($css, $err, $stats);
+
+	# open filehandle if path is given
+	if (defined $ARGV[0] && $ARGV[0] ne '-')
+	{
+		($css, $err, $stats) = sass_compile_file(
+			$ARGV[0], sass_options()
+		);
+	}
+	# or use standard input
+	else
+	{
+		($css, $err, $stats) = sass_compile(
+			join('', <STDIN>), sass_options()
+		);
+	}
+
+	# process return status values
+	if (defined $css)
+	{
+		# by default we just print to standard out
+		unless (defined $output_file) { print $css; }
+		# or if output_file is defined via options we write it there
+		else { write_file($output_file, { binmode => ':utf8' }, $css ); }
+	}
+	elsif (defined $err) { $error->($err); }
+	else { $error->("fatal error - aborting"); }
+
+	# output source-map
+	if ($source_map_file)
+	{
+		my $smap = $stats->{'source_map_string'};
+		unless ($smap) { $error->("source-map not generated <$source_map_file>") }
+		else { write_file($source_map_file, { binmode => ':utf8' }, $smap ); }
+	}
+
+	# return according to expected return type
+	return wantarray ? ($css, $err, $stats) : $css;
 }
 
-# process return status values
-if (defined $css)
-{
-	# by default we just print to standard out
-	unless (defined $output_file) { print $css; }
-	# or if output_file is defined via options we write it there
-	else { write_file($output_file, { binmode => ':utf8' }, $css ); }
-}
-elsif (defined $err) { die $err; }
-else { die "fatal error - aborting"; }
+####################################################################################################
+# main program execution
+####################################################################################################
 
-# output source-map
-if ($source_map_file)
+my ($css, $err, $stats) = compile();
+
+if ($watchdog)
 {
-	my $smap = $stats->{'source_map_string'};
-	unless ($smap) { warn "source-map not generated <$source_map_file>" }
-	else { write_file($source_map_file, { binmode => ':utf8' }, $smap ); }
+	local $error = sub { warn @_ };
+	start_watchdog($stats, \&compile);
 }
 
 ####################################################################################################
@@ -158,11 +189,12 @@ psass - perl sass (scss) compiler
 
 =head1 SYNOPSIS
 
-psass [options] [ source | - ]
+psass [options] [ path_in | - ] [ path_out | - ]
 
  Options:
    -v, --version                 print version
    -h, --help                    print this help
+   -w, --watch                   start watchdog mode
    -p, --precision               precision for float output
    -o, --output-file=file        output file to write result to
    -t, --output-style=style      output style [nested|compressed]
