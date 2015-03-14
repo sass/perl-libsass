@@ -173,6 +173,8 @@ my %config = (
     create_license      => 0,
     configure_requires => {
         'Module::Build' => 0,
+        'File::chdir' => 0,
+        'File::Slurp' => 0,
     },
     build_requires => {
         'Test::More' => 0,
@@ -184,7 +186,9 @@ my %config = (
     },
     requires => {
         'perl' => '5.008',
+        'File::chdir' => 0,
         'File::Slurp' => 0,
+        'List::MoreUtils' => 0,
     },
     meta_merge => {
       resources => {
