@@ -364,8 +364,8 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
             char* source = 0;
             char* mapjson = 0;
             char* error_msg = 0;
-            size_t error_line = 0;
-            size_t error_column = 0;
+            size_t error_line = -1;
+            size_t error_column = -1;
 
             // get the entry from the array
             // can either be another array or a path string
@@ -579,6 +579,7 @@ void finalize_sass_context(struct Sass_Context* ctx, HV* RETVAL, SV* err)
     size_t error_column = sass_context_get_error_column(ctx);
     const char* error_text = sass_context_get_error_text(ctx);
     const char* error_message = sass_context_get_error_message(ctx);
+    const char* error_src = 0; // sass_context_get_error_src(ctx);
     const char* output_string = sass_context_get_output_string(ctx);
     const char* source_map_string = sass_context_get_source_map_string(ctx);
     char** included_files = sass_context_get_included_files(ctx);
@@ -595,6 +596,7 @@ void finalize_sass_context(struct Sass_Context* ctx, HV* RETVAL, SV* err)
     hv_stores(RETVAL, "source_map_string", source_map_string ? newSVpv(source_map_string, 0) : newSV(0));
     hv_stores(RETVAL, "error_line",        SvOK(err) ? err : error_line ? newSViv(error_line) : newSViv(0));
     hv_stores(RETVAL, "error_column",      SvOK(err) ? err : error_column ? newSViv(error_column) : newSViv(0));
+    hv_stores(RETVAL, "error_src",         SvOK(err) ? err : error_src ? newSVpv(error_src, 0) : newSViv(0));
     hv_stores(RETVAL, "error_text",        SvOK(err) ? err : error_text ? newSVpv(error_text, 0) : newSV(0));
     hv_stores(RETVAL, "error_message",     SvOK(err) ? err : error_message ? newSVpv(error_message, 0) : newSV(0));
     hv_stores(RETVAL, "error_json",        SvOK(err) ? err : error_json ? newSVpv(error_json, 0) : newSV(0));

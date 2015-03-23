@@ -211,6 +211,7 @@ my %config = (
         extend.cpp file.cpp output.cpp parser.cpp prelexer.cpp emitter.cpp position.cpp
         sass.cpp sass_interface.cpp sass_functions.cpp sass_values.cpp sass_context.cpp
         source_map.cpp to_c.cpp to_string.cpp units.cpp utf8_string.cpp util.cpp cssize.cpp
+        contextualize_eval.cpp listize.cpp
     ) ]
     },
     config => { ld => 'c++' }, # Need to link with a C++ linker since libsass is C++ (even though the .xs file is not)

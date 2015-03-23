@@ -18,8 +18,10 @@ use Getopt::Long;
 use File::Slurp qw(write_file);
 
 # load constants from libsass
+use CSS::Sass qw(SASS_STYLE_EXPANDED);
 use CSS::Sass qw(SASS_STYLE_NESTED);
 use CSS::Sass qw(SASS_STYLE_COMPRESSED);
+use CSS::Sass qw(SASS_STYLE_COMPACT);
 use CSS::Sass::Watchdog qw(start_watchdog);
 
 ####################################################################################################
@@ -84,8 +86,12 @@ unless (defined $output_style)
 # parse string to constant
 elsif ($output_style =~ m/^n/i)
 { $output_style = SASS_STYLE_NESTED }
-elsif ($output_style =~ m/^c/i)
+elsif ($output_style =~ m/^compa/i)
+{ $output_style = SASS_STYLE_COMPACT }
+elsif ($output_style =~ m/^compr/i)
 { $output_style = SASS_STYLE_COMPRESSED }
+elsif ($output_style =~ m/^e/i)
+{ $output_style = SASS_STYLE_EXPANDED }
 # die with message if style is unknown
 else { die "unknown output style: $output_style" }
 
@@ -197,7 +203,7 @@ psass [options] [ path_in | - ] [ path_out | - ]
    -w, --watch                   start watchdog mode
    -p, --precision               precision for float output
    -o, --output-file=file        output file to write result to
-   -t, --output-style=style      output style [nested|compressed]
+   -t, --output-style=style      output style [expanded|nested|compressed|compact]
    -L, --plugin-path=path        plugin load path (repeatable)
    -I, --include-path=path       sass include path (repeatable)
    -c, --source-comments         enable source debug comments
