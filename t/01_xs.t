@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 40;
+use Test::More tests => 46;
 BEGIN { use_ok('CSS::Sass') };
 
 my $r;
@@ -53,6 +53,17 @@ $r = CSS::Sass::compile_sass("\n.valid {\n color: red; }", { source_comments => 
 is    ($r->{error_status},  0,           "source_comments=>[] no error_status and doesn't crash");
 is    ($r->{error_message}, undef,       "source_comments=>[] error_message is undef");
 
+# $options->{indent}
+$r = CSS::Sass::compile_sass('foo { color: red; }', { indent => '-äöü-' });
+is    ($r->{error_status},  0,           "import no error_status");
+is    ($r->{error_message}, undef,       "import error_message is undef");
+like  ($r->{output_string}, qr/foo {\r?\n-äöü-color: red; }/, "custom indent");
+
+# $options->{linefeed}
+$r = CSS::Sass::compile_sass('foo { color: red; }', { linefeed => "-äöü-\r" });
+is    ($r->{error_status},  0,           "import no error_status");
+is    ($r->{error_message}, undef,       "import error_message is undef");
+like  ($r->{output_string}, qr/foo {-äöü-\r  color: red; }/, "custom linefeed");
 
 # $options->{include_paths}
 $r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { });

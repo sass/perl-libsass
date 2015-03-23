@@ -62,11 +62,17 @@ exit 0 };
 my @plugin_paths;
 my @include_paths;
 
+# output styles
+my $indent = "  ";
+my $linefeed = "auto";
+
 # get options
 GetOptions (
 	'help|h' => sub { pod2usage(1); },
 	'watch|w' => \ $watchdog,
 	'version|v' => \ &version,
+	'indent=s' => \ $indent,
+	'linefeed=s' => \ $linefeed,
 	'precision|p=s' => \ $precision,
 	'output-file|o=s' => \ $output_file,
 	'output-style|t=s' => \ $output_style,
@@ -95,6 +101,18 @@ elsif ($output_style =~ m/^e/i)
 # die with message if style is unknown
 else { die "unknown output style: $output_style" }
 
+# resolve linefeed options
+if ($linefeed =~ m/^a/i)
+{ $linefeed = undef; }
+elsif ($linefeed =~ m/^w/i)
+{ $linefeed = "\r\n"; }
+elsif ($linefeed =~ m/^[u]/i)
+{ $linefeed = "\n"; }
+elsif ($linefeed =~ m/^[n]/i)
+{ $linefeed = ""; }
+# die with message if linefeed type is unknown
+else { die "unknown linefeed type: $linefeed" }
+
 # do we have output path in second arg?
 if (defined $ARGV[1] && $ARGV[1] ne '-')
 { $output_file = $ARGV[1]; }
@@ -108,6 +126,8 @@ sub sass_options ()
 {
 	return (
 		dont_die => $watchdog,
+		indent => $indent,
+		linefeed => $linefeed,
 		precision => $precision,
 		output_path => $output_file,
 		output_style  => $output_style,
@@ -201,7 +221,9 @@ psass [options] [ path_in | - ] [ path_out | - ]
    -v, --version                 print version
    -h, --help                    print this help
    -w, --watch                   start watchdog mode
-   -p, --precision               precision for float output
+   -p, --precision=int           precision for float output
+       --indent=string           set indent string used for output
+       --linefeed=type           linefeed used for output [auto|unix|win|none]
    -o, --output-file=file        output file to write result to
    -t, --output-style=style      output style [expanded|nested|compressed|compact]
    -L, --plugin-path=path        plugin load path (repeatable)

@@ -283,6 +283,18 @@ C<undef>, but never both.
 The default is C<SASS_STYLE_NESTED>. Set to C<SASS_STYLE_COMPRESSED> to
 eliminate all whitespace (for your production CSS).
 
+=item C<precision>
+
+Set the floating point precision for output.
+
+=item C<linefeed>
+
+Set the linefeed string used for css output.
+
+=item C<indentation>
+
+Set the indentation string used for css output.
+
 =item C<source_comments>
 
 Set to C<true> to get extra comments in the output, indicating what input

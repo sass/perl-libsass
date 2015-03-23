@@ -17,6 +17,7 @@
 #include "sass2scss.h"
 #include "sass_context.h"
 
+#define isSafeSv(sv) sv && SvOK(*sv)
 #define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
 
 #undef free
@@ -513,6 +514,8 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     SV** include_paths_sv       = hv_fetchs(perl_options, "include_paths",        false);
     SV** plugin_paths_sv        = hv_fetchs(perl_options, "plugin_paths",         false);
     SV** precision_sv           = hv_fetchs(perl_options, "precision",            false);
+    SV** linefeed_sv            = hv_fetchs(perl_options, "linefeed",             false);
+    SV** indent_sv              = hv_fetchs(perl_options, "indent",               false);
     SV** source_map_root_sv     = hv_fetchs(perl_options, "source_map_root",      false);
     SV** source_map_file_sv     = hv_fetchs(perl_options, "source_map_file",      false);
     SV** sass_functions_sv      = hv_fetchs(perl_options, "sass_functions",       false);
@@ -528,9 +531,13 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     if (source_map_embed_sv)    sass_option_set_source_map_embed    (sass_options, SvTRUE(*source_map_embed_sv));
     if (include_paths_sv)       sass_option_set_include_path        (sass_options, safe_svpv(*include_paths_sv, ""));
     if (plugin_paths_sv)        sass_option_set_plugin_path         (sass_options, safe_svpv(*plugin_paths_sv, ""));
-    if (precision_sv)           sass_option_set_precision           (sass_options, SvUV(*precision_sv));
     if (source_map_root_sv)     sass_option_set_source_map_root     (sass_options, safe_svpv(*source_map_root_sv, ""));
     if (source_map_file_sv)     sass_option_set_source_map_file     (sass_options, safe_svpv(*source_map_file_sv, ""));
+
+    // do not set anything if the option is set to undef
+    if (isSafeSv(indent_sv))     sass_option_set_indent              (sass_options, SvPV_nolen(*indent_sv));
+    if (isSafeSv(linefeed_sv))   sass_option_set_linefeed            (sass_options, SvPV_nolen(*linefeed_sv));
+    if (isSafeSv(precision_sv))  sass_option_set_precision           (sass_options, SvUV(*precision_sv));
 
     if (importer_sv) { sass_option_set_importer(sass_options, sass_make_importer(sass_importer, *importer_sv)); }
 
