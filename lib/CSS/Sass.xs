@@ -14,8 +14,11 @@
 
 #include "ppport.h"
 
+#include "sass.h"
 #include "sass2scss.h"
+#include "sass_values.h"
 #include "sass_context.h"
+#include "sass_functions.h"
 
 #define isSafeSv(sv) sv && SvOK(*sv)
 #define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
@@ -293,7 +296,7 @@ SV* sass_value_to_sv(union Sass_Value* val)
 }
 
 
-struct Sass_Import** sass_importer(const char* url, const char* prev, void* cookie)
+Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, struct Sass_Compiler* comp)
 {
 
     dSP;
@@ -305,9 +308,13 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
     ENTER;
     SAVETMPS;
 
+    void* cookie = sass_importer_get_cookie(cb);
+    struct Sass_Import* previous = sass_compiler_get_last_import(comp);
+    const char* prev_path = sass_import_get_path(previous);
+
     PUSHMARK(SP);
-    XPUSHs(sv_2mortal(newSVpv(url, 0)));
-    XPUSHs(sv_2mortal(newSVpv(prev, 0)));
+    XPUSHs(sv_2mortal(newSVpv(cur_path, 0)));
+    XPUSHs(sv_2mortal(newSVpv(prev_path, 0)));
     PUTBACK;
 
     // call the static function by soft name reference
@@ -439,9 +446,8 @@ struct Sass_Import** sass_importer(const char* url, const char* prev, void* cook
 
 }
 
-
 // we are called by libsass to dispatch to registered functions
-union Sass_Value* call_sass_function(const union Sass_Value* s_args, void* cookie)
+union Sass_Value* call_sass_function(const union Sass_Value* s_args, Sass_Function_Entry cb, struct Sass_Options* opts)
 {
 
     dSP;
@@ -453,6 +459,8 @@ union Sass_Value* call_sass_function(const union Sass_Value* s_args, void* cooki
 
     ENTER;
     SAVETMPS;
+
+    void* cookie = sass_function_get_cookie(cb);
 
     PUSHMARK(SP);
     for (i=0; i<sass_list_get_length(s_args); i++) {
@@ -518,8 +526,9 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     SV** indent_sv              = hv_fetchs(perl_options, "indent",               false);
     SV** source_map_root_sv     = hv_fetchs(perl_options, "source_map_root",      false);
     SV** source_map_file_sv     = hv_fetchs(perl_options, "source_map_file",      false);
-    SV** sass_functions_sv      = hv_fetchs(perl_options, "sass_functions",       false);
-    SV** importer_sv            = hv_fetchs(perl_options, "importer",             false);
+    SV** sass_headers_sv        = hv_fetchs(perl_options, "headers",              false);
+    SV** sass_importers_sv      = hv_fetchs(perl_options, "importers",            false);
+    SV** sass_functions_sv      = hv_fetchs(perl_options, "functions",            false);
 
     if (input_path_sv)          sass_option_set_input_path          (sass_options, safe_svpv(*input_path_sv, ""));
     if (output_path_sv)         sass_option_set_output_path         (sass_options, safe_svpv(*output_path_sv, ""));
@@ -539,7 +548,67 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
     if (isSafeSv(linefeed_sv))   sass_option_set_linefeed            (sass_options, SvPV_nolen(*linefeed_sv));
     if (isSafeSv(precision_sv))  sass_option_set_precision           (sass_options, SvUV(*precision_sv));
 
-    if (importer_sv) { sass_option_set_importer(sass_options, sass_make_importer(sass_importer, *importer_sv)); }
+    if (sass_importers_sv) {
+        int i;
+        AV* sass_importers_av;
+        if (!SvROK(*sass_importers_sv) || SvTYPE(SvRV(*sass_importers_sv)) != SVt_PVAV) {
+            return newSVpvf("sass_importers should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*sass_importers_sv)));
+        }
+        sass_importers_av = (AV*)SvRV(*sass_importers_sv);
+
+        Sass_Importer_List c_importers = sass_make_importer_list(av_len(sass_importers_av) + 1);
+
+        if (!c_importers) {
+            return newSVpv("couldn't alloc memory for c_importers", 0);
+        }
+        for (i=0; i<=av_len(sass_importers_av); i++) {
+            SV** entry_sv = av_fetch(sass_importers_av, i, false);
+            AV* entry_av;
+            if (!SvROK(*entry_sv) || SvTYPE(SvRV(*entry_sv)) != SVt_PVAV) {
+                return newSVpvf("each sass_importer entry should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*entry_sv)));
+            }
+            entry_av = (AV*)SvRV(*entry_sv);
+
+            SV** importer_sv = av_fetch(entry_av, 0, false);
+            SV** priority_sv = av_fetch(entry_av, 1, false);
+            double priority = priority_sv ? SvNV(*priority_sv) : 0;
+            if (!importer_sv) return newSVpv("custom importer without callback", 0);
+            c_importers[i] = sass_make_importer(sass_importer, priority, *importer_sv);
+        }
+
+        sass_option_set_c_importers(sass_options, c_importers);
+    }
+
+    if (sass_headers_sv) {
+        int i;
+        AV* sass_headers_av;
+        if (!SvROK(*sass_headers_sv) || SvTYPE(SvRV(*sass_headers_sv)) != SVt_PVAV) {
+            return newSVpvf("sass_headers should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*sass_headers_sv)));
+        }
+        sass_headers_av = (AV*)SvRV(*sass_headers_sv);
+
+        Sass_Importer_List c_headers = sass_make_importer_list(av_len(sass_headers_av) + 1);
+
+        if (!c_headers) {
+            return newSVpv("couldn't alloc memory for c_headers", 0);
+        }
+        for (i=0; i<=av_len(sass_headers_av); i++) {
+            SV** entry_sv = av_fetch(sass_headers_av, i, false);
+            AV* entry_av;
+            if (!SvROK(*entry_sv) || SvTYPE(SvRV(*entry_sv)) != SVt_PVAV) {
+                return newSVpvf("each sass_header entry should be an arrayref (SvTYPE=%u)", (unsigned)SvTYPE(SvRV(*entry_sv)));
+            }
+            entry_av = (AV*)SvRV(*entry_sv);
+
+            SV** header_sv = av_fetch(entry_av, 0, false);
+            SV** priority_sv = av_fetch(entry_av, 1, false);
+            double priority = priority_sv ? SvNV(*priority_sv) : 0;
+            if (!header_sv) return newSVpv("custom header without callback", 0);
+            c_headers[i] = sass_make_importer(sass_importer, priority, *header_sv);
+        }
+
+        sass_option_set_c_headers(sass_options, c_headers);
+    }
 
     if (sass_functions_sv) {
         int i;
@@ -549,7 +618,7 @@ SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
         }
         sass_functions_av = (AV*)SvRV(*sass_functions_sv);
 
-        Sass_C_Function_List c_functions = sass_make_function_list(av_len(sass_functions_av) + 1);
+        Sass_Function_List c_functions = sass_make_function_list(av_len(sass_functions_av) + 1);
 
         if (!c_functions) {
             return newSVpv("couldn't alloc memory for c_functions", 0);
@@ -744,6 +813,23 @@ unquote(str)
         RETVAL = newSVpv(unquoted, 0);
 
         free (unquoted);
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+resolve_file(file)
+             char* file
+    CODE:
+    {
+
+        const char* paths[4] = { ".", "t", "bin", NULL };
+        char* resolved = sass_resolve_file(file, paths);
+
+        RETVAL = newSVpv(resolved, 0);
+
+        free (resolved);
 
     }
     OUTPUT:

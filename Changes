@@ -1,3 +1,15 @@
+CSS::Sass (3.2.0)
+
+  * Update to latest libsass release (3.2.0)
+  * Add options for remaining output styles
+  * Add indent and linefeed config options
+  * Add benchmark option to command line tool
+  * Add watcher option to recompile on changes
+  * Refactor for libsass context option initializing
+  * Expose `resolve_file` function on the C-API
+  * Add experimental API for multiple importers
+  * Add highly experimental API for custom headers
+
 CSS::Sass (3.1.0)
 
   * Updates to latest libsass version (3.1.0)

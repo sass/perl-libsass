@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 39;
+use Test::More tests => 41;
 BEGIN { use_ok('CSS::Sass', qw(:DEFAULT sass_compile sass_compile_file)) };
 
 my $r;
@@ -183,3 +183,12 @@ is    ($err,                undef,       "custom precision works without error")
 like  ($r,                  qr/padding\:0.3333333333\W/,     "custom precision has correct output");
 
 close($fh);
+
+# test quote and unquote helpers
+my $quoted = CSS::Sass::quote("hello world");
+is ($quoted, "\"hello world\"", "test quote");
+my $unquoted = CSS::Sass::unquote($quoted);
+is ($unquoted, "hello world", "test unquote");
+
+# test file resolve helper
+# die " hello [", CSS::Sass::resolve_file("bin/psass.pl"), "]";

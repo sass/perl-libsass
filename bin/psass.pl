@@ -41,6 +41,7 @@ use Encode qw(decode encode);
 
 # init options
 my $watchdog;
+my $benchmark;
 my $precision;
 my $output_file;
 my $output_style;
@@ -69,8 +70,9 @@ my $linefeed = "auto";
 # get options
 GetOptions (
 	'help|h' => sub { pod2usage(1); },
-	'watch|w' => \ $watchdog,
+	'watch|w!' => \ $watchdog,
 	'version|v' => \ &version,
+	'benchmark|b!' => \ $benchmark,
 	'indent=s' => \ $indent,
 	'linefeed=s' => \ $linefeed,
 	'precision|p=s' => \ $precision,
@@ -117,6 +119,9 @@ else { die "unknown linefeed type: $linefeed" }
 if (defined $ARGV[1] && $ARGV[1] ne '-')
 { $output_file = $ARGV[1]; }
 
+# check if the benchmark module is available
+if ($benchmark && ! eval "use Benchmark; 1" )
+{ die "Error loading Benchmark module\n", $@; }
 
 ####################################################################################################
 # get sass standard option list
@@ -154,6 +159,9 @@ sub compile ()
 	# variables
 	my ($css, $err, $stats);
 
+	# get benchmark stamp before compiling
+	my $t0 = $benchmark ? Benchmark->new : 0;
+
 	# open filehandle if path is given
 	if (defined $ARGV[0] && $ARGV[0] ne '-')
 	{
@@ -168,6 +176,11 @@ sub compile ()
 			join('', <STDIN>), sass_options()
 		);
 	}
+
+	# get benchmark stamp after compiling
+	my $t1 = $benchmark ? Benchmark->new : 0;
+	# only print benchmark result when module is available
+	if ($benchmark) { print timestr(timediff($t1, $t0)), "\n"; }
 
 	# process return status values
 	if (defined $css)
@@ -233,6 +246,7 @@ psass [options] [ path_in | - ] [ path_out | - ]
    -s, --source-map-contents     include original contents
    -m, --source-map-file=file    create and write source-map to file
        --no-source-map-url       omit sourceMappingUrl from output
+       --benchmark               print benchmark for compilation time
 
 =head1 OPTIONS
 

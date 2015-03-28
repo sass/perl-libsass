@@ -20,7 +20,7 @@ our @EXPORT = qw(start_watchdog); # symbols to export by default
 use List::MoreUtils qw(uniq);
 
 # check if the benchmark module is available
-my $benchmark = eval { use Benchmark; 1 };
+my $benchmark = eval "use Benchmark; 1";
 
 # declare package variables
 my ($parent_pid, $child_pid) = ($$, 0);

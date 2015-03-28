@@ -56,7 +56,8 @@ require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
 require CSS::Sass::Type;
 
-sub new {
+sub new
+{
     my ($class, %options) = @_;
     # Ensure initial sub structures on options
     $options{plugin_paths} = [] unless exists $options{plugin_paths};
@@ -66,56 +67,91 @@ sub new {
     bless { options => \%options }, $class;
 };
 
-sub options {
+sub options
+{
     shift->{options}
 }
 
-sub last_error {
+sub last_error
+{
     my ($self) = @_;
     $self->{last_error}
 }
 
-sub sass_compile {
+my @path_types = (
+  'plugin_paths',
+  'include_paths'
+);
+
+# directory delimiter according to platform
+my $dir_delim = $^O eq 'MSWin32' ? ';' : ':';
+
+# normalize option hash
+my $normalize_options = sub
+{
+    my ($options) = @_;
+    # gather all functions
+    # they need to be hashes
+    my %functions =
+    (
+      %{$options->{'functions'} || {}},
+      %{$options->{'sass_functions'} || {}}
+    );
+    # create functions array
+    # help the c code a little
+    my @functions = map { [
+      $_, $functions{$_}
+    ] } keys %functions;
+    # gather all importers
+    # they need to be arrays
+    my @importers =
+    map {
+      ref($_) eq "ARRAY" ?
+        $_ : [ $_, 0 ];
+    }
+    grep { defined }
+    (
+      $options->{'importer'},
+      @{$options->{'importers'} || []},
+      @{$options->{'sass_importers'} || []}
+    );
+    # gather all paths strings
+    foreach my $type (@path_types)
+    {
+      $options->{$type} = join $dir_delim,
+        map { split $dir_delim, $_ }
+        @{$options->{$type} || []};
+    }
+    # now normalize the original hash
+    $options->{'functions'} = \@functions;
+    $options->{'importers'} = \@importers;
+    # remove importer from options
+    # it is now included in importers
+    delete $options->{'importer'};
+    # return pointer
+    return $options;
+};
+
+sub sass_compile
+{
     my ($sass_code, %options) = @_;
     no warnings 'uninitialized';
-    my $r = compile_sass($sass_code, { %options,
-                                       # Override sass_functions with the arrayref of arrayrefs that the XS expects.
-                                       !$options{sass_functions} ? ()
-                                                                 : (sass_functions => [ map { [ $_ => $options{sass_functions}->{$_} ]
-                                                                                            } keys %{$options{sass_functions}} ]),
-                                       # Override include_paths with a ':' separated list
-                                       !$options{include_paths} ? ()
-                                                                : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
-                                                                                         @{$options{include_paths}})),
-                                       # Override plugin_paths with a ':' separated list
-                                       !$options{plugin_paths} ? ()
-                                                               : (plugin_paths => join($^O eq 'MSWin32' ? ';' : ':',
-                                                                                       @{$options{plugin_paths}})),
-                                     });
+    $normalize_options->(\%options);
+    my $r = compile_sass($sass_code, \%options);
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
-sub sass_compile_file {
+sub sass_compile_file
+{
     my ($input_path, %options) = @_;
     no warnings 'uninitialized';
-    my $r = compile_sass_file($input_path, { %options,
-                                            # Override sass_functions with the arrayref of arrayrefs that the XS expects.
-                                            !$options{sass_functions} ? ()
-                                                                      : (sass_functions => [ map { [ $_ => $options{sass_functions}->{$_} ]
-                                                                                                 } keys %{$options{sass_functions}} ]),
-                                            # Override include_paths with a ':' separated list
-                                            !$options{include_paths} ? ()
-                                                                     : (include_paths => join($^O eq 'MSWin32' ? ';' : ':',
-                                                                                              @{$options{include_paths}})),
-                                            # Override plugin_paths with a ':' separated list
-                                            !$options{plugin_paths} ? ()
-                                                                    : (plugin_paths => join($^O eq 'MSWin32' ? ';' : ':',
-                                                                                            @{$options{plugin_paths}})),
-                                          });
+    $normalize_options->(\%options);
+    my $r = compile_sass_file($input_path, \%options);
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
-sub compile {
+sub compile
+{
     my ($self, $sass_code) = @_;
     my ($compiled, $stats);
     ($compiled, $self->{last_error}, $stats) = sass_compile($sass_code, %{$self->options});
@@ -123,7 +159,8 @@ sub compile {
     wantarray ? ($compiled, $stats) : $compiled
 }
 
-sub compile_file {
+sub compile_file
+{
     my ($self, $sass_file) = @_;
     my ($compiled, $stats);
     ($compiled, $self->{last_error}, $stats) = sass_compile_file($sass_file, %{$self->options});
@@ -494,7 +531,7 @@ L<The CSS::Sass Home Page|https://github.com/sass/perl-libsass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>  
+David Caldwell E<lt>david@porkrind.orgE<gt>
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE

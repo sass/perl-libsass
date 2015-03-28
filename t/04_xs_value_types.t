@@ -375,11 +375,11 @@ is $css_str, "A{color:foo bar}\n", "function returned native string type";
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "\"foo\\\"s\"" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, "A{color:\"foo\\\"s\"}\n", "function returned native string type";
+is $css_str, "A{color:foo\"s}\n", "function returned native string type";
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "\'foo\\'s\'" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, "A{color:\'foo\\\'s\'}\n", "function returned native string type";
+is $css_str, "A{color:foo\'s}\n", "function returned native string type";
 
 ################################################################################
 # test if functions get passed correct var structures

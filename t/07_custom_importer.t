@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 28;
+use Test::More tests => 30;
 
 BEGIN { use_ok('CSS::Sass') };
 
@@ -11,7 +11,26 @@ my ($r, $err, $stat);
 
 ($r, $err, $stat) = CSS::Sass::sass_compile('@import "http://www.host.dom/red";',
     source_map_file => "test.css.map",
-    importer => sub {
+    headers => [
+      [sub { return [['header-02', 'div { b: .5; }']]; }, .5],
+      [sub { return [['header-03', 'div { c: .1; }']]; }, .1],
+      [sub { return [['header-01', 'div { @include mixme; }']]; }, .9],
+      [sub { return [['mixin-01', '@mixin mixme { a: .9; }']]; }, 1009],
+    ],
+    importers => [[sub {
+
+      if ($_[0] eq "http://www.host.dom/red") {
+        is ($_[1], "stdin", "import parent[0]");
+        return [["red.css", '@import "brown";']];
+      }
+      if ($_[0] eq "green") {
+        is ($_[1], "red.css", "import parent[1]");
+        return [['http://www.host.dom/green', '@import "yellow";']];
+      }
+      is ($_[1], "http://www.host.dom/green", "import parent[2]");
+      return [['http://www.host.dom/final', 'A { color: ' . $_[0] . '; }']]; # yellow
+    }, 10], [sub {
+
       if ($_[0] eq "http://www.host.dom/red") {
         is ($_[1], "stdin", "import parent[0]");
         return [["red.css", '@import "green";']];
@@ -22,9 +41,10 @@ my ($r, $err, $stat);
       }
       is ($_[1], "http://www.host.dom/green", "import parent[2]");
       return [['http://www.host.dom/final', 'A { color: ' . $_[0] . '; }']]; # yellow
-    }
+    }, 25]]
 );
 
+like  ($r,   qr/a:\s*\.9;.*b:\s*\.5;.*c:\s*\.1;/s,       "Custom header works");
 like  ($r,   qr/color:\s*yellow;/,                     "Custom importer works");
 is    ($err, undef,                                    "Custom importer returns no errors");
 
@@ -33,6 +53,7 @@ is    ($stat->{'included_files'}->[0], "green", "included_files[0] has correct u
 is    ($stat->{'included_files'}->[1], "http://www.host.dom/red", "included_files[1] has correct url");
 is    ($stat->{'included_files'}->[2], "yellow", "included_files[2] has correct url");
 
+is    (scalar(@{$stat->{'included_files'}}), 3,        "included_files has correct size");
 
 ## from https://github.com/sass/libsass/pull/691#issuecomment-67130937
 

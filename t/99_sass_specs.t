@@ -105,6 +105,8 @@ sub clean_output ($) {
 }
 sub norm_output ($) {
 	$_[0] =~ s/\r//g;
+	$_[0] =~ s/\s+([{,])/$1/g;
+	# $_[0] =~ s/#ff0/yellow/g;
 	$_[0] =~ s/(?:\r?\n)+/\n/g;
 	$_[0] =~ s/(?:\r?\n)+$/\n/g;
 }
@@ -128,10 +130,10 @@ foreach my $test (@tests)
 	if ($redo_sass)
 	{
 		unless (-f join("/", $test->[0], 'redo.skip')) {
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass --unix-newlines --sourcemap=none -t nested -C \"$input_file\" \"$output_nested\"", $input_file] if ($do_nested);
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass --unix-newlines --sourcemap=none -t compact -C \"$input_file\" \"$output_compact\"", $input_file] if ($do_compact);
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass --unix-newlines --sourcemap=none -t expanded -C \"$input_file\" \"$output_expanded\"", $input_file] if ($do_expanded);
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass --unix-newlines --sourcemap=none -t compressed -C \"$input_file\" \"$output_compressed\"", $input_file] if ($do_compressed);
+			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t nested -C \"$input_file\" \"$output_nested\"", $input_file] if ($do_nested);
+			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t compact -C \"$input_file\" \"$output_compact\"", $input_file] if ($do_compact);
+			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t expanded -C \"$input_file\" \"$output_expanded\"", $input_file] if ($do_expanded);
+			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t compressed -C \"$input_file\" \"$output_compressed\"", $input_file] if ($do_compressed);
 		} else {
 			SKIP: { skip("dont redo expected_output.css", 1) if ($do_nested); }
 			SKIP: { skip("dont redo expected.compact.css", 1) if ($do_compact); }
@@ -175,6 +177,12 @@ while (scalar(@running)) {
 		! $_->Wait(0);
 	} @running;
 }
+
+# check if the benchmark module is available
+my $benchmark = eval "use Benchmark; 1" ;
+
+# get benchmark stamp before compiling
+my $t0 = $benchmark ? Benchmark->new : 0;
 
 foreach my $test (@tests)
 {
@@ -246,6 +254,7 @@ foreach my $test (@tests)
 	norm_output $css_nested; norm_output $sass_nested;
 	norm_output $css_compact; norm_output $sass_compact;
 	norm_output $css_expanded; norm_output $sass_expanded;
+	norm_output $css_compressed; norm_output $sass_compressed;
 
 	unless ($input_file =~ m/todo/)
 	{
@@ -275,31 +284,43 @@ foreach my $test (@tests)
 	else
 	{
 
+		# warn "doing test spec " << $test->[0], "\n";
+
 		my $surprise = sub { fail("suprprise in: " . $_[0]); push @surprises, [ @_ ]; };
 
 		if ($css_nested eq $sass_nested)
-		{ $surprise->(join("/", $test->[0], 'expected.nested') . " unexpectely works"); }
+		{ $surprise->(join("/", $test->[0], 'expected.nested')); }
 		else { pass(join("/", $test->[0], 'expected.nested') . " is still failing"); }
 
 		if ($css_compact eq $sass_compact)
-		{ $surprise->(join("/", $test->[0], 'expected.compact') . " unexpectely works"); }
+		{ $surprise->(join("/", $test->[0], 'expected.compact')); }
 		else { pass(join("/", $test->[0], 'expected.compact') . " is still failing"); }
 
 		if ($css_expanded eq $sass_expanded)
-		{ $surprise->(join("/", $test->[0], 'expected.expanded') . " unexpectely works"); }
+		{ $surprise->(join("/", $test->[0], 'expected.expanded')); }
 		else { pass(join("/", $test->[0], 'expected.expanded') . " is still failing"); }
 
 		if ($css_compressed eq $sass_compressed)
-		{ $surprise->(join("/", $test->[0], 'expected.compressed') . " unexpectely works") }
+		{ $surprise->(join("/", $test->[0], 'expected.compressed')) }
 		else { pass(join("/", $test->[0], 'expected.compressed') . " is still failing"); }
 
 	}
 
 }
+
+# get benchmark stamp after compiling
+my $t1 = $benchmark ? Benchmark->new : 0;
+
 END {
+
+	# only print benchmark result when module is available
+	if ($benchmark) { warn "\nin ", timestr(timediff($t1, $t0)), "\n"; }
+
 	foreach my $surprise (@surprises)
 	{
-		printf STDERR "surprise: %s\n", $surprise->[0];
+		my $file = $surprise->[0];
+		$file =~ s/\//\\/g if $^O eq 'MSWin32';
+		printf STDERR "at %s\n", $file;
 	}
 }
 
