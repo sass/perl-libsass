@@ -180,7 +180,7 @@ sub compile ()
 	# get benchmark stamp after compiling
 	my $t1 = $benchmark ? Benchmark->new : 0;
 	# only print benchmark result when module is available
-	if ($benchmark) { print timestr(timediff($t1, $t0)), "\n"; }
+	if ($benchmark) { print timestr(timediff($t1, $t0), 'auto', '5.4f'), "\n"; }
 
 	# process return status values
 	if (defined $css)

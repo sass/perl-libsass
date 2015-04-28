@@ -20,7 +20,7 @@ CSS::Sass - Compile .scss files using libsass
 
     # Compile string and get css output and source-map json
     $sass->options->{source_map_file} = 'output.css.map';
-    ($css, $srcmap) = $sass->compile('A { color: foobar(); }');
+    ($css, $stats) = $sass->compile('A { color: foobar(); }');
 
 
     # Object Oriented API w/ options
@@ -35,7 +35,7 @@ CSS::Sass - Compile .scss files using libsass
                               });
 
     # Compile string and use the registered function
-    my ($css, $srcmap) = $sass->compile('A { color: foobar(red); }');
+    my ($css, $stats) = $sass->compile('A { color: foobar(red); }');
 
     # Result can be undef because 'dont_die' was set
     warn $sass->last_error unless (defined $css);
@@ -45,7 +45,7 @@ CSS::Sass - Compile .scss files using libsass
     use CSS::Sass qw(:Default sass_compile);
 
     # Functional API, with error messages and source-map
-    my ($css, $err, $srcmap) = sass_compile('A { color: red; }');
+    my ($css, $err, $stats) = sass_compile('A { color: red; }');
     die $err if defined $err;
 
     # Functional API, simple, with no error messages
@@ -53,10 +53,10 @@ CSS::Sass - Compile .scss files using libsass
     die unless defined $css;
 
     # Functional API w/ options
-    my ($css, $err, $srcmap) = sass_compile('A { color: red; }',
-                                            include_paths   => ['some/include/path'],
-                                            output_style    => SASS_STYLE_NESTED,
-                                            source_map_file => 'output.css.map');
+    my ($css, $err, $stats) = sass_compile('A { color: red; }',
+                                           include_paths   => ['some/include/path'],
+                                           output_style    => SASS_STYLE_NESTED,
+                                           source_map_file => 'output.css.map');
 
     # Import sass2scss function
     use CSS::Sass qw(sass2scss);
@@ -74,7 +74,7 @@ CSS::Sass - Compile .scss files using libsass
 # DESCRIPTION
 
 CSS::Sass provides a perl interface to libsass, a fairly complete Sass
-compiler written in C++.  It is currently somewhere around ruby sass 3.2/3.3
+compiler written in C++. It is currently somewhere around ruby sass 3.3/3.4
 feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
 # OBJECT ORIENTED INTERFACE
@@ -115,21 +115,58 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 # FUNCTIONAL INTERFACE
 
 - `$css = sass_compile(source_code, options)`
-- `($css, $err, $srcmap) = sass_compile(source_code, options)`
+- `($css, $err, $stats) = sass_compile(source_code, options)`
 
-    Compiles the given Sass source code. It returns CSS, error and source-map in
-    list context or just the CSS in scalar context. Either CSS or error will be
-    `undef`, but never both.
+    Compiles the sass code given by `source_code`. It returns CSS, error and a
+    status object in list context or just the CSS in scalar context. Either CSS
+    or error will be `undef`, but never both.
+
+- `$css = sass_compile_file(input_path, options)`
+- `($css, $err, $stats) = sass_compile_file(input_path, options)`
+
+    Compiles the sass file given by `input_path`. It returns CSS, error and a
+    status object in list context or just the CSS in scalar context. Either CSS
+    or error will be `undef`, but never both.
+
+- $stats status hash:
+
+    The status hash holds usefull information after compilation:
+
+    - `error_status`
+    - `output_string`
+    - `included_files`
+    - `source_map_string`
+    - `error_line`
+    - `error_column`
+    - `error_src`
+    - `error_file`
+    - `error_text`
+    - `error_message`
+    - `error_json`
 
 # OPTIONS
 
 - `output_style`
 
     - `SASS_STYLE_NESTED`
+    - `SASS_STYLE_COMPACT`
+    - `SASS_STYLE_EXPANDED`
     - `SASS_STYLE_COMPRESSED`
 
     The default is `SASS_STYLE_NESTED`. Set to `SASS_STYLE_COMPRESSED` to
     eliminate all whitespace (for your production CSS).
+
+- `precision`
+
+    Set the floating point precision for output.
+
+- `linefeed`
+
+    Set the linefeed string used for css output.
+
+- `indentation`
+
+    Set the indentation string used for css output.
 
 - `source_comments`
 
@@ -230,6 +267,17 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
             [ "http://xyz/file", "div { color: red; }" ],
           ];
         }
+
+    You may also return `undef` to skip the importer (usefull if an importer only handles
+    certain url protocols). With the latest libsass version, you can add multiple importers
+    with a priority order to implement more complex scenarios (highly experimental).
+
+- Custom `headers`
+
+    Another highly experimental feature to prepend content on every compilation. It can be
+    used to predefine mixins or other stuff. Internally the content is really just added to
+    the top of the processed data. Custom headers have the same structure as importers. But
+    all registered headers are called in the order given by the priority flag.
 
 - `Sass_Value` Types
 

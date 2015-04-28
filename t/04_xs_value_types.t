@@ -314,7 +314,10 @@ is $error_msg->message, 'message', "error message method return ok";
 
 test_string($regex);
 
-is $regex, '"'.qr/regex/.'"', "regex stringify value is correct";
+SKIP: {
+	skip (1) if $] < 5.011000;
+	is $regex, '"'.qr/regex/.'"', "regex stringify value is correct";
+}
 
 ################################################################################
 ################################################################################
@@ -443,8 +446,11 @@ is $sass->compile('$bol: test-bol(var-pl-new-boolean()); A { value: $bol; }'),
 is $sass->compile('$err: test-err(var-pl-new-error()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 
-is $sass->compile('$rgx: test-str(var-pl-regex()); A { value: $rgx; }'),
-   "A{value:".qr/foobar/."}\n", 'test returned blessed variable of type "regex"';
+SKIP: {
+	skip (1) if $] < 5.011000;
+	is $sass->compile('$rgx: test-str(var-pl-regex()); A { value: $rgx; }'),
+	   "A{value:".qr/foobar/."}\n", 'test returned blessed variable of type "regex"';
+}
 
 ################################################################################
 $sass->options->{'dont_die'} = 0;

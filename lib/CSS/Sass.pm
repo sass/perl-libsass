@@ -50,7 +50,7 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = "v3.2.0";
+our $VERSION = "v3.2.1";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
@@ -193,7 +193,7 @@ CSS::Sass - Compile .scss files using libsass
 
   # Compile string and get css output and source-map json
   $sass->options->{source_map_file} = 'output.css.map';
-  ($css, $srcmap) = $sass->compile('A { color: foobar(); }');
+  ($css, $stats) = $sass->compile('A { color: foobar(); }');
 
 
   # Object Oriented API w/ options
@@ -208,7 +208,7 @@ CSS::Sass - Compile .scss files using libsass
                             });
 
   # Compile string and use the registered function
-  my ($css, $srcmap) = $sass->compile('A { color: foobar(red); }');
+  my ($css, $stats) = $sass->compile('A { color: foobar(red); }');
 
   # Result can be undef because 'dont_die' was set
   warn $sass->last_error unless (defined $css);
@@ -218,7 +218,7 @@ CSS::Sass - Compile .scss files using libsass
   use CSS::Sass qw(:Default sass_compile);
 
   # Functional API, with error messages and source-map
-  my ($css, $err, $srcmap) = sass_compile('A { color: red; }');
+  my ($css, $err, $stats) = sass_compile('A { color: red; }');
   die $err if defined $err;
 
   # Functional API, simple, with no error messages
@@ -226,10 +226,10 @@ CSS::Sass - Compile .scss files using libsass
   die unless defined $css;
 
   # Functional API w/ options
-  my ($css, $err, $srcmap) = sass_compile('A { color: red; }',
-                                          include_paths   => ['some/include/path'],
-                                          output_style    => SASS_STYLE_NESTED,
-                                          source_map_file => 'output.css.map');
+  my ($css, $err, $stats) = sass_compile('A { color: red; }',
+                                         include_paths   => ['some/include/path'],
+                                         output_style    => SASS_STYLE_NESTED,
+                                         source_map_file => 'output.css.map');
 
   # Import sass2scss function
   use CSS::Sass qw(sass2scss);
@@ -247,7 +247,7 @@ CSS::Sass - Compile .scss files using libsass
 =head1 DESCRIPTION
 
 CSS::Sass provides a perl interface to libsass, a fairly complete Sass
-compiler written in C++.  It is currently somewhere around ruby sass 3.2/3.3
+compiler written in C++. It is currently somewhere around ruby sass 3.3/3.4
 feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
 =head1 OBJECT ORIENTED INTERFACE
@@ -295,11 +295,49 @@ Allows you to inspect or change the options after a call to C<new>.
 
 =item C<$css = sass_compile(source_code, options)>
 
-=item C<($css, $err, $srcmap) = sass_compile(source_code, options)>
+=item C<($css, $err, $stats) = sass_compile(source_code, options)>
 
-Compiles the given Sass source code. It returns CSS, error and source-map in
-list context or just the CSS in scalar context. Either CSS or error will be
-C<undef>, but never both.
+Compiles the sass code given by C<source_code>. It returns CSS, error and a
+status object in list context or just the CSS in scalar context. Either CSS
+or error will be C<undef>, but never both.
+
+=item C<$css = sass_compile_file(input_path, options)>
+
+=item C<($css, $err, $stats) = sass_compile_file(input_path, options)>
+
+Compiles the sass file given by C<input_path>. It returns CSS, error and a
+status object in list context or just the CSS in scalar context. Either CSS
+or error will be C<undef>, but never both.
+
+=item $stats status hash:
+
+The status hash holds usefull information after compilation:
+
+=over
+
+=item C<error_status>
+
+=item C<output_string>
+
+=item C<included_files>
+
+=item C<source_map_string>
+
+=item C<error_line>
+
+=item C<error_column>
+
+=item C<error_src>
+
+=item C<error_file>
+
+=item C<error_text>
+
+=item C<error_message>
+
+=item C<error_json>
+
+=back
 
 =back
 
@@ -312,6 +350,10 @@ C<undef>, but never both.
 =over 4
 
 =item C<SASS_STYLE_NESTED>
+
+=item C<SASS_STYLE_COMPACT>
+
+=item C<SASS_STYLE_EXPANDED>
 
 =item C<SASS_STYLE_COMPRESSED>
 
@@ -432,6 +474,17 @@ A simple example:
       ];
     }
 
+You may also return C<undef> to skip the importer (usefull if an importer only handles
+certain url protocols). With the latest libsass version, you can add multiple importers
+with a priority order to implement more complex scenarios (highly experimental).
+
+=item Custom C<headers>
+
+Another highly experimental feature to prepend content on every compilation. It can be
+used to predefine mixins or other stuff. Internally the content is really just added to
+the top of the processed data. Custom headers have the same structure as importers. But
+all registered headers are called in the order given by the priority flag.
+	
 =item C<Sass_Value> Types
 
 Sass knowns various C<Sass_Value> types. We export the constants for completeness.
@@ -531,7 +584,7 @@ L<The CSS::Sass Home Page|https://github.com/sass/perl-libsass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>
+David Caldwell E<lt>david@porkrind.orgE<gt>  
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE

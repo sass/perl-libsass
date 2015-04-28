@@ -1,3 +1,9 @@
+CSS::Sass (3.2.1)
+
+  * Update some outdated documentation
+  * Add missing version file for libsass
+  * Silence some compiler warnings
+
 CSS::Sass (3.2.0)
 
   * Update to latest libsass release (3.2.0)

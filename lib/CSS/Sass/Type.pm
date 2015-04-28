@@ -27,7 +27,7 @@ use CSS::Sass;
 
 ################################################################################
 package CSS::Sass::Type;
-our $VERSION = "v3.2.0";
+our $VERSION = "v3.2.1";
 ################################################################################
 use CSS::Sass qw(import_sv);
 ################################################################################
@@ -406,7 +406,7 @@ L<CSS::Sass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>
+David Caldwell E<lt>david@porkrind.orgE<gt>  
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE

@@ -18,6 +18,7 @@ if (-d ".git") {
     system "git submodule update";
     open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
     print $manifest "MANIFEST\n";
+    print $manifest "libsass/VERSION\n";
     while (my $module = shift @modules)
     {
       my $cwd = getcwd;
@@ -192,7 +193,7 @@ my %config = (
     },
     meta_merge => {
       resources => {
-        repository  => 'https://github.com/caldwell/CSS-Sass',
+        repository  => 'https://github.com/sass/CSS-Sass',
       },
     },
     add_to_cleanup     => [ 'CSS-Sass-*' ],
