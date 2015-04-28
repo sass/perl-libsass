@@ -201,10 +201,10 @@ SV* new_sv_sass_number (SV* number, SV* unit) {
 
 SV* new_sv_sass_color (SV* r, SV* g, SV* b, SV* a) {
     HV* hash = newHV();
-    hv_store(hash, "r", 1, r, 0);
-    hv_store(hash, "g", 1, g, 0);
-    hv_store(hash, "b", 1, b, 0);
-    hv_store(hash, "a", 1, a, 0);
+    (void)hv_store(hash, "r", 1, r, 0);
+    (void)hv_store(hash, "g", 1, g, 0);
+    (void)hv_store(hash, "b", 1, b, 0);
+    (void)hv_store(hash, "a", 1, a, 0);
     SV* sv = newRV_noinc(newRV_noinc((SV*) hash));
     sv_bless(sv, gv_stashpv("CSS::Sass::Type::Color", GV_ADD));
     return sv;
@@ -275,7 +275,7 @@ SV* sass_value_to_sv(union Sass_Value* val)
                 union Sass_Value* value = sass_map_get_value(val, i);
                 SV* sv_value = sass_value_to_sv(value);
                 // store the key/value pair on the hash
-                hv_store_ent(map, sv_key, sv_value, 0);
+                (void)hv_store_ent(map, sv_key, sv_value, 0);
                 // make key sv mortal
                 sv_2mortal(sv_key);
             }
@@ -667,17 +667,17 @@ void finalize_sass_context(struct Sass_Context* ctx, HV* RETVAL, SV* err)
       ++it;
     }
 
-    hv_stores(RETVAL, "error_status",      newSViv(error_status || SvOK(err)));
-    hv_stores(RETVAL, "output_string",     output_string ? newSVpv(output_string, 0) : newSV(0));
-    hv_stores(RETVAL, "source_map_string", source_map_string ? newSVpv(source_map_string, 0) : newSV(0));
-    hv_stores(RETVAL, "error_line",        SvOK(err) ? err : error_line ? newSViv(error_line) : newSViv(0));
-    hv_stores(RETVAL, "error_column",      SvOK(err) ? err : error_column ? newSViv(error_column) : newSViv(0));
-    hv_stores(RETVAL, "error_src",         SvOK(err) ? err : error_src ? newSVpv(error_src, 0) : newSViv(0));
-    hv_stores(RETVAL, "error_text",        SvOK(err) ? err : error_text ? newSVpv(error_text, 0) : newSV(0));
-    hv_stores(RETVAL, "error_message",     SvOK(err) ? err : error_message ? newSVpv(error_message, 0) : newSV(0));
-    hv_stores(RETVAL, "error_json",        SvOK(err) ? err : error_json ? newSVpv(error_json, 0) : newSV(0));
-    hv_stores(RETVAL, "error_file",        SvOK(err) ? err : error_file ? newSVpv(error_file, 0) : newSV(0));
-    hv_stores(RETVAL, "included_files",    newRV_noinc((SV*) sv_included_files));
+    (void)hv_stores(RETVAL, "error_status",      newSViv(error_status || SvOK(err)));
+    (void)hv_stores(RETVAL, "output_string",     output_string ? newSVpv(output_string, 0) : newSV(0));
+    (void)hv_stores(RETVAL, "source_map_string", source_map_string ? newSVpv(source_map_string, 0) : newSV(0));
+    (void)hv_stores(RETVAL, "error_line",        SvOK(err) ? err : error_line ? newSViv(error_line) : newSViv(0));
+    (void)hv_stores(RETVAL, "error_column",      SvOK(err) ? err : error_column ? newSViv(error_column) : newSViv(0));
+    (void)hv_stores(RETVAL, "error_src",         SvOK(err) ? err : error_src ? newSVpv(error_src, 0) : newSViv(0));
+    (void)hv_stores(RETVAL, "error_text",        SvOK(err) ? err : error_text ? newSVpv(error_text, 0) : newSV(0));
+    (void)hv_stores(RETVAL, "error_message",     SvOK(err) ? err : error_message ? newSVpv(error_message, 0) : newSV(0));
+    (void)hv_stores(RETVAL, "error_json",        SvOK(err) ? err : error_json ? newSVpv(error_json, 0) : newSV(0));
+    (void)hv_stores(RETVAL, "error_file",        SvOK(err) ? err : error_file ? newSVpv(error_file, 0) : newSV(0));
+    (void)hv_stores(RETVAL, "included_files",    newRV_noinc((SV*) sv_included_files));
 
 }
 
