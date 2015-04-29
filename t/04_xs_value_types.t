@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 339;
+use Test::More tests => 499;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -62,6 +62,12 @@ sub test_string
 	ok UNIVERSAL::isa($_[0], 'SCALAR'), "string type points to a scalar";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::String'), "string type has package";
 
+	my $clone = $_[0]->clone;
+	is $_[0] eq $clone, 1, "string is stringify equal to its clone";
+	is $_[0] == $clone, 1, "string is numerical equal to its clone";
+	is $_[0] ne $clone, 0, "string not not stringify equal to its clone";
+	is $_[0] != $clone, 0, "string not not numerical equal to its clone";
+
 	# test the representation of the value (must always be undef)
 	ok defined ${$_[0]}, "string value must not be undefined";
 
@@ -75,6 +81,12 @@ sub test_number
 	ok UNIVERSAL::isa(${$_[0]}, 'ARRAY'), "number type points to array";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Number'), "number has correct package";
 
+	my $clone = $_[0]->clone;
+	is $_[0] eq $clone, 1, "number is stringify equal to its clone";
+	is $_[0] == $clone, 1, "number is numerical equal to its clone";
+	is $_[0] ne $clone, 0, "number not not stringify equal to its clone";
+	is $_[0] != $clone, 0, "number not not numerical equal to its clone";
+
 };
 
 sub test_color
@@ -85,6 +97,13 @@ sub test_color
 	ok UNIVERSAL::isa(${$_[0]}, 'HASH'), "color type points to hash";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Color'), "color has correct package";
 
+	my $clone = $_[0]->clone;
+	# warn $clone;
+	is $_[0] eq $clone, 1, "color is stringify equal to its clone";
+	is $_[0] == $clone, 1, "color is numerical equal to its clone";
+	is $_[0] ne $clone, 0, "color not not stringify equal to its clone";
+	is $_[0] != $clone, 0, "color not not numerical equal to its clone";
+
 };
 
 sub test_map
@@ -93,6 +112,12 @@ sub test_map
 	# test internal (xs) data structure of a map
 	ok UNIVERSAL::isa($_[0], 'HASH'), "map type points to hash";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Map'), "map type has package";
+
+	my $clone = $_[0]->clone;
+	is $_[0] eq $clone, 1, "map is stringify equal to its clone";
+	is $_[0] == $clone, 1, "map is numerical equal to its clone";
+	is $_[0] ne $clone, 0, "map not not stringify equal to its clone";
+	is $_[0] != $clone, 0, "map not not numerical equal to its clone";
 
 };
 
@@ -103,6 +128,12 @@ sub test_list
 	ok UNIVERSAL::isa($_[0], 'ARRAY'), "map type points to array";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::List'), "map type has package";
 
+	my $clone = $_[0]->clone;
+	is $_[0] eq $clone, 1, "list is stringify equal to its clone";
+	is $_[0] == $clone, 1, "list is numerical equal to its clone";
+	is $_[0] ne $clone, 0, "list not not stringify equal to its clone";
+	is $_[0] != $clone, 0, "list not not numerical equal to its clone";
+
 };
 
 sub test_error
@@ -111,6 +142,12 @@ sub test_error
 	ok UNIVERSAL::isa($_[0], 'REF'), "error type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'REF'), "error type points to a scalar";
 	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Error'), "error has correct package";
+
+	my $clone = $_[0]->clone;
+	is $_[0] eq $clone, 1, "error is stringify equal to its clone";
+	is $_[0] == $clone, 1, "error is numerical equal to its clone";
+	is $_[0] ne $clone, 0, "error not not stringify equal to its clone";
+	is $_[0] != $clone, 0, "error not not numerical equal to its clone";
 
 };
 
@@ -133,18 +170,18 @@ is "" . CSS::Sass::Type->new(42.35), "42.35", "number stringify ok";
 is "" . CSS::Sass::Type->new(42.35)->unit, "", "number unit ok";
 is "" . CSS::Sass::Type->new(42.35)->value, "42.35", "number value ok";
 is "" . CSS::Sass::Type->new("foobar"), "foobar", "string stringify ok";
-is "" . CSS::Sass::Type->new({ "key" => "foobar" }), "key: foobar", "map stringify ok";
-is "" . CSS::Sass::Type->new([ "foo baz", 42, "bar" ]), "\"foo baz\", 42, bar", "list stringify ok";
-is "" . CSS::Sass::Type->new(["foo", "bar"]), "foo, bar", "list comma stringify ok";
+is "" . CSS::Sass::Type->new({ "key" => "foobar" }), '"key": "foobar"', "map stringify ok";
+is "" . CSS::Sass::Type->new([ "foo baz", 42, "bar" ]), '"foo baz", 42, "bar"', "list stringify ok";
+is "" . CSS::Sass::Type->new(["foo", "bar"]), '"foo", "bar"', "list comma stringify ok";
 
 # force stringification
 is "" . CSS::Sass::Type::Null->new(undef), "null", "null stringify ok";
 is "" . CSS::Sass::Type::Number->new(42.35), "42.35", "null stringify ok";
 is "" . CSS::Sass::Type::String->new("foobar"), "foobar", "null stringify ok";
-is "" . CSS::Sass::Type::Map->new("key" => "foobar"), "key: foobar", "map stringify ok";
-is "" . CSS::Sass::Type::List->new("foo baz", 42, "bar"), "\"foo baz\", 42, bar", "list stringify ok";
-is "" . CSS::Sass::Type::List::Comma->new("foo", "bar"), "foo, bar", "list comma stringify ok";
-is "" . CSS::Sass::Type::List::Space->new("foo", "bar"), "foo bar", "list space stringify ok";
+is "" . CSS::Sass::Type::Map->new("key" => "foobar"), '"key": "foobar"', "map stringify ok";
+is "" . CSS::Sass::Type::List->new("foo baz", 42, "bar"), '"foo baz", 42, "bar"', "list stringify ok";
+is "" . CSS::Sass::Type::List::Comma->new("foo", "bar"), '"foo", "bar"', "list comma stringify ok";
+is "" . CSS::Sass::Type::List::Space->new("foo", "bar"), '"foo" "bar"', "list space stringify ok";
 
 ################################################################################
 ################################################################################
@@ -270,18 +307,18 @@ test_list($list);
 test_list($list_comma);
 test_list($list_space);
 
-is $list, 'foo, bar', "list stringify is correct";
+is $list, '"foo", "bar"', "list stringify is correct";
 is $list->[0], 'foo', "list[0] is correct";
 is $list->[1], 'bar', "list[1] is correct";
 is $list->[-1], 'bar', "list[-1] is correct";
 
-is $list_comma, 'foo, bar, baz', "list_comma stringify is correct";
+is $list_comma, '"foo", "bar", "baz"', "list_comma stringify is correct";
 is $list_comma->[0], 'foo', "list_comma[0] is correct";
 is $list_comma->[1], 'bar', "list_comma[1] is correct";
 is $list_comma->[2], 'baz', "list_comma[2] is correct";
 is $list_comma->[-1], 'baz', "list_comma[-1] is correct";
 
-is $list_space, 'foo bar baz', "list_space stringify is correct";
+is $list_space, '"foo" "bar" "baz"', "list_space stringify is correct";
 is $list_space->[0], 'foo', "list_space[0] is correct";
 is $list_space->[1], 'bar', "list_space[1] is correct";
 is $list_space->[2], 'baz', "list_space[2] is correct";
@@ -295,7 +332,7 @@ is $list_space->separator, SASS_SPACE, "space separator method works";
 
 test_map($map);
 
-is $map, 'foo: bar', "map stringify is correct";
+is $map, '"foo": "bar"', "map stringify is correct";
 is $map->{'foo'}, 'bar', "map->foo is correct";
 
 is join("", $map->keys), "foo", "map keys method works";
@@ -315,8 +352,8 @@ is $error_msg->message, 'message', "error message method return ok";
 test_string($regex);
 
 SKIP: {
-	skip (1) if $] < 5.011000;
-	is $regex, '"'.qr/regex/.'"', "regex stringify value is correct";
+	skip ("known regex issue in perl < 5.12", 1) if $] < 5.012000;
+	is $regex, qr/regex/, "regex stringify value is correct";
 }
 
 ################################################################################
@@ -447,7 +484,7 @@ is $sass->compile('$err: test-err(var-pl-new-error()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 
 SKIP: {
-	skip (1) if $] < 5.011000;
+	skip ("known regex issue in perl < 5.12", 4) if $] < 5.012000;
 	is $sass->compile('$rgx: test-str(var-pl-regex()); A { value: $rgx; }'),
 	   "A{value:".qr/foobar/."}\n", 'test returned blessed variable of type "regex"';
 }
@@ -465,12 +502,12 @@ like $@, qr/message/, "returning an error dies within sass";
 ################################################################################
 
 $list = CSS::Sass::Type::List->new("'foo'", 42, "bar");
-is $list->[0]->value, "foo", "string in list was upgraded correctly";
+is $list->[0]->value, "'foo'", "string in list was upgraded correctly";
 is $list->[1]->unit, "", "number in list was upgraded correctly";
 is $list->[2]->value, "bar", "string in list was upgraded correctly";
 
 $list = CSS::Sass::Type::Map->new(key => "'foo'", bar => 42);
-is $list->{'key'}->value, "foo", "string in map was upgraded correctly";
+is $list->{'key'}->value, "'foo'", "string in map was upgraded correctly";
 is $list->{'bar'}->unit, "", "number in map was upgraded correctly";
 
 ################################################################################

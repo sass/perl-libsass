@@ -90,11 +90,18 @@ union Sass_Value* sv_to_sass_value(SV* sv)
                 if (!SvOK(sv)) return sass_make_null();
                 // perl reference
                 if (SvROK(sv)) {
+                    // dereference
+                    sv = SvRV(sv);
                     // check if it's an error struct
-                    if (SvTYPE(SvRV(sv)) == SVt_PVAV) {
-                        SV** value_svp = av_fetch((AV*)SvRV(sv), 0, false);
-                        SV* value_sv = value_svp ? *value_svp : &PL_sv_undef;
-                        return sass_make_error(SvPV_nolen(value_sv));
+                    if (SvTYPE(sv) == SVt_PVAV) {
+                        bool has_msg = false;
+                        if (av_len((AV*)sv) >= 0) {
+                            SV** value_svp = av_fetch((AV*)sv, 0, false);
+                            has_msg = value_svp && *value_svp && SvOK(*value_svp);
+                            return sass_make_error(has_msg ? SvPV_nolen(*value_svp) : "error");
+                        } else {
+                            return sass_make_error("error");
+                        }
                     }
                 // if we have a scalar
                 } else if (!SvROK(sv)) {
@@ -122,11 +129,16 @@ union Sass_Value* sv_to_sass_value(SV* sv)
             // a hash means we have a color
             else if (SvTYPE(sv) == SVt_PVHV) {
                 HV* color = (HV*) sv;
-                double r = SvNV(*hv_fetchs(color, "r", false));
-                double g = SvNV(*hv_fetchs(color, "g", false));
-                double b = SvNV(*hv_fetchs(color, "b", false));
-                double a = SvNV(*hv_fetchs(color, "a", false));
-                return sass_make_color(r, g, b, a);
+                SV* sv_r = *hv_fetchs(color, "r", false);
+                SV* sv_g = *hv_fetchs(color, "g", false);
+                SV* sv_b = *hv_fetchs(color, "b", false);
+                SV* sv_a = *hv_fetchs(color, "a", false);
+                return sass_make_color(
+                    SvOK(sv_r) ? SvNV(sv_r) : 0,
+                    SvOK(sv_g) ? SvNV(sv_g) : 0,
+                    SvOK(sv_b) ? SvNV(sv_b) : 0,
+                    SvOK(sv_a) ? SvNV(sv_a) : 0
+                );
             }
 
         }
@@ -396,12 +408,13 @@ Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, str
             // the expected type is an array
             else if (SvTYPE(import_sv) == SVt_PVAV) {
                 AV* import_av = (AV*) import_sv;
-                SV** path_sv = av_fetch(import_av, 0, false);
-                SV** source_sv = av_fetch(import_av, 1, false);
-                SV** mapjson_sv = av_fetch(import_av, 2, false);
-                SV** error_msg_sv = av_fetch(import_av, 3, false);
-                SV** error_line_sv = av_fetch(import_av, 4, false);
-                SV** error_column_sv = av_fetch(import_av, 5, false);
+                size_t len = av_len(import_av);
+                SV** path_sv = len < 0 ? 0 : av_fetch(import_av, 0, false);
+                SV** source_sv = len < 1 ? 0 : av_fetch(import_av, 1, false);
+                SV** mapjson_sv = len < 2 ? 0 : av_fetch(import_av, 2, false);
+                SV** error_msg_sv = len < 3 ? 0 : av_fetch(import_av, 3, false);
+                SV** error_line_sv = len < 4 ? 0 : av_fetch(import_av, 4, false);
+                SV** error_column_sv = len < 5 ? 0 : av_fetch(import_av, 5, false);
                 if (path_sv && SvOK(*path_sv)) path = SvPV_nolen(*path_sv);
                 if (source_sv && SvOK(*source_sv)) source = SvPV_nolen(*source_sv);
                 if (mapjson_sv && SvOK(*mapjson_sv)) mapjson = SvPV_nolen(*mapjson_sv);

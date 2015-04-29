@@ -31,19 +31,27 @@ our $VERSION = "v3.2.1";
 ################################################################################
 use CSS::Sass qw(import_sv);
 ################################################################################
-sub new { import_sv($_[1]) }
-
-
-################################################################################
-package CSS::Sass::Type::Null;
-################################################################################
-use base 'CSS::Sass::Type';
-################################################################################
 use overload '""' => 'stringify';
 use overload 'eq' => 'equals';
 use overload '==' => 'equals';
 use overload 'ne' => 'nequals';
 use overload '!=' => 'nequals';
+################################################################################
+
+sub new { import_sv($_[1]) }
+sub clone { import_sv($_[0]) }
+
+# default implementations
+sub quoted { shift->stringify(@_) }
+
+# generic implementations
+sub equals { $_[0]->stringify eq $_[1] ? 1 : 0; }
+sub nequals { $_[0]->equals($_[1]) ? 0 : 1; }
+
+################################################################################
+package CSS::Sass::Type::Null;
+################################################################################
+use base 'CSS::Sass::Type';
 ################################################################################
 
 sub new {
@@ -64,14 +72,14 @@ package CSS::Sass::Type::Error;
 ################################################################################
 use base 'CSS::Sass::Type';
 ################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
-################################################################################
 
 sub new {
 	my ($class, @msg) = @_;
 	bless \\ [ @msg ], $class;
 }
+
+# cloning through sass.xs does not work?
+# sub clone { bless \\ [ @{${${$_[0]}}} ] }
 
 sub message {
 	wantarray ? @{${${$_[0]}}} :
@@ -84,17 +92,10 @@ sub stringify {
 	  : "error";
 }
 
-sub equals {
-	shift->stringify eq $_[0]
-}
-
 ################################################################################
 package CSS::Sass::Type::Boolean;
 ################################################################################
 use base 'CSS::Sass::Type';
-################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
 ################################################################################
 
 sub new {
@@ -114,26 +115,17 @@ sub stringify {
 	shift->value ? "true" : "false";
 }
 
-sub equals {
-	shift->stringify eq $_[0]
-}
-
 ################################################################################
 package CSS::Sass::Type::String;
 ################################################################################
 use base 'CSS::Sass::Type';
 ################################################################################
-use CSS::Sass qw(quote unquote);
-################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
+use CSS::Sass qw(quote);
 ################################################################################
 
 sub new {
 	my ($class, $string) = @_;
 	$string = "" unless defined $string;
-	# we may can unquote the string!
-	# should we really do this here?
 	bless \ $string, $class;
 }
 
@@ -141,25 +133,22 @@ sub value {
 	if (scalar(@_) > 1) {
 		${$_[0]} = defined $_[1] ? $_[1] : "";
 	}
-	defined ${$_[0]} ? unquote(${$_[0]}) : "";
+	defined ${$_[0]} ? ${$_[0]} : "";
 }
 
 sub stringify {
 	$_ = shift->value;
-	m/^\w*$/ ? $_ : quote($_);
+	m/^\w*$/ ? $_ : $_;
 }
 
-sub equals {
-	shift->stringify eq $_[0]
+sub quoted {
+	quote($_[0]);
 }
 
 ################################################################################
 package CSS::Sass::Type::Number;
 ################################################################################
 use base 'CSS::Sass::Type';
-################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
 ################################################################################
 
 sub new {
@@ -187,17 +176,10 @@ sub stringify {
 	sprintf "%g%s", @{${$_[0]}};
 }
 
-sub equals {
-	shift->stringify eq $_[0]
-}
-
 ################################################################################
 package CSS::Sass::Type::Color;
 ################################################################################
 use base 'CSS::Sass::Type';
-################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
 ################################################################################
 
 sub new {
@@ -234,18 +216,13 @@ sub stringify {
 	}
 }
 
-sub equals {
-	shift->stringify eq $_[0]
-}
-
 
 ################################################################################
 package CSS::Sass::Type::Map;
 ################################################################################
 use base 'CSS::Sass::Type';
 ################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
+use CSS::Sass qw(quote);
 ################################################################################
 
 sub new {
@@ -261,11 +238,7 @@ sub keys { CORE::keys %{$_[0]} }
 sub values { CORE::values %{$_[0]} }
 
 sub stringify {
-	join ', ', map { join ": ", $_, $_[0]->{$_} } CORE::keys %{$_[0]};
-}
-
-sub equals {
-	shift->stringify eq $_[0]
+	join ', ', map { join ": ", quote($_), quote($_[0]->{$_}) } CORE::keys %{$_[0]};
 }
 
 
@@ -274,8 +247,7 @@ package CSS::Sass::Type::List;
 ################################################################################
 use base 'CSS::Sass::Type';
 ################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
+use CSS::Sass qw(SASS_COMMA);
 ################################################################################
 
 sub new {
@@ -286,8 +258,42 @@ sub new {
 
 sub values { @{$_[0]} }
 
-sub stringify { join ', ', @{$_[0]} }
-sub equals { shift->stringify eq $_[0] }
+sub listjoint { ', ' }
+sub separator { return SASS_COMMA }
+
+sub stringify
+{
+	join $_[0]->listjoint,
+		map { ref $_ ? $_->quoted : $_ }
+		@{$_[0]};
+}
+
+# ignore different separators
+# they have different stringifies
+# so we must overload generic method
+sub equals {
+	# compare to native type
+	unless (ref $_[1]) {
+		return $_[0]->stringify eq $_[1]
+	}
+	# compare to another list (compore arrays)
+	elsif ($_[1]->isa('CSS::Sass::Type::List')) {
+		# both arrays must have same length
+		return 0 if $#{$_[0]} != $#{$_[1]};
+		# all items must be equal to the other items
+		for (my ($i, $L) = (0, scalar(@{$_[0]})); $i < $L; $i++)
+		{ return 0 if $_[0]->[$i] ne $_[1]->[$i]; }
+		# no diffs
+		return 1;
+	}
+	# other value
+	else
+	{
+		return 0;
+		# is always false
+		# $_[0] !== $_[1];
+	}
+}
 
 ################################################################################
 package CSS::Sass::Type::List::Comma;
@@ -298,7 +304,7 @@ use CSS::Sass qw(SASS_COMMA);
 ################################################################################
 sub new { shift->SUPER::new(@_) }
 sub separator { return SASS_COMMA }
-sub stringify { join ', ', @{$_[0]} }
+sub listjoint { ', ' }
 
 ################################################################################
 package CSS::Sass::Type::List::Space;
@@ -309,7 +315,7 @@ use CSS::Sass qw(SASS_SPACE);
 ################################################################################
 sub new { shift->SUPER::new(@_) }
 sub separator { return SASS_SPACE }
-sub stringify { join ' ', @{$_[0]} }
+sub listjoint { ' ' }
 
 ################################################################################
 package CSS::Sass::Type;
@@ -385,19 +391,19 @@ It only implements a generic constructor, which accepts native perl data types
 =head2 CSS::Sass::Type::Map
 
     my $map = CSS::Sass::Type::Map->new(key => 'value');
-    my $string = "$map"; # eq 'key: value'
-    my $value = $map->{'key'}; # eq 'value'
+    my $string = "$map"; # eq 'key: "value"'
+    my $value = $map->{'key'}; # eq '"value"'
 
 =head2 CSS::Sass::Type::List::Comma
 
     my $list = CSS::Sass::Type::List::Comma->new('foo', 'bar');
-    my $string = "$list"; # eq 'foo, bar'
+    my $string = "$list"; # eq '"foo", "bar"'
     my $value = $list->[0]; # eq 'foo'
 
 =head2 CSS::Sass::Type::List::Space
 
     my $list = CSS::Sass::Type::List::Space->new('foo', 'bar');
-    my $string = "$list"; # eq 'foo bar'
+    my $string = "$list"; # eq '"foo" "bar"'
     my $value = $list->[-1]; # eq 'bar'
 
 =head1 SEE ALSO
@@ -406,7 +412,7 @@ L<CSS::Sass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>  
+David Caldwell E<lt>david@porkrind.orgE<gt>
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE
