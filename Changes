@@ -1,3 +1,10 @@
+CSS::Sass (3.2.2)
+
+  * Update to latest libsass release (3.2.4)
+  * Rename CSS::Sass::Type to CSS::Sass::Value
+  * Old namespace is still supported ("linked")
+  * Add more overload operators for sass values
+
 CSS::Sass (3.2.1)
 
   * Update some outdated documentation

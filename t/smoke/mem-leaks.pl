@@ -30,17 +30,17 @@ $sass->options->{'sass_functions'}->{'var-pl-map'} = sub { return { foo => 'bar'
 $sass->options->{'sass_functions'}->{'var-pl-list'} = sub { return [ 'foo', 'bar', 'baz' ] };
 $sass->options->{'sass_functions'}->{'var-pl-die'} = sub { die "died in function" };
 
-$sass->options->{'sass_functions'}->{'var-pl-new-nil'} = sub { return CSS::Sass::Type::Null->new };
-$sass->options->{'sass_functions'}->{'var-pl-new-int'} = sub { return CSS::Sass::Type::Number->new(42) };
-$sass->options->{'sass_functions'}->{'var-pl-new-dbl'} = sub { return CSS::Sass::Type::Number->new(4.2) };
-$sass->options->{'sass_functions'}->{'var-pl-new-str'} = sub { return CSS::Sass::Type::String->new('foobar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-map'} = sub { return CSS::Sass::Type::Map->new(foo => 'bar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-list-comma'} = sub { return CSS::Sass::Type::List::Comma->new('foo', 'bar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-list-space'} = sub { return CSS::Sass::Type::List::Space->new('foo', 'bar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-error'} = sub { return CSS::Sass::Type::Error->new('message') };
-$sass->options->{'sass_functions'}->{'var-pl-new-boolean'} = sub { return CSS::Sass::Type::Boolean->new(1) };
+$sass->options->{'sass_functions'}->{'var-pl-new-nil'} = sub { return CSS::Sass::Value::Null->new };
+$sass->options->{'sass_functions'}->{'var-pl-new-int'} = sub { return CSS::Sass::Value::Number->new(42) };
+$sass->options->{'sass_functions'}->{'var-pl-new-dbl'} = sub { return CSS::Sass::Value::Number->new(4.2) };
+$sass->options->{'sass_functions'}->{'var-pl-new-str'} = sub { return CSS::Sass::Value::String->new('foobar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-map'} = sub { return CSS::Sass::Value::Map->new(foo => 'bar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-list-comma'} = sub { return CSS::Sass::Value::List::Comma->new('foo', 'bar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-list-space'} = sub { return CSS::Sass::Value::List::Space->new('foo', 'bar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-error'} = sub { return CSS::Sass::Value::Error->new('message') };
+$sass->options->{'sass_functions'}->{'var-pl-new-boolean'} = sub { return CSS::Sass::Value::Boolean->new(1) };
 
-$sass->options->{'sass_functions'}->{'var-pipe($val)'} = sub { return CSS::Sass::Type->new($_[0]) };
+$sass->options->{'sass_functions'}->{'var-pipe($val)'} = sub { return CSS::Sass::Value->new($_[0]) };
 $sass->options->{'sass_functions'}->{'var-pipe2($val)'} = sub { return $_[0] };
 
 my $mem_usage = -e "/proc/$$/status" ? 0 : -1;
@@ -116,46 +116,46 @@ sub run_sass_value_test
 		my $css = sass2scss("A\n  color: red;");
 		my $quoted = quote("I am a string");
 		my $unquote = unquote("'I am a string'");
-		$quoted = quote(CSS::Sass::Type->new("I am a string"));
-		$unquote = unquote(CSS::Sass::Type->new("I am a string"));
-		$unquote = unquote(CSS::Sass::Type->new("'I am a string'"));
-		$quoted = quote(quote(CSS::Sass::Type->new("'I am a string'")));
+		$quoted = quote(CSS::Sass::Value->new("I am a string"));
+		$unquote = unquote(CSS::Sass::Value->new("I am a string"));
+		$unquote = unquote(CSS::Sass::Value->new("'I am a string'"));
+		$quoted = quote(quote(CSS::Sass::Value->new("'I am a string'")));
 	}
 
 	my $foo = undef;
 
 	# force stringification
-	$foo = CSS::Sass::Type->new(undef);
-	$foo = CSS::Sass::Type->new(42.35);
-	$foo = CSS::Sass::Type->new("foobar");
-	$foo = CSS::Sass::Type::Map->new("key" => "foobar");
-	$foo = CSS::Sass::Type::List->new("foo baz", 42, "bar");
-	$foo = CSS::Sass::Type::List::Comma->new("foo", "bar");
-	$foo = CSS::Sass::Type::List::Space->new("foo", "bar");
+	$foo = CSS::Sass::Value->new(undef);
+	$foo = CSS::Sass::Value->new(42.35);
+	$foo = CSS::Sass::Value->new("foobar");
+	$foo = CSS::Sass::Value::Map->new("key" => "foobar");
+	$foo = CSS::Sass::Value::List->new("foo baz", 42, "bar");
+	$foo = CSS::Sass::Value::List::Comma->new("foo", "bar");
+	$foo = CSS::Sass::Value::List::Space->new("foo", "bar");
 
-	my $null = CSS::Sass::Type::Null->new;
-	my $bool = CSS::Sass::Type::Boolean->new();
-	my $bool_null = CSS::Sass::Type::Boolean->new(undef);
-	my $bool_true = CSS::Sass::Type::Boolean->new(1);
-	my $bool_false = CSS::Sass::Type::Boolean->new(0);
-	my $string = CSS::Sass::Type::String->new();
-	my $string_null = CSS::Sass::Type::String->new(undef);
-	my $string_foobar = CSS::Sass::Type::String->new('foobar');
-	my $number = CSS::Sass::Type::Number->new();
-	my $number_null = CSS::Sass::Type::Number->new(undef);
-	my $number_42 = CSS::Sass::Type::Number->new(42);
-	my $number_px = CSS::Sass::Type::Number->new(42, 'px');
-	my $number_percent = CSS::Sass::Type::Number->new(42, '%');
-	my $color = CSS::Sass::Type::Color->new();
-	my $color_rgb = CSS::Sass::Type::Color->new(42, 43, 44);
-	my $color_rgba = CSS::Sass::Type::Color->new(1, 2, 3, 0.4);
-	my $color_trans = CSS::Sass::Type::Color->new(255, 0, 128, 0);
-	my $list = CSS::Sass::Type::List->new('foo', 'bar');
-	my $list_comma = CSS::Sass::Type::List::Comma->new('foo', 'bar', 'baz');
-	my $list_space = CSS::Sass::Type::List::Space->new('foo', 'bar', 'baz');
-	my $map = CSS::Sass::Type::Map->new('foo' => 'bar');
-	my $error = CSS::Sass::Type::Error->new();
-	my $error_msg = CSS::Sass::Type::Error->new('message');
+	my $null = CSS::Sass::Value::Null->new;
+	my $bool = CSS::Sass::Value::Boolean->new();
+	my $bool_null = CSS::Sass::Value::Boolean->new(undef);
+	my $bool_true = CSS::Sass::Value::Boolean->new(1);
+	my $bool_false = CSS::Sass::Value::Boolean->new(0);
+	my $string = CSS::Sass::Value::String->new();
+	my $string_null = CSS::Sass::Value::String->new(undef);
+	my $string_foobar = CSS::Sass::Value::String->new('foobar');
+	my $number = CSS::Sass::Value::Number->new();
+	my $number_null = CSS::Sass::Value::Number->new(undef);
+	my $number_42 = CSS::Sass::Value::Number->new(42);
+	my $number_px = CSS::Sass::Value::Number->new(42, 'px');
+	my $number_percent = CSS::Sass::Value::Number->new(42, '%');
+	my $color = CSS::Sass::Value::Color->new();
+	my $color_rgb = CSS::Sass::Value::Color->new(42, 43, 44);
+	my $color_rgba = CSS::Sass::Value::Color->new(1, 2, 3, 0.4);
+	my $color_trans = CSS::Sass::Value::Color->new(255, 0, 128, 0);
+	my $list = CSS::Sass::Value::List->new('foo', 'bar');
+	my $list_comma = CSS::Sass::Value::List::Comma->new('foo', 'bar', 'baz');
+	my $list_space = CSS::Sass::Value::List::Space->new('foo', 'bar', 'baz');
+	my $map = CSS::Sass::Value::Map->new('foo' => 'bar');
+	my $error = CSS::Sass::Value::Error->new();
+	my $error_msg = CSS::Sass::Value::Error->new('message');
 
 	my $css_tst = $sass->compile('A { color: red; }');
 	my $css_nil1 = $sass->compile('A { color: var-pl-nil(); }');

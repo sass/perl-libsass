@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 499;
+use Test::More tests => 518;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -21,14 +21,13 @@ use CSS::Sass qw(SASS_MAP);
 use CSS::Sass qw(SASS_COMMA);
 use CSS::Sass qw(SASS_SPACE);
 
-
 sub test_bool
 {
 
 	# test internal (xs) data structure of a boolean
 	ok UNIVERSAL::isa($_[0], 'REF'), "boolean type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'SCALAR'), "boolean type points to a scalar";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Boolean'), "boolean has correct package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::Boolean'), "boolean has correct package";
 
 	# test the representation of the value (should never be undef)
 	like ${${$_[0]}}, qr/^[01]$/, "boolean value matches specified type";
@@ -41,7 +40,7 @@ sub test_null
 	# test internal (xs) data structure of a null
 	ok UNIVERSAL::isa($_[0], 'REF'), "null type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'SCALAR'), "null type points to a scalar";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Null'), "null has correct package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::Null'), "null has correct package";
 
 	is $_[0] eq undef, 1, "null equals to undef";
 	is $_[0] ne undef, 0, "null not equals undef";
@@ -60,7 +59,7 @@ sub test_string
 
 	# test internal (xs) data structure of a string
 	ok UNIVERSAL::isa($_[0], 'SCALAR'), "string type points to a scalar";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::String'), "string type has package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::String'), "string type has package";
 
 	my $clone = $_[0]->clone;
 	is $_[0] eq $clone, 1, "string is stringify equal to its clone";
@@ -79,7 +78,7 @@ sub test_number
 	# test internal (xs) data structure of a boolean
 	ok UNIVERSAL::isa($_[0], 'REF'), "number type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'ARRAY'), "number type points to array";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Number'), "number has correct package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::Number'), "number has correct package";
 
 	my $clone = $_[0]->clone;
 	is $_[0] eq $clone, 1, "number is stringify equal to its clone";
@@ -95,7 +94,7 @@ sub test_color
 	# test internal (xs) data structure of a boolean
 	ok UNIVERSAL::isa($_[0], 'REF'), "color type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'HASH'), "color type points to hash";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Color'), "color has correct package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::Color'), "color has correct package";
 
 	my $clone = $_[0]->clone;
 	# warn $clone;
@@ -111,7 +110,7 @@ sub test_map
 
 	# test internal (xs) data structure of a map
 	ok UNIVERSAL::isa($_[0], 'HASH'), "map type points to hash";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Map'), "map type has package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::Map'), "map type has package";
 
 	my $clone = $_[0]->clone;
 	is $_[0] eq $clone, 1, "map is stringify equal to its clone";
@@ -126,7 +125,7 @@ sub test_list
 
 	# test internal (xs) data structure of a list
 	ok UNIVERSAL::isa($_[0], 'ARRAY'), "map type points to array";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::List'), "map type has package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::List'), "map type has package";
 
 	my $clone = $_[0]->clone;
 	is $_[0] eq $clone, 1, "list is stringify equal to its clone";
@@ -141,7 +140,7 @@ sub test_error
 
 	ok UNIVERSAL::isa($_[0], 'REF'), "error type is a reference";
 	ok UNIVERSAL::isa(${$_[0]}, 'REF'), "error type points to a scalar";
-	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Type::Error'), "error has correct package";
+	ok UNIVERSAL::isa($_[0], 'CSS::Sass::Value::Error'), "error has correct package";
 
 	my $clone = $_[0]->clone;
 	is $_[0] eq $clone, 1, "error is stringify equal to its clone";
@@ -153,63 +152,66 @@ sub test_error
 
 ################################################################################
 
-test_null(CSS::Sass::Type->new());
-test_null(CSS::Sass::Type->new(undef));
-test_number(CSS::Sass::Type->new(42));
-test_string(CSS::Sass::Type->new("foobar"));
-test_list(CSS::Sass::Type->new([ "foo", "bar" ]));
-test_map(CSS::Sass::Type->new({ "foo" => "bar" }));
-test_null(CSS::Sass::Type->new(\[ "foobar" ]));
-test_error(CSS::Sass::Type->new(\\[ "foobar" ]));
-my $err = CSS::Sass::Type->new(\\[ "foobar" ]);
+test_null(CSS::Sass::Value->new());
+test_null(CSS::Sass::Value->new(undef));
+test_number(CSS::Sass::Value->new(42));
+test_string(CSS::Sass::Value->new("foobar"));
+test_list(CSS::Sass::Value->new([ "foo", "bar" ]));
+test_map(CSS::Sass::Value->new({ "foo" => "bar" }));
+test_null(CSS::Sass::Value->new(\[ "foobar" ]));
+test_error(CSS::Sass::Value->new(\\[ "foobar" ]));
+my $err = CSS::Sass::Value->new(\\[ "foobar" ]);
 is $err->message, "foobar", "error correctly parsed";
 
 # force stringification
-is "" . CSS::Sass::Type->new(undef), "null", "null stringify ok";
-is "" . CSS::Sass::Type->new(42.35), "42.35", "number stringify ok";
-is "" . CSS::Sass::Type->new(42.35)->unit, "", "number unit ok";
-is "" . CSS::Sass::Type->new(42.35)->value, "42.35", "number value ok";
-is "" . CSS::Sass::Type->new("foobar"), "foobar", "string stringify ok";
-is "" . CSS::Sass::Type->new({ "key" => "foobar" }), '"key": "foobar"', "map stringify ok";
-is "" . CSS::Sass::Type->new([ "foo baz", 42, "bar" ]), '"foo baz", 42, "bar"', "list stringify ok";
-is "" . CSS::Sass::Type->new(["foo", "bar"]), '"foo", "bar"', "list comma stringify ok";
+is (CSS::Sass::Value->new(undef) . "", "null", "null stringify ok");
+is (CSS::Sass::Value->new(42.35), "42.35", "number stringify ok");
+is (CSS::Sass::Value->new(42.35)->unit, "", "number unit ok");
+is (CSS::Sass::Value->new(42.35)->value, "42.35", "number value ok");
+is (CSS::Sass::Value->new("foobar"), "foobar", "string stringify ok");
+is (CSS::Sass::Value->new("foo bar"), '"foo bar"', "string stringify ok");
+is (CSS::Sass::Value->new({ "key" => "foobar" }), '{ key: foobar }', "map stringify ok");
+is (CSS::Sass::Value->new([ "foo baz", 42, "bar" ]), '[ "foo baz", 42, bar ]', "list stringify ok");
+is (CSS::Sass::Value->new(["foo", "bar"]), '[ foo, bar ]', "list comma stringify ok");
 
 # force stringification
-is "" . CSS::Sass::Type::Null->new(undef), "null", "null stringify ok";
-is "" . CSS::Sass::Type::Number->new(42.35), "42.35", "null stringify ok";
-is "" . CSS::Sass::Type::String->new("foobar"), "foobar", "null stringify ok";
-is "" . CSS::Sass::Type::Map->new("key" => "foobar"), '"key": "foobar"', "map stringify ok";
-is "" . CSS::Sass::Type::List->new("foo baz", 42, "bar"), '"foo baz", 42, "bar"', "list stringify ok";
-is "" . CSS::Sass::Type::List::Comma->new("foo", "bar"), '"foo", "bar"', "list comma stringify ok";
-is "" . CSS::Sass::Type::List::Space->new("foo", "bar"), '"foo" "bar"', "list space stringify ok";
+is (CSS::Sass::Value::Null->new(undef) . "", "null", "null stringify ok");
+is (CSS::Sass::Value::Number->new(42.35), "42.35", "number stringify ok");
+is (CSS::Sass::Value::String->new("foobar"), "foobar", "string stringify ok");
+is (CSS::Sass::Value::String::Quoted->new("foobar"), "\"foobar\"", "string stringify ok");
+is (CSS::Sass::Value::String::Constant->new("foo bar"), "foo bar", "string stringify ok");
+is (CSS::Sass::Value::Map->new("key" => "foobar"), '{ key: foobar }', "map stringify ok");
+is (CSS::Sass::Value::List->new("foo baz", 42, "bar"), '[ "foo baz", 42, bar ]', "list stringify ok");
+is (CSS::Sass::Value::List::Comma->new("foo", "bar"), '[ foo, bar ]', "list comma stringify ok");
+is (CSS::Sass::Value::List::Space->new("foo", "bar"), '[ foo bar ]', "list space stringify ok");
 
 ################################################################################
 ################################################################################
 
-my $null = CSS::Sass::Type::Null->new;
-my $bool = CSS::Sass::Type::Boolean->new();
-my $bool_null = CSS::Sass::Type::Boolean->new(undef);
-my $bool_true = CSS::Sass::Type::Boolean->new(1);
-my $bool_false = CSS::Sass::Type::Boolean->new(0);
-my $string = CSS::Sass::Type::String->new();
-my $string_null = CSS::Sass::Type::String->new(undef);
-my $string_foobar = CSS::Sass::Type::String->new('foobar');
-my $number = CSS::Sass::Type::Number->new();
-my $number_null = CSS::Sass::Type::Number->new(undef);
-my $number_42 = CSS::Sass::Type::Number->new(42);
-my $number_px = CSS::Sass::Type::Number->new(42, 'px');
-my $number_percent = CSS::Sass::Type::Number->new(42, '%');
-my $color = CSS::Sass::Type::Color->new();
-my $color_rgb = CSS::Sass::Type::Color->new(42, 43, 44);
-my $color_rgba = CSS::Sass::Type::Color->new(1, 2, 3, 0.4);
-my $color_trans = CSS::Sass::Type::Color->new(255, 0, 128, 0);
-my $list = CSS::Sass::Type::List->new('foo', 'bar');
-my $list_comma = CSS::Sass::Type::List::Comma->new('foo', 'bar', 'baz');
-my $list_space = CSS::Sass::Type::List::Space->new('foo', 'bar', 'baz');
-my $map = CSS::Sass::Type::Map->new('foo' => 'bar');
-my $error = CSS::Sass::Type::Error->new();
-my $error_msg = CSS::Sass::Type::Error->new('message');
-my $regex = CSS::Sass::Type->new(qr/regex/);
+my $null = CSS::Sass::Value::Null->new;
+my $bool = CSS::Sass::Value::Boolean->new();
+my $bool_null = CSS::Sass::Value::Boolean->new(undef);
+my $bool_true = CSS::Sass::Value::Boolean->new(1);
+my $bool_false = CSS::Sass::Value::Boolean->new(0);
+my $string = CSS::Sass::Value::String->new();
+my $string_null = CSS::Sass::Value::String->new(undef);
+my $string_foobar = CSS::Sass::Value::String->new('foobar');
+my $number = CSS::Sass::Value::Number->new();
+my $number_null = CSS::Sass::Value::Number->new(undef);
+my $number_42 = CSS::Sass::Value::Number->new(42);
+my $number_px = CSS::Sass::Value::Number->new(42, 'px');
+my $number_percent = CSS::Sass::Value::Number->new(42, '%');
+my $color = CSS::Sass::Value::Color->new();
+my $color_rgb = CSS::Sass::Value::Color->new(42, 43, 44);
+my $color_rgba = CSS::Sass::Value::Color->new(1, 2, 3, 0.4);
+my $color_trans = CSS::Sass::Value::Color->new(255, 0, 128, 0);
+my $list = CSS::Sass::Value::List->new('foo', 'bar');
+my $list_comma = CSS::Sass::Value::List::Comma->new('foo', 'bar', 'baz');
+my $list_space = CSS::Sass::Value::List::Space->new('foo', 'bar', 'baz');
+my $map = CSS::Sass::Value::Map->new('foo' => 'bar');
+my $error = CSS::Sass::Value::Error->new();
+my $error_msg = CSS::Sass::Value::Error->new('message');
+my $regex = CSS::Sass::Value->new(qr/regex/);
 
 ################################################################################
 
@@ -307,18 +309,18 @@ test_list($list);
 test_list($list_comma);
 test_list($list_space);
 
-is $list, '"foo", "bar"', "list stringify is correct";
+is $list, '[ foo, bar ]', "list stringify is correct";
 is $list->[0], 'foo', "list[0] is correct";
 is $list->[1], 'bar', "list[1] is correct";
 is $list->[-1], 'bar', "list[-1] is correct";
 
-is $list_comma, '"foo", "bar", "baz"', "list_comma stringify is correct";
+is $list_comma, '[ foo, bar, baz ]', "list_comma stringify is correct";
 is $list_comma->[0], 'foo', "list_comma[0] is correct";
 is $list_comma->[1], 'bar', "list_comma[1] is correct";
 is $list_comma->[2], 'baz', "list_comma[2] is correct";
 is $list_comma->[-1], 'baz', "list_comma[-1] is correct";
 
-is $list_space, '"foo" "bar" "baz"', "list_space stringify is correct";
+is $list_space, '[ foo bar baz ]', "list_space stringify is correct";
 is $list_space->[0], 'foo', "list_space[0] is correct";
 is $list_space->[1], 'bar', "list_space[1] is correct";
 is $list_space->[2], 'baz', "list_space[2] is correct";
@@ -332,7 +334,7 @@ is $list_space->separator, SASS_SPACE, "space separator method works";
 
 test_map($map);
 
-is $map, '"foo": "bar"', "map stringify is correct";
+is $map, '{ foo: bar }', "map stringify is correct";
 is $map->{'foo'}, 'bar', "map->foo is correct";
 
 is join("", $map->keys), "foo", "map keys method works";
@@ -359,6 +361,39 @@ SKIP: {
 ################################################################################
 ################################################################################
 
+my $bar = CSS::Sass::Value::String->new('bar');
+my $bar_c1 = CSS::Sass::Value::String->new('bar', 0);
+my $bar_q1 = CSS::Sass::Value::String->new('bar', 1);
+my $bar_c2 = CSS::Sass::Value::String::Constant->new('bar');
+my $bar_q2 = CSS::Sass::Value::String::Quoted->new('bar');
+
+my $bar_3 = CSS::Sass::Value::String->new('b a r');
+my $bar_c3 = CSS::Sass::Value::String::Constant->new('b a r');
+my $bar_q3 = CSS::Sass::Value::String::Quoted->new('b a r');
+
+is $bar . "baz", "barbaz", "string concat test #01";
+is $bar_c1 . "baz", "barbaz", "string concat test #02";
+is $bar_q1 . "baz", '"barbaz"', "string concat test #03";
+is $bar_c2 . "baz", "barbaz", "string concat test #04";
+is $bar_q2 . "baz", '"barbaz"', "string concat test #05";
+
+is "foo" . $bar . "baz", "foobarbaz", "string concat test #06";
+is "foo" . $bar_c1 . "baz", "foobarbaz", "string concat test #07";
+is "foo" . $bar_q1 . "baz", 'foobarbaz', "string concat test #08";
+is "foo" . $bar_c2 . "baz", "foobarbaz", "string concat test #09";
+is "foo" . $bar_q2 . "baz", 'foobarbaz', "string concat test #10";
+
+is $bar_3 . "baz", "b a rbaz", "string concat test #01";
+is $bar_c3 . "baz", "b a rbaz", "string concat test #02";
+is $bar_q3 . "baz", '"b a rbaz"', "string concat test #03";
+
+is "foo" . $bar_3 . "baz", 'foob a rbaz', "string concat test #11";
+is "foo" . $bar_c3 . "baz", "foob a rbaz", "string concat test #12";
+is "foo" . $bar_q3 . "baz", 'foob a rbaz', "string concat test #13";
+
+################################################################################
+################################################################################
+
 my $sass = CSS::Sass->new;
 
 use CSS::Sass qw(SASS_SPACE SASS_COMMA SASS_STYLE_COMPRESSED);
@@ -373,15 +408,15 @@ $sass->options->{'sass_functions'}->{'var-pl-list'} = sub { return [ 'foo', 'bar
 $sass->options->{'sass_functions'}->{'var-pl-die'} = sub { die "died in function" };
 $sass->options->{'sass_functions'}->{'var-pl-regex'} = sub { qr/foobar/ };
 
-$sass->options->{'sass_functions'}->{'var-pl-new-nil'} = sub { return CSS::Sass::Type::Null->new };
-$sass->options->{'sass_functions'}->{'var-pl-new-int'} = sub { return CSS::Sass::Type::Number->new(42) };
-$sass->options->{'sass_functions'}->{'var-pl-new-dbl'} = sub { return CSS::Sass::Type::Number->new(4.2) };
-$sass->options->{'sass_functions'}->{'var-pl-new-str'} = sub { return CSS::Sass::Type::String->new('foobar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-map'} = sub { return CSS::Sass::Type::Map->new(foo => 'bar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-list-comma'} = sub { return CSS::Sass::Type::List::Comma->new('foo', 'bar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-list-space'} = sub { return CSS::Sass::Type::List::Space->new('foo', 'bar') };
-$sass->options->{'sass_functions'}->{'var-pl-new-error'} = sub { return CSS::Sass::Type::Error->new('message') };
-$sass->options->{'sass_functions'}->{'var-pl-new-boolean'} = sub { return CSS::Sass::Type::Boolean->new(1) };
+$sass->options->{'sass_functions'}->{'var-pl-new-nil'} = sub { return CSS::Sass::Value::Null->new };
+$sass->options->{'sass_functions'}->{'var-pl-new-int'} = sub { return CSS::Sass::Value::Number->new(42) };
+$sass->options->{'sass_functions'}->{'var-pl-new-dbl'} = sub { return CSS::Sass::Value::Number->new(4.2) };
+$sass->options->{'sass_functions'}->{'var-pl-new-str'} = sub { return CSS::Sass::Value::String->new('foobar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-map'} = sub { return CSS::Sass::Value::Map->new(foo => 'bar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-list-comma'} = sub { return CSS::Sass::Value::List::Comma->new('foo', 'bar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-list-space'} = sub { return CSS::Sass::Value::List::Space->new('foo', 'bar') };
+$sass->options->{'sass_functions'}->{'var-pl-new-error'} = sub { return CSS::Sass::Value::Error->new('message') };
+$sass->options->{'sass_functions'}->{'var-pl-new-boolean'} = sub { return CSS::Sass::Value::Boolean->new(1) };
 
 ################################################################################
 # basic test if functions can return unblessed types
@@ -501,12 +536,12 @@ like $@, qr/message/, "returning an error dies within sass";
 
 ################################################################################
 
-$list = CSS::Sass::Type::List->new("'foo'", 42, "bar");
+$list = CSS::Sass::Value::List->new("'foo'", 42, "bar");
 is $list->[0]->value, "'foo'", "string in list was upgraded correctly";
 is $list->[1]->unit, "", "number in list was upgraded correctly";
 is $list->[2]->value, "bar", "string in list was upgraded correctly";
 
-$list = CSS::Sass::Type::Map->new(key => "'foo'", bar => 42);
+$list = CSS::Sass::Value::Map->new(key => "'foo'", bar => 42);
 is $list->{'key'}->value, "'foo'", "string in map was upgraded correctly";
 is $list->{'bar'}->unit, "", "number in map was upgraded correctly";
 

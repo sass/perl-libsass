@@ -25,6 +25,30 @@
 
 #undef free
 
+// implement this logic here for now
+// libsass has no auto quoting concept
+bool sass_string_need_quotes(char* str)
+{
+    char* it = str;
+    if (*it == 0) return false;
+    if (!(
+        (*it >= 'a' && *it <= 'z') ||
+        (*it >= 'A' && *it <= 'Z')
+    )) return false;
+    ++it;
+    while (*it) {
+        if (!(
+            (*it >= 127) ||
+            (*it >= '0' && *it <= '9') ||
+            (*it >= 'a' && *it <= 'z') ||
+            (*it >= 'A' && *it <= 'Z') ||
+            (*it == '\\' && *(it+1) != 0)
+        )) return true;
+        ++it;
+    }
+    return false;
+}
+
 char* safe_svpv(SV* sv, char* _default)
 {
 
@@ -73,9 +97,17 @@ union Sass_Value* sv_to_sass_value(SV* sv)
         }
         // perl string
         else if (SvPOK(sv)) { // i.e. "foobar"
+            char* str = SvPV_nolen(sv);
             // coerce all other scalars into a string
             // IMO there should only be strings left!?
-            return sass_make_string(SvPV_nolen(sv));
+            if (sv_derived_from(org, "CSS::Sass::Value::String::Quoted"))
+            { return sass_make_qstring(str); }
+            else if (sv_derived_from(org, "CSS::Sass::Value::String"))
+            { return sass_make_string(str); }
+            // perl-libsass specific behavior
+            if (sass_string_need_quotes(str))
+            { return sass_make_qstring(str); }
+            else { return sass_make_string(str); }
         }
 
         // perl reference
@@ -150,7 +182,7 @@ union Sass_Value* sv_to_sass_value(SV* sv)
         AV* av = (AV*) sv;
         enum Sass_Separator sep = SASS_COMMA;
         // special check for space separated lists
-        if (sv_derived_from(org, "CSS::Sass::Type::List::Space")) sep = SASS_SPACE;
+        if (sv_derived_from(org, "CSS::Sass::Value::List::Space")) sep = SASS_SPACE;
         union Sass_Value* list = sass_make_list(av_len(av) + 1, sep);
         int i;
         for (i = 0; i < sass_list_get_length(list); i++) {
@@ -186,19 +218,20 @@ union Sass_Value* sv_to_sass_value(SV* sv)
 
 SV* new_sv_sass_null () {
     SV* sv = newRV_noinc(newRV_noinc(newSV(0)));
-    sv_bless(sv, gv_stashpv("CSS::Sass::Type::Null", GV_ADD));
+    sv_bless(sv, gv_stashpv("CSS::Sass::Value::Null", GV_ADD));
     return sv;
 }
 
-SV* new_sv_sass_string (SV* string) {
+SV* new_sv_sass_string (SV* string, bool quoted) {
     SV* sv = newRV_noinc(string);
-    sv_bless(sv, gv_stashpv("CSS::Sass::Type::String", GV_ADD));
+    if (quoted) sv_bless(sv, gv_stashpv("CSS::Sass::Value::String::Quoted", GV_ADD));
+    else sv_bless(sv, gv_stashpv("CSS::Sass::Value::String::Constant", GV_ADD));
     return sv;
 }
 
 SV* new_sv_sass_boolean (SV* boolean) {
     SV* sv = newRV_noinc(newRV_noinc(boolean));
-    sv_bless(sv, gv_stashpv("CSS::Sass::Type::Boolean", GV_ADD));
+    sv_bless(sv, gv_stashpv("CSS::Sass::Value::Boolean", GV_ADD));
     return sv;
 }
 
@@ -207,7 +240,7 @@ SV* new_sv_sass_number (SV* number, SV* unit) {
     av_push(array, number);
     av_push(array, unit);
     SV* sv = newRV_noinc(newRV_noinc((SV*) array));
-    sv_bless(sv, gv_stashpv("CSS::Sass::Type::Number", GV_ADD));
+    sv_bless(sv, gv_stashpv("CSS::Sass::Value::Number", GV_ADD));
     return sv;
 }
 
@@ -218,7 +251,7 @@ SV* new_sv_sass_color (SV* r, SV* g, SV* b, SV* a) {
     (void)hv_store(hash, "b", 1, b, 0);
     (void)hv_store(hash, "a", 1, a, 0);
     SV* sv = newRV_noinc(newRV_noinc((SV*) hash));
-    sv_bless(sv, gv_stashpv("CSS::Sass::Type::Color", GV_ADD));
+    sv_bless(sv, gv_stashpv("CSS::Sass::Value::Color", GV_ADD));
     return sv;
 }
 
@@ -226,7 +259,7 @@ SV* new_sv_sass_error (SV* msg) {
     AV* error = newAV();
     av_push(error, msg);
     SV* sv = newRV_noinc(newRV_noinc(newRV_noinc((SV*) error)));
-    sv_bless(sv, gv_stashpv("CSS::Sass::Type::Error", GV_ADD));
+    sv_bless(sv, gv_stashpv("CSS::Sass::Value::Error", GV_ADD));
     return sv;
 }
 
@@ -259,7 +292,8 @@ SV* sass_value_to_sv(union Sass_Value* val)
         }   break;
         case SASS_STRING: {
             sv = new_sv_sass_string(
-                     newSVpv(sass_string_get_value(val), 0)
+                     newSVpv(sass_string_get_value(val), 0),
+                     sass_string_is_quoted(val)
                  );
         }   break;
         case SASS_LIST: {
@@ -267,9 +301,9 @@ SV* sass_value_to_sv(union Sass_Value* val)
             AV* list = newAV();
             sv = newRV_noinc((SV*) list);
             if (sass_list_get_separator(val) == SASS_SPACE) {
-                sv_bless(sv, gv_stashpv("CSS::Sass::Type::List::Space", GV_ADD));
+                sv_bless(sv, gv_stashpv("CSS::Sass::Value::List::Space", GV_ADD));
             } else {
-                sv_bless(sv, gv_stashpv("CSS::Sass::Type::List::Comma", GV_ADD));
+                sv_bless(sv, gv_stashpv("CSS::Sass::Value::List::Comma", GV_ADD));
             }
             for (i=0; i<sass_list_get_length(val); i++)
                 av_push(list, sass_value_to_sv(sass_list_get_value(val, i)));
@@ -278,7 +312,7 @@ SV* sass_value_to_sv(union Sass_Value* val)
             int i;
             HV* map = newHV();
             sv = newRV_noinc((SV*) map);
-            sv_bless(sv, gv_stashpv("CSS::Sass::Type::Map", GV_ADD));
+            sv_bless(sv, gv_stashpv("CSS::Sass::Value::Map", GV_ADD));
             for (i=0; i<sass_map_get_length(val); i++) {
                 // this should return a scalar sv
                 union Sass_Value* key = sass_map_get_key(val, i);
@@ -826,6 +860,42 @@ unquote(str)
         RETVAL = newSVpv(unquoted, 0);
 
         free (unquoted);
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+safequote(str)
+             char* str
+    CODE:
+    {
+
+        if (sass_string_need_quotes(str)) {
+
+            char* string = sass_string_quote(str, '*');
+
+            RETVAL = newSVpv(string, 0);
+
+            free (string);
+
+        } else {
+
+            RETVAL = newSVpv(str, 0);
+
+        }
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+need_quotes(str)
+             char* str
+    CODE:
+    {
+
+      RETVAL = sass_string_need_quotes(str) ? &PL_sv_yes : &PL_sv_no;
 
     }
     OUTPUT:

@@ -18,6 +18,8 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
 	quote
 	unquote
+	safequote
+	need_quotes
 	sass2scss
 	import_sv
 	sass_compile
@@ -50,11 +52,11 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = "v3.2.1";
+our $VERSION = "v3.2.2";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
-require CSS::Sass::Type;
+require CSS::Sass::Value;
 
 sub new
 {
@@ -188,7 +190,7 @@ CSS::Sass - Compile .scss files using libsass
   my $css = $sass->compile_file('styles.scss');
 
   # Add custom function to use inside your Sass code
-  sub foobar { CSS::Sass::Type::String->new('blue') }
+  sub foobar { CSS::Sass::Value::String->new('blue') }
   $sass->options->{sass_functions}->{'foobar'} = \ &foobar;
 
   # Compile string and get css output and source-map json
@@ -427,20 +429,20 @@ This is a hash of Sass functions implemented in Perl. The key for each
 function should be the function's Sass signature and the value should be a
 Perl subroutine reference. This subroutine will be called whenever the
 function is used in the Sass being compiled. The arguments to the subroutine
-are L<CSS::Sass::Type> objects, which map to native perl types if possible.
-You can return either L<CSS::Sass::Type> objects or supported native perl data
-structures. C<undef> is an equivalent of CSS::Sass::Type::Null->new.
+are L<CSS::Sass::Value> objects, which map to native perl types if possible.
+You can return either L<CSS::Sass::Value> objects or supported native perl data
+structures. C<undef> is an equivalent of CSS::Sass::Value::Null->new.
 
 The function is called with an C<eval> statement so you may use "die" to
-throw errors back to libsass (C<CSS::Sass::Type::Error>).
+throw errors back to libsass (C<CSS::Sass::Value::Error>).
 
 A simple example:
 
     sass_functions => {
         'append_hello($str)' => sub {
             my ($str) = @_;
-            die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
-            return CSS::Sass::Type::String->new($str->value . " hello");
+            die '$str should be a string' unless $str->isa("CSS::Sass::Value::String");
+            return CSS::Sass::Value::String->new($str->value . " hello");
             # equivalent to return $str->value . " hello";
         }
     }
@@ -484,11 +486,11 @@ Another highly experimental feature to prepend content on every compilation. It 
 used to predefine mixins or other stuff. Internally the content is really just added to
 the top of the processed data. Custom headers have the same structure as importers. But
 all registered headers are called in the order given by the priority flag.
-	
+
 =item C<Sass_Value> Types
 
 Sass knowns various C<Sass_Value> types. We export the constants for completeness.
-Each type is mapped to a package inside the C<CSS::Sass::Type> namespace.
+Each type is mapped to a package inside the C<CSS::Sass::Value> namespace.
 
     # Value types
     SASS_ERROR
@@ -511,11 +513,11 @@ mapped to C<string>, C<number> or C<null>. You can directly return these
 native data types from your custom functions or use the datastructures
 to access maps and lists.
 
-    undef; # same as CSS::Sass::Type::Null->new;
-    42; # same as CSS::Sass::Type::Number->new(42);
-    "foobar"; # same as CSS::Sass::Type::String->new("foobar");
-    [ 'foo', 'bar' ]; # same as CSS::Sass::Type::List->new('foo', 'bar');
-    { key => 'value' }; # same as CSS::Sass::Type::Map->new(key => 'value');
+    undef; # same as CSS::Sass::Value::Null->new;
+    42; # same as CSS::Sass::Value::Number->new(42);
+    "foobar"; # same as CSS::Sass::Value::String->new("foobar");
+    [ 'foo', 'bar' ]; # same as CSS::Sass::Value::List->new('foo', 'bar');
+    { key => 'value' }; # same as CSS::Sass::Value::Map->new(key => 'value');
 
 We bless native return values from custom functions into the correct package.
 
@@ -574,7 +576,7 @@ automatically recognize the format of your string data.
 
 =head1 SEE ALSO
 
-L<CSS::Sass::Type>
+L<CSS::Sass::Value>
 
 L<The Sass Home Page|http://sass-lang.com/>
 

@@ -6,47 +6,47 @@
 use strict;
 use warnings;
 
-use Test::More tests => 37;
+use Test::More tests => 39;
 
 use CSS::Sass;
 
-#use CSS::Sass::Type;
+require CSS::Sass::Value;
 
 my ($r, $err);
 # Boolean input/output
 ($r, $err) = CSS::Sass::sass_compile('.valid { color: test(false); }',
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::Boolean->new(!shift->value) } } );
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::Boolean->new(!shift->value) } } );
 like  ($r,   qr/color: true;/,                         "Sass function boolean works");
 is    ($err, undef,                                    "Sass function boolean returns no errors");
 
 # Number input/output
 ($r, $err) = CSS::Sass::sass_compile('.valid { color: test(40); }',
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::Number->new(shift->value**2) } } );
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::Number->new(shift->value**2) } } );
 like  ($r,   qr/color: 1600;/,                         "Sass function number works");
 is    ($err, undef,                                    "Sass function number returns no errors");
 
 # Percentage input/output
 ($r, $err) = CSS::Sass::sass_compile('.valid { color: test(40%); }',
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::Number->new(shift->value/2, '%') } } );
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::Number->new(shift->value/2, '%') } } );
 like  ($r,   qr/color: 20%;/,                          "Sass function percentage works");
 is    ($err, undef,                                    "Sass function percentage returns no errors");
 
 # Dimension input/output
 ($r, $err) = CSS::Sass::sass_compile('.valid { color: test(20rods); }',
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::Number->new($_[0]->value*2,
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::Number->new($_[0]->value*2,
                                                                             $_[0]->unit."perhogshead") } } );
 like  ($r,   qr/color: 40rodsperhogshead;/,            "Sass function dimension works");
 is    ($err, undef,                                    "Sass function dimension returns no errors");
 
 # Color input/output
 ($r, $err) = CSS::Sass::sass_compile('.valid { color: test(rgba(40,30,20,.3)); }',
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::Color->new($_[0]->r*2, $_[0]->g*2, $_[0]->b*2, $_[0]->a*2) } } );
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::Color->new($_[0]->r*2, $_[0]->g*2, $_[0]->b*2, $_[0]->a*2) } } );
 like  ($r,   qr/color: rgba\(80, 60, 40, 0.6\);/,      "Sass function color works");
 is    ($err, undef,                                    "Sass function color returns no errors");
 
 # String input/output
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test('x y z'); }",
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[0]->value) } } );
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::String->new($_[0]->value . "_" . $_[0]->value) } } );
 like  ($r,   qr/color: x y z_x y z;/,                  "Sass function string works");
 is    ($err, undef,                                    "Sass function string returns no errors");
 
@@ -59,24 +59,24 @@ like  ($err, qr/Perl Error/,                           "Sass function die return
 
 # List output
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(5%); }",
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::List->new(CSS::Sass::Type::Number->new($_[0]->value * 2, '%'),
-                                                                       CSS::Sass::Type::Number->new($_[0]->value * 3, '%'),
-                                                                       CSS::Sass::Type::Number->new($_[0]->value * 4, '%'))
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::List->new(CSS::Sass::Value::Number->new($_[0]->value * 2, '%'),
+                                                                       CSS::Sass::Value::Number->new($_[0]->value * 3, '%'),
+                                                                       CSS::Sass::Value::Number->new($_[0]->value * 4, '%'))
                                           } } );
 like  ($r,   qr/color: 10%, 15%, 20%;/,                "Sass function comma list works");
 is    ($err, undef,                                    "Sass function comma list returns no errors");
 
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(5%); }",
-    sass_functions => { 'test($x)' => sub { CSS::Sass::Type::List::Space->new(CSS::Sass::Type::Number->new($_[0]->value * 2, '%'),
-                                                                              CSS::Sass::Type::Number->new($_[0]->value * 3, '%'),
-                                                                              CSS::Sass::Type::Number->new($_[0]->value * 4, '%'))
+    sass_functions => { 'test($x)' => sub { CSS::Sass::Value::List::Space->new(CSS::Sass::Value::Number->new($_[0]->value * 2, '%'),
+                                                                              CSS::Sass::Value::Number->new($_[0]->value * 3, '%'),
+                                                                              CSS::Sass::Value::Number->new($_[0]->value * 4, '%'))
                                           } } );
 like  ($r,   qr/color: 10% 15% 20%;/,                  "Sass function space list works");
 is    ($err, undef,                                    "Sass function space list returns no errors");
 
 # List input/output
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(5%,40in,rgba(4,3,2,.5)); }",
-    sass_functions => { 'test($x,$y,$z)' => sub { CSS::Sass::Type::List::Space->new($_[2], $_[1], $_[0]) } });
+    sass_functions => { 'test($x,$y,$z)' => sub { CSS::Sass::Value::List::Space->new($_[2], $_[1], $_[0]) } });
 like  ($r,   qr/color: rgba\(4, 3, 2, 0.5\) 40in 5%;/, "Sass function list i/o works");
 is    ($err, undef,                                    "Sass function list i/o returns no errors");
 
@@ -90,10 +90,14 @@ is    ($err, undef,                                    "Sass function undef retu
 # Testing my example code
 my %sass_func = (
     sass_functions => {
+        'compare($a,$b)' => sub {
+            my ($a, $b) = @_;
+            return $a == $b;
+        },
         'append_hello($str)' => sub {
             my ($str) = @_;
-            die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
-            return CSS::Sass::Type::String->new($str->value . " hello");
+            die '$str should be a string' unless $str->isa("CSS::Sass::Value::String");
+            return CSS::Sass::Value::String->new($str->value . " hello");
         }
     } );
 
@@ -101,39 +105,43 @@ my %sass_func = (
 like  ($r,   qr/some_rule: Well, hello;/,              "Sass function example works");
 is    ($err, undef,                                    "Sass function example returns no errors");
 
+($r, $err) = CSS::Sass::sass_compile('.valid { equals: compare("a", a); }', %sass_func);
+like  ($r,   qr/equals: 1;/,                           "Sass function compare works");
+is    ($err, undef,                                    "Sass function compare returns no errors");
+
 ($r, $err) = CSS::Sass::sass_compile('.valid { some_rule: append_hello(5%); }', %sass_func);
 is    ($r,   undef,                                    "Sass function bad example returns no css");
 like  ($err, qr/should be a string/,                   "Sass function bad example returns informative error message");
 
 # Multiple functions
 ($r, $err) = CSS::Sass::sass_compile('.valid { foo: foo(); bar: bar() }',
-    sass_functions => { 'foo()' => sub { CSS::Sass::Type::Boolean->new(1) },
-                        'bar()' => sub { CSS::Sass::Type::Boolean->new(0) } } );
+    sass_functions => { 'foo()' => sub { CSS::Sass::Value::Boolean->new(1) },
+                        'bar()' => sub { CSS::Sass::Value::Boolean->new(0) } } );
 like  ($r,   qr/foo:\s*true;/,                         "First function worked");
 like  ($r,   qr/bar:\s*false;/,                        "Second function worked");
 is    ($err, undef,                                    "Sass multiple functions test returns no errors");
 
 # One argument
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test('a'); }",
-    sass_functions => { 'test($x, $y: 42)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+    sass_functions => { 'test($x, $y: 42)' => sub { CSS::Sass::Value::String->new($_[0]->value . "_" . $_[1]->value) } } );
 like  ($r,   qr/color: a_42;/,                         "Sass function string works");
 is    ($err, undef,                                    "Sass function string returns no errors");
 
 # List arguments
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test('a', 'b'); }",
-    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Value::String->new($_[0]->value . "_" . $_[1]->value) } } );
 like  ($r,   qr/color: a_b;/,                          "Sass function string works");
 is    ($err, undef,                                    "Sass function string returns no errors");
 
 
 # Mapped arguments
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: test(\$x : 'a', \$y: 'b'); }",
-    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Type::String->new($_[0]->value . "_" . $_[1]->value) } } );
+    sass_functions => { 'test($x,$y)' => sub { CSS::Sass::Value::String->new($_[0]->value . "_" . $_[1]->value) } } );
 like  ($r,   qr/color: a_b;/,                          "Sass function with mapped arguments works");
 is    ($err, undef,                                    "Sass function with mapped arguments returns no errors");
 
 # Mapped arguments (https://github.com/sass/libsass/issues/708)
 ($r, $err) = CSS::Sass::sass_compile(".valid { color: sprite-map(\$spacing: 2px, \$glob: \"*.png\"); }",
-    sass_functions => { 'sprite-map($glob, $spacing: 0px)' => sub { CSS::Sass::Type::String->new($_[0]->value . "::" . $_[1]->value) } } );
+    sass_functions => { 'sprite-map($glob, $spacing: 0px)' => sub { CSS::Sass::Value::String->new($_[0]->value . "::" . $_[1]->value) } } );
 like  ($r,   qr/color: \*\.png::2;/,                   "Sass function with mapped arguments and defaults works");
 is    ($err, undef,                                    "Sass function with mapped arguments and defaults returns no errors");
