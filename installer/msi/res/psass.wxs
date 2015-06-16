@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+ xmlns:bal="http://schemas.microsoft.com/wix/BalExtension"
+ xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
+>
+
+	<!-- load variables -->
+	<?include psass.wxi?>
+
+	<!-- perl-libsass product -->
+	<Product Id="*"
+		Version="$(var.Version)"
+		Name="$(var.ProductName)"
+		Manufacturer="Marcel Greter"
+		Language="1033" Codepage="1252"
+		UpgradeCode="$(var.UpgradeCode)"
+	>
+
+		<Package Id="*"
+			Keywords="Installer"
+			InstallScope="perMachine"
+			Platform="$(var.Platform)"
+			Manufacturer="Marcel Greter"
+			Description="$(var.ProductDescription)"
+			Comments="Installer for perl libsass util $(var.Version)"
+			InstallerVersion="200"
+			SummaryCodepage="1252"
+			Languages="1033"
+			Compressed="yes"
+		/>
+
+		<MajorUpgrade
+			AllowDowngrades="no"
+			AllowSameVersionUpgrades="yes"
+			Schedule="afterInstallExecute"
+			DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit."
+		/>
+
+		<Media Id="1" Cabinet="Sample.cab" EmbedCab="yes" DiskPrompt="Media #1" />
+		<Property Id="DiskPrompt" Value="Insert Installation Media [1]" />
+
+		<WixVariable Id="WixUISupportPerUser" Value="1" />
+		<WixVariable Id="WixUISupportPerMachine" Value="1" />
+
+		<Property Id="APPLICATIONFOLDER" Secure="yes">
+			<RegistrySearch Id="FindInstallLocation"
+				Type="raw"
+				Root="HKLM"
+				Win64="$(var.Win64)"
+				Name="InstallLocation"
+				Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\[WIX_UPGRADE_DETECTED]"
+			/>
+		</Property>
+
+		<Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+		<Property Id="ApplicationFolderName" Value="$(var.InstallName)" />
+
+		<SetDirectory
+			Id="APPLICATIONFOLDER"
+			Value="[ProgramFiles64Folder][ApplicationFolderName]"
+		>
+			APPLICATIONFOLDER=""
+		</SetDirectory>
+
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="$(var.PlatformProgramFilesFolder)">
+				<Directory Id="APPLICATIONFOLDER" Name="$(var.InstallName)">
+
+					<!--
+					<Component Id="HelpExecutable" Guid="577B0A4C-008B-45BB-B7B4-83EAB82195EE">
+						<File Id="perl-libsass-cmd" Name="perl-libsass.cmd" Source="..\..\..\..\perl-libsass.cmd"></File>
+						<File Id="perl-libsass-bat" Name="perl-libsass.bat" Source="..\..\..\..\perl-libsass.bat"></File>
+					</Component>
+					-->
+
+					<Directory Id="BINDIR" Name=".">
+					<Component Id="MainExecutable" Guid="577B0A4C-093A-420F-A730-AEE2DA30BA46">
+						<File Id="psass.bin" Name="psass.exe" Source="psass.exe" KeyPath="yes">
+							<!--
+							<Shortcut Id="startmenuPsass" Directory="ProgramMenuDir" Name="psass" WorkingDirectory="APPLICATIONFOLDER" Icon="psass.exe" IconIndex="0" Advertise="yes" />
+							<Shortcut Id="desktopPsass" Directory="DesktopFolder" Name="psass" WorkingDirectory="APPLICATIONFOLDER" Icon="psass.exe" IconIndex="0" Advertise="yes" />
+							-->
+						</File>
+					</Component>
+					</Directory>
+
+					<Component Id="PathPerUser" Guid="577B0A4C-CFC7-4F71-9124-AA38D62B7F0B" KeyPath="yes">
+						<Condition>ALLUSERS="" OR (ALLUSERS=2 AND (NOT Privileged))</Condition>
+						<Environment Id="PERUSERPATH" Name="PATH" Value="[BINDIR]" Permanent="no" Part="last" Action="set" System="no" />
+					</Component>
+					<Component Id="PathPerMachine" Guid="577B0A4C-4FD2-4569-B2B8-2E96462544A4" KeyPath="yes">
+						<Condition>ALLUSERS=1 OR (ALLUSERS=2 AND Privileged)</Condition>
+						<Environment Id="PATH" Name="PATH" Value="[BINDIR]" Permanent="no" Part="last" Action="set" System="yes" />
+					</Component>
+
+				</Directory>
+				<!-- EO InstallDir -->
+			</Directory>
+			<!-- EO ProgramDir -->
+
+			<!--
+			<Directory Id="ProgramMenuFolder" Name="Programs">
+				<Directory Id="ProgramMenuDir" Name="perl-libsass">
+					<Component Id="ProgramMenuDir" Guid="577B0A4C-E689-4ABC-A0D4-D85FB755DF40">
+						<RemoveFolder Id="ProgramMenuDir" On="uninstall" />
+						<RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="" KeyPath="yes" />
+					</Component>
+				</Directory>
+			</Directory>
+
+			<Directory Id="DesktopFolder" Name="Desktop" />
+			-->
+
+		</Directory>
+		<!-- EO SourceDir -->
+
+		<Feature
+			Level="1"
+			Id="Complete"
+			Display="expand"
+			Title="perl-libsass"
+			InstallDefault="local"
+			ConfigurableDirectory="APPLICATIONFOLDER"
+			Description="Frontend Asset Manager handling all kind of js and css manipulations."
+		>
+
+			<Feature
+				Level="1"
+				Id="MainProgram"
+				Absent="disallow"
+				Title="Application"
+				InstallDefault="followParent"
+				Description="Main executable bundled with perl interpreter and required modules."
+			>
+
+				<ComponentRef Id="MainExecutable" />
+				<!-- <ComponentRef Id="ProgramMenuDir" /> -->
+
+			</Feature>
+
+			<Feature
+				Level="1"
+				Id="PathUpdate"
+				Absent="allow"
+				Title="Register Path"
+				InstallDefault="followParent"
+				Description="Add the executable path to the PATH environment variable."
+			>
+
+				<ComponentRef Id="PathPerUser" />
+				<ComponentRef Id="PathPerMachine" />
+
+			</Feature>
+
+		</Feature>
+
+		<!-- Include the Custom Actions library - currently just to send notification of Environment changes. -->
+		<Binary Id="SetupCustomActionsCPP.dll" SourceFile="..\..\res\RefreshEnv.dll" />
+
+		<!-- Define the custom action to Refresh Environment Variables. -->
+		<CustomAction Id="RefreshEnvironmentVariables"
+		              Return="check"
+		              Execute="immediate"
+		              BinaryKey="SetupCustomActionsCPP.dll"
+		              DllEntry="RefreshEnvironmentVariables"
+		/>
+
+		<!-- fix a bug in advanced install ui -->
+		<!-- http://stackoverflow.com/questions/5479790 -->
+		<CustomAction
+			Id="OverwriteWixSetDefaultPerMachineFolder"
+			Property="WixPerMachineFolder"
+			Value="[APPLICATIONFOLDER]"
+			Execute="immediate"
+		/>
+
+		<CustomAction
+			Id="SetARPINSTALLLOCATION"
+			Property="ARPINSTALLLOCATION"
+			Value="[APPLICATIONFOLDER]"
+		/>
+
+		<!-- Schedule custom actions on ui -->
+		<InstallUISequence>
+			<Custom Action="OverwriteWixSetDefaultPerMachineFolder" After="WixSetDefaultPerMachineFolder" />
+		</InstallUISequence>
+
+		<!-- Schedule custom actions on install -->
+		<InstallExecuteSequence>
+			<Custom Action="OverwriteWixSetDefaultPerMachineFolder" After="WixSetDefaultPerMachineFolder" />
+			<Custom Action="SetARPINSTALLLOCATION" After="InstallValidate"/>
+			<Custom Action="RefreshEnvironmentVariables" After="InstallFinalize"/>
+		</InstallExecuteSequence>
+
+		<!-- Icon in add/remove programs -->
+		<Icon Id="icon.ico" SourceFile="..\..\exe\res\psass.ico"/>
+		<Property Id="ARPPRODUCTICON" Value="icon.ico" />
+
+		<!-- load user interface -->
+		<UIRef Id="WixUI_Advanced" />
+		<!-- show custom error messages -->
+		<UIRef Id="WixUI_ErrorProgressText" />
+
+		<!-- add some custom graphics to the installer ui -->
+		<WixVariable Id="WixUIBannerBmp" Value="..\..\res\theme\banner.bmp" />
+		<WixVariable Id="WixUIDialogBmp" Value="..\..\res\theme\dialog.bmp" />
+
+		<!-- specify the licence file (use custom libsass mit rtf) -->
+		<WixVariable Id="WixUILicenseRtf" Value="..\..\res\license\MIT.rtf" />
+
+		<!--
+		<WixVariable Id="WixUIUpIco" Value="..\..\res\theme\up.ico" />
+		<WixVariable Id="WixUINewIco" Value="..\..\res\theme\new.ico" />
+		<WixVariable Id="WixUIInfoIco" Value="..\..\res\theme\information.ico" />
+		<WixVariable Id="WixUIExclamationIco" Value="..\..\res\theme\exclamation.ico" />
+		-->
+
+	</Product>
+
+</Wix>

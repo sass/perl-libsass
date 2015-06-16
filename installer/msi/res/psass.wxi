@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include>
+	<!-- Upgrade code should not change unless you want to install
+	     a new product and have the old product remain installed,
+	     that is, both products existing as separate instances. -->
+	<?define UpgradeCode = "577B0A4C-4DCE-41D6-BF11-E50450BA17DD" ?>
+
+	<!-- Windows Installer only uses the first 3 parts of the version in
+	     upgrade scenarios, so make sure to increment your version such
+	     that one of the first 3 parts is higher than any previously shipped
+	     version. For example, if your version 1 uses Version value 1.0.1.0,
+	     then version 2 should have a Version value of 1.0.2.0 or higher
+	     (1.0.1.1 will not work here). -->
+	<?define Version = "$(var.GitVersion)" ?>
+
+	<!-- Platform specific variables -->
+	<?if $(var.Platform) = x64 ?>
+		<!-- Product name as you want it to appear in Add/Remove Programs-->
+		<?define Win64 = "yes" ?>
+		<?define Executable = "64\psass.exe" ?>
+		<?define ProductName = "perl-libsass $(var.Version) (64 bit)" ?>
+		<?define ProductDescription = "perl-libsass $(var.Version) x64" ?>
+		<?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+	<?else ?>
+		<?define Win64 = "no" ?>
+		<?define Executable = "32\psass.exe" ?>
+		<?define ProductName = "perl-libsass $(var.Version) (32 bit)" ?>
+		<?define ProductDescription = "perl-libsass $(var.Version) x86" ?>
+		<?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+	<?endif ?>
+
+	<!-- Directory name used as default installation location -->
+	<?define InstallName = "perl-libsass" ?>
+
+	<!-- Registry key name used to store installation location -->
+	<?define InstallNameKey = "perl-libsass" ?>
+
+</Include>

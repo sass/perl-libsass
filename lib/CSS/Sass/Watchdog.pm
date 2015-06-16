@@ -236,14 +236,14 @@ END
 	# check if we actually are the parent
 	if ($parent_pid && $parent_pid == $$)
 	{
-		print "parent is terminating\n";
+		# print "parent is terminating\n";
 		# make sure our child is terminated
 		kill 'TERM', $child_pid if $child_pid;
 	}
 	# check if we actually are the parent
 	elsif ($parent_pid && $parent_pid != $$)
 	{
-		print "file watcher was terminated\n";
+		# print "file watcher was terminated\n";
 	}
 }
 

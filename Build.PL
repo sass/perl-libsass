@@ -8,9 +8,11 @@ use Cwd;
 
 my $libsass_version = '[na]';
 
+my $has_git = eval { `git --help` };
+
 # Are we in our development tree?
 # If so, create the MANIFEST file.
-if (-d ".git") {
+if ($has_git && -d ".git") {
     my @modules = ('.');
     my $base = getcwd;
     my ($dir, $manifest);
@@ -36,7 +38,7 @@ if (-d ".git") {
     }
 }
 
-if (-e "libsass/.git" && ! -f "libsass/VERSION") {
+if ($has_git && -e "libsass/.git" && ! -f "libsass/VERSION") {
   chdir "libsass";
   my $libsass_version = `git describe --abbrev=4 --dirty --always --tags`;
   chdir "..";
@@ -204,6 +206,7 @@ my %config = (
                                 ($cover ? ' -O0 -fprofile-arcs -ftest-coverage' : '') . $version,
     ) : (),
     extra_cpp_compiler_flags => [ '-std=c++0x' ],
+    # to link against syslib, add `-lsass` to `linker_flags` and remove `c_source`
     extra_linker_flags => ($cover ? '-lgcov -fprofile-arcs -ftest-coverage' : ''),
     c_source => { 'libsass' => [ sort qw(
         ast.cpp sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp json.cpp
