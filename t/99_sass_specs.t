@@ -101,6 +101,7 @@ my ($src, $expect);
 # lib/sass_spec/test_case.rb
 sub clean_output ($) {
 	$_[0] =~ s/[\r\n\s	 ]+/ /g;
+	$_[0] =~ s/[\r\n\s	 ]+,/,/g;
 	$_[0] =~ s/,[\r\n\s	 ]+/,/g;
 }
 sub norm_output ($) {
@@ -109,9 +110,17 @@ sub norm_output ($) {
 	# $_[0] =~ s/#ff0/yellow/g;
 	$_[0] =~ s/(?:\r?\n)+/\n/g;
 	$_[0] =~ s/(?:\r?\n)+$/\n/g;
+	$_[0] =~ s/;(?:\s*;)+/;/g;
+	$_[0] =~ s/;\s*}/}/g;
 }
 
 my @false_negatives;
+
+sub res_expected_file {
+	my $name = $_[0];
+	$name =~ s/\.css$/libsass.css/;
+	return -f $name ? $name : $_[0];
+}
 
 my %options;
 my @cmds;
@@ -123,6 +132,11 @@ foreach my $test (@tests)
 	my $output_compact = join("/", $test->[0], 'expected.compact.css');
 	my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
 	my $output_compressed = join("/", $test->[0], 'expected.compressed.css');
+
+	$output_nested = res_expected_file($output_nested);
+	$output_compact = res_expected_file($output_compact);
+	$output_expanded = res_expected_file($output_expanded);
+	$output_compressed = res_expected_file($output_compressed);
 
 	eval('use Win32::Process;');
 	eval('use Win32;');
@@ -208,10 +222,16 @@ foreach my $test (@tests)
 	my $comp_expanded = CSS::Sass->new(%options, output_style => SASS_STYLE_EXPANDED);
 	my $comp_compressed = CSS::Sass->new(%options, output_style => SASS_STYLE_COMPRESSED);
 
+	no warnings 'once';
+	open OLDFH, '>&STDERR';
+	open(STDERR, ">>", "specs.stderr.log");
+
 	my $css_nested = eval { $do_nested && $comp_nested->compile_file($input_file) }; my $error_nested = $@;
 	my $css_compact = eval { $do_compact && $comp_compact->compile_file($input_file) }; my $error_compact = $@;
 	my $css_expanded = eval { $do_expanded && $comp_expanded->compile_file($input_file) }; my $error_expanded = $@;
 	my $css_compressed = eval { $do_compressed && $comp_compressed->compile_file($input_file) }; my $error_compressed = $@;
+
+	open STDERR, '>&OLDFH';
 
 	# warn $output_nested unless defined $css_nested;
 	$css_nested = "[$error_nested]" unless defined $css_nested;

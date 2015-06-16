@@ -1,24 +1,45 @@
-// Copyright © 2013 David Caldwell.
-// Copyright © 2014 Marcel Greter.
+// Copyright (c) 2013 David Caldwell.
+// Copyright (c) 2014 Marcel Greter.
 //
-// This library is free software; you can redistribute it and/or modify
-// it under the same terms as Perl itself, either Perl version 5.12.4 or,
-// at your option, any later version of Perl 5 you may have available.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+// dont hook libc calls
+#define NO_XSLOCKS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "EXTERN.h"
+#undef my_setlocale
 #include "perl.h"
 #include "XSUB.h"
+#include "ppport.h"
+
+#ifdef __cplusplus
+}
+#endif
+
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include "ppport.h"
-
-#include "sass.h"
-#include "sass2scss.h"
-#include "sass_values.h"
-#include "sass_context.h"
-#include "sass_functions.h"
+#include <sass.h>
 
 #define isSafeSv(sv) sv && SvOK(*sv)
 #define Constant(c) newCONSTSUB(stash, #c, newSViv(c))
@@ -34,7 +55,7 @@ bool sass_string_need_quotes(char* str)
     if (!(
         (*it >= 'a' && *it <= 'z') ||
         (*it >= 'A' && *it <= 'Z')
-    )) return false;
+    )) return true;
     ++it;
     while (*it) {
         if (!(
@@ -102,9 +123,9 @@ union Sass_Value* sv_to_sass_value(SV* sv)
             // IMO there should only be strings left!?
             if (sv_derived_from(org, "CSS::Sass::Value::String::Quoted"))
             { return sass_make_qstring(str); }
-            else if (sv_derived_from(org, "CSS::Sass::Value::String"))
+            else if (sv_derived_from(org, "CSS::Sass::Value::String::Constant"))
             { return sass_make_string(str); }
-            // perl-libsass specific behavior
+            // perl-libsass autoquote behavior
             if (sass_string_need_quotes(str))
             { return sass_make_qstring(str); }
             else { return sass_make_string(str); }
@@ -144,7 +165,7 @@ union Sass_Value* sv_to_sass_value(SV* sv)
             // an array means we have a number
             else if (SvTYPE(sv) == SVt_PVAV) {
                 AV* number = (AV*) sv;
-                size_t len = av_len(number);
+                int len = av_len(number);
                 if (len >= 0) {
                   SV* num = *av_fetch(number, 0, false);
                   if (SvIOK(num) || SvNOK(num)) {
@@ -184,7 +205,7 @@ union Sass_Value* sv_to_sass_value(SV* sv)
         // special check for space separated lists
         if (sv_derived_from(org, "CSS::Sass::Value::List::Space")) sep = SASS_SPACE;
         union Sass_Value* list = sass_make_list(av_len(av) + 1, sep);
-        int i;
+        size_t i;
         for (i = 0; i < sass_list_get_length(list); i++) {
             SV** value_svp = av_fetch(av, i, false);
             SV* value_sv = value_svp ? *value_svp : &PL_sv_undef;
@@ -200,7 +221,13 @@ union Sass_Value* sv_to_sass_value(SV* sv)
         int i = 0;
         hv_iterinit(hv);
         while (NULL != (key = hv_iternext(hv))) {
-            sass_map_set_key(map, i, sv_to_sass_value(HeSVKEY_force(key)));
+            void* key_ptr = HeKEY(key);
+            // using the HePV makros gave me strange gcc warnings here:
+            // dereferencing type-punned pointer will break strict-aliasing rules
+            union Sass_Value* key_val = (HeKLEN(key) < 0)
+              ? sv_to_sass_value((SV*) key_ptr)
+              : sass_make_string((char*) key_ptr);
+            sass_map_set_key(map, i, key_val);
             sass_map_set_value(map, i,  sv_to_sass_value(HeVAL(key)));
             i++;
         }
@@ -225,7 +252,7 @@ SV* new_sv_sass_null () {
 SV* new_sv_sass_string (SV* string, bool quoted) {
     SV* sv = newRV_noinc(string);
     if (quoted) sv_bless(sv, gv_stashpv("CSS::Sass::Value::String::Quoted", GV_ADD));
-    else sv_bless(sv, gv_stashpv("CSS::Sass::Value::String::Constant", GV_ADD));
+    else { sv_bless(sv, gv_stashpv("CSS::Sass::Value::String::Constant", GV_ADD)); }
     return sv;
 }
 
@@ -293,11 +320,11 @@ SV* sass_value_to_sv(union Sass_Value* val)
         case SASS_STRING: {
             sv = new_sv_sass_string(
                      newSVpv(sass_string_get_value(val), 0),
-                     sass_string_is_quoted(val)
+                     false
                  );
         }   break;
         case SASS_LIST: {
-            int i;
+            size_t i;
             AV* list = newAV();
             sv = newRV_noinc((SV*) list);
             if (sass_list_get_separator(val) == SASS_SPACE) {
@@ -309,7 +336,7 @@ SV* sass_value_to_sv(union Sass_Value* val)
                 av_push(list, sass_value_to_sv(sass_list_get_value(val, i)));
         }   break;
         case SASS_MAP: {
-            int i;
+            size_t i;
             HV* map = newHV();
             sv = newRV_noinc((SV*) map);
             sv_bless(sv, gv_stashpv("CSS::Sass::Value::Map", GV_ADD));
@@ -356,11 +383,13 @@ Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, str
 
     void* cookie = sass_importer_get_cookie(cb);
     struct Sass_Import* previous = sass_compiler_get_last_import(comp);
-    const char* prev_path = sass_import_get_path(previous);
+    const char* prev_abs_path = sass_import_get_abs_path(previous);
+    const char* prev_imp_path = sass_import_get_imp_path(previous);
 
     PUSHMARK(SP);
     XPUSHs(sv_2mortal(newSVpv(cur_path, 0)));
-    XPUSHs(sv_2mortal(newSVpv(prev_path, 0)));
+    XPUSHs(sv_2mortal(newSVpv(prev_abs_path, 0)));
+    XPUSHs(sv_2mortal(newSVpv(prev_imp_path, 0)));
     PUTBACK;
 
     // call the static function by soft name reference
@@ -406,7 +435,7 @@ Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, str
     // the expected type is an array
     else if (SvTYPE(perl_value) == SVt_PVAV) {
 
-        size_t i;
+        int i;
         AV* sass_imports_av = (AV*) perl_value;
         size_t length = av_len(sass_imports_av);
         incs = sass_make_import_list(length + 1);
@@ -442,7 +471,7 @@ Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, str
             // the expected type is an array
             else if (SvTYPE(import_sv) == SVt_PVAV) {
                 AV* import_av = (AV*) import_sv;
-                size_t len = av_len(import_av);
+                int len = av_len(import_av);
                 SV** path_sv = len < 0 ? 0 : av_fetch(import_av, 0, false);
                 SV** source_sv = len < 1 ? 0 : av_fetch(import_av, 1, false);
                 SV** mapjson_sv = len < 2 ? 0 : av_fetch(import_av, 2, false);
@@ -502,7 +531,7 @@ union Sass_Value* call_sass_function(const union Sass_Value* s_args, Sass_Functi
     SV* perl_value = NULL;
     // value to return to libsass
     union Sass_Value* sass_value = NULL;
-    int i;
+    size_t i;
 
     ENTER;
     SAVETMPS;
@@ -761,6 +790,21 @@ BOOT:
     Constant(SASS2SCSS_KEEP_COMMENT);
     Constant(SASS2SCSS_STRIP_COMMENT);
     Constant(SASS2SCSS_CONVERT_COMMENT);
+
+    // enum Sass_OP
+    Constant(AND);
+    Constant(OR);
+    Constant(EQ);
+    Constant(NEQ);
+    Constant(GT);
+    Constant(GTE);
+    Constant(LT);
+    Constant(LTE);
+    Constant(ADD);
+    Constant(SUB);
+    Constant(MUL);
+    Constant(DIV);
+    Constant(MOD);
 }
 
 
@@ -773,7 +817,9 @@ compile_sass(input_string, options)
         sv_2mortal((SV*)RETVAL);
     {
 
-        struct Sass_Data_Context* data_ctx = sass_make_data_context(strdup(input_string));
+        char* src = strdup(input_string);
+        // input_string will be freed by libsass (first "loaded" source)
+        struct Sass_Data_Context* data_ctx = sass_make_data_context(src);
         struct Sass_Context* ctx = sass_data_context_get_context(data_ctx);
         struct Sass_Options* ctx_opt = sass_context_get_options(ctx);
         SV* err = init_sass_options(ctx_opt, options);
@@ -866,7 +912,63 @@ unquote(str)
              RETVAL
 
 SV*
-safequote(str)
+sass_operation(op, a, b)
+             SV* op
+             SV* a
+             SV* b
+    CODE:
+    {
+
+        union Sass_Value* lhs = sv_to_sass_value(a);
+        union Sass_Value* rhs = sv_to_sass_value(b);
+
+        union Sass_Value* rv = 0;
+        switch ((enum Sass_OP) SvNV(op)) {
+          case ADD: rv = sass_value_op(ADD, lhs, rhs); break;
+          case MUL: rv = sass_value_op(MUL, lhs, rhs); break;
+          case AND: rv = sass_value_op(AND, lhs, rhs); break;
+          case OR:  rv = sass_value_op(OR,  lhs, rhs); break;
+          case EQ:  rv = sass_value_op(EQ,  lhs, rhs); break;
+          case NEQ: rv = sass_value_op(NEQ, lhs, rhs); break;
+          case GT:  rv = sass_value_op(GT,  lhs, rhs); break;
+          case GTE: rv = sass_value_op(GTE, lhs, rhs); break;
+          case LT:  rv = sass_value_op(LT,  lhs, rhs); break;
+          case LTE: rv = sass_value_op(LTE, lhs, rhs); break;
+          case SUB: rv = sass_value_op(SUB, lhs, rhs); break;
+          case DIV: rv = sass_value_op(DIV, lhs, rhs); break;
+          case MOD: rv = sass_value_op(MOD, lhs, rhs); break;
+          default: rv = sass_make_error("invalid op"); break;
+        }
+
+        RETVAL = sass_value_to_sv(rv);
+
+        sass_delete_value(rhs);
+        sass_delete_value(lhs);
+        sass_delete_value(rv);
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+sass_stringify(v)
+             SV* v
+    CODE:
+    {
+
+        union Sass_Value* val = sv_to_sass_value(v);
+        // ToDo: make compressed and precision option configurable
+        union Sass_Value* rv = sass_value_stringify(val, false, 5);
+        RETVAL = sass_value_to_sv(rv);
+        sass_delete_value(val);
+        sass_delete_value(rv);
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+auto_quote(str)
              char* str
     CODE:
     {

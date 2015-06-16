@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 46;
+use Test::More tests => 52;
 BEGIN { use_ok('CSS::Sass') };
 
 my $r;
@@ -57,13 +57,13 @@ is    ($r->{error_message}, undef,       "source_comments=>[] error_message is u
 $r = CSS::Sass::compile_sass('foo { color: red; }', { indent => '-äöü-' });
 is    ($r->{error_status},  0,           "import no error_status");
 is    ($r->{error_message}, undef,       "import error_message is undef");
-like  ($r->{output_string}, qr/foo {\r?\n-äöü-color: red; }/, "custom indent");
+like  ($r->{output_string}, qr/foo \{\r?\n-äöü-color: red; \}/, "custom indent");
 
 # $options->{linefeed}
 $r = CSS::Sass::compile_sass('foo { color: red; }', { linefeed => "-äöü-\r" });
 is    ($r->{error_status},  0,           "import no error_status");
 is    ($r->{error_message}, undef,       "import error_message is undef");
-like  ($r->{output_string}, qr/foo {-äöü-\r  color: red; }/, "custom linefeed");
+like  ($r->{output_string}, qr/foo \{-äöü-\r  color: red; \}/, "custom linefeed");
 
 # $options->{include_paths}
 $r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { });
@@ -97,3 +97,14 @@ $r = CSS::Sass::compile_sass('.valid { width: #{(1/3)}; }', { precision => 10 })
 is    ($r->{error_status},  0,                        "import no error_status");
 is    ($r->{error_message}, undef,                    "import error_message is undef");
 like  ($r->{output_string}, qr/0\.3333333333;/,       "float precision of 10");
+
+use CSS::Sass qw(auto_quote resolve_file);
+
+is (auto_quote("foobar"), "foobar", "auto_quote test #1");
+is (auto_quote("foo bar"), "\"foo bar\"", "auto_quote test #2");
+is (auto_quote("baz\""), "'baz\"'", "auto_quote test #3");
+
+is (resolve_file("inc/simple"), "t/inc/simple.css", "resolve file test #1");
+is (resolve_file("inc/colors"), "t/inc/_colors.scss", "resolve file test #2");
+is (resolve_file("nonexisting"), "", "resolve file test #3");
+
