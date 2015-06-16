@@ -111,6 +111,8 @@ foreach my $test (@tests)
 					$cur = $smap_cur->{'mappings'}->[$i]->[$n]; ++$n;
 				}
 				# check if we have found it
+				# unless ($cur) { print STDERR "\n", $stats->{'output_string'}, "\n"; }
+				# unless ($cur) { print STDERR $stats->{'source_map_string'}, "\n"; }
 				unless ($cur) { return fail($test->[0] . "/" . $srcmap_file); }
 			}
 			++ $i;

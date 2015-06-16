@@ -3,8 +3,6 @@ Makefile
 Makefile.old
 Build
 Build.bat
-META.*
-MYMETA.*
 .build/
 _build/
 cover_db/
@@ -27,3 +25,17 @@ lib/CSS/Sass.exp
 lib/CSS/Sass.lds
 .libsass.version
 *~
+/libsass.*
+/*.c
+/*.o
+/*.old
+/*.bs
+/*.def
+/*.bac
+/*.bak
+/*.exp
+/*.base
+/*.scss
+/*.sass
+/*.css
+/*.log

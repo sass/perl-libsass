@@ -1,31 +1,27 @@
 language: perl
+sudo: false
+
 compiler:
   - clang
   - gcc
-perl:
-   - "5.20"
-   - "5.18"
-   - "5.16"
-   - "5.14"
-   - "5.12"
 
-before_install:
-   - git submodule update --init --recursive
+perl:
+  - "5.20"
+  - "5.18"
+  - "5.16"
+  - "5.14"
+  - "5.12"
+
 install:
-   # Deal with dependencies
-   - cpanm -n File::Slurp
-   - cpanm -n File::chdir
-   - cpanm -n Devel::Cover
-   # - cpanm --quiet --installdeps --notest .
-   - cpanm -n Devel::Cover::Report::Coveralls
-before_script:
-   # initialize libsass, sass2scss and sass-spec
-   # - git submodule update --init --recursive
+  # Deal with dependencies
+  - cpanm --installdeps --verbose .
+  - cpanm -n Devel::Cover
+  - cpanm -n Devel::Cover::Report::Coveralls
 script:
-   - perl Build.PL cover=1
-   - ./Build verbose=1
-   - HARNESS_PERL_SWITCHES=-MDevel::Cover ./Build test verbose=1
-   - ./Build install verbose=1
+  - perl Makefile.PL
+  - make -j5
+  - HARNESS_PERL_SWITCHES=-MDevel::Cover make test
+  - make install
 after_success:
-   - find -name *.gcda -type f -exec gcov-4.8 -abc -o `basename {}` {} \;
-   - cover -gcov -report coveralls -ignore_re "^/usr" -ignore_re "^libsass"
+  - find -name *.gcda -type f -exec gcov-4.8 -abc -o `basename {}` {} \;
+  - cover -gcov -report coveralls -ignore_re "^/usr" -ignore_re "^libsass"

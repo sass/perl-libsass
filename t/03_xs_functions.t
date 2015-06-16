@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 39;
+use Test::More tests => 41;
 
 use CSS::Sass;
 
@@ -94,6 +94,12 @@ my %sass_func = (
             my ($a, $b) = @_;
             return $a == $b;
         },
+        'number_test($a)' => sub {
+            my ($a) = @_;
+            $a->value(52);
+            $a->unit("in*px");
+            return $a;
+        },
         'append_hello($str)' => sub {
             my ($str) = @_;
             die '$str should be a string' unless $str->isa("CSS::Sass::Value::String");
@@ -108,6 +114,10 @@ is    ($err, undef,                                    "Sass function example re
 ($r, $err) = CSS::Sass::sass_compile('.valid { equals: compare("a", a); }', %sass_func);
 like  ($r,   qr/equals: 1;/,                           "Sass function compare works");
 is    ($err, undef,                                    "Sass function compare returns no errors");
+
+($r, $err) = CSS::Sass::sass_compile('.valid { number: (number_test(2px)/2px); }', %sass_func);
+like  ($r,   qr/number: 26in;/,                        "Sass function number test works");
+is    ($err, undef,                                    "Sass function number test returns no errors");
 
 ($r, $err) = CSS::Sass::sass_compile('.valid { some_rule: append_hello(5%); }', %sass_func);
 is    ($r,   undef,                                    "Sass function bad example returns no css");

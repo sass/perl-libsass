@@ -26,6 +26,8 @@ our @EXPORT_OK = qw(
 	sass_compile_file
 	libsass_version
 	sass2scss_version
+	sass_operation
+	sass_stringify
 	SASS_COMMA
 	SASS_SPACE
 	SASS_ERROR

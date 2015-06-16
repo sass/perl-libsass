@@ -57,13 +57,13 @@ is    ($r->{error_message}, undef,       "source_comments=>[] error_message is u
 $r = CSS::Sass::compile_sass('foo { color: red; }', { indent => '-äöü-' });
 is    ($r->{error_status},  0,           "import no error_status");
 is    ($r->{error_message}, undef,       "import error_message is undef");
-like  ($r->{output_string}, qr/foo {\r?\n-äöü-color: red; }/, "custom indent");
+like  ($r->{output_string}, qr/foo \{\r?\n-äöü-color: red; \}/, "custom indent");
 
 # $options->{linefeed}
 $r = CSS::Sass::compile_sass('foo { color: red; }', { linefeed => "-äöü-\r" });
 is    ($r->{error_status},  0,           "import no error_status");
 is    ($r->{error_message}, undef,       "import error_message is undef");
-like  ($r->{output_string}, qr/foo {-äöü-\r  color: red; }/, "custom linefeed");
+like  ($r->{output_string}, qr/foo \{-äöü-\r  color: red; \}/, "custom linefeed");
 
 # $options->{include_paths}
 $r = CSS::Sass::compile_sass('@import "colors"; .valid { color: $red; }', { });

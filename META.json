@@ -1,0 +1,62 @@
+{
+   "abstract" : "Compile .scss files using libsass",
+   "author" : [
+      "Marcel Greter <perl-libsass@ocbnet.ch>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "ExtUtils::MakeMaker version 7.0401, CPAN::Meta::Converter version 2.150001",
+   "license" : [
+      "mit"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "CSS-Sass",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::CppGuess" : "0.09",
+            "ExtUtils::MakeMaker" : "6.52",
+            "File::chdir" : "0.01",
+            "Getopt::Long" : "0.01"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::CppGuess" : "0.09",
+            "ExtUtils::MakeMaker" : "6.52",
+            "Getopt::Long" : "0.01"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Carp" : "1.01",
+            "perl" : "5.008",
+            "strict" : "0",
+            "version" : "0",
+            "warnings" : "0"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/sass/perl-libsass/issues"
+      },
+      "homepage" : "https://metacpan.org/release/CSS-Sass",
+      "license" : [
+         "http://opensource.org/licenses/MIT"
+      ],
+      "repository" : {
+         "url" : "https://github.com/sass/CSS-Sass"
+      }
+   },
+   "version" : "v3.2.2"
+}

@@ -14,11 +14,7 @@
 # \4.2 -> number (no unit)
 
 # internal representations differ slightly
-
 # for list only the blessed class is important
-
-# missing: error, boolean, color, number with unit
-
 
 use strict;
 use warnings;
@@ -29,23 +25,43 @@ package CSS::Sass::Value;
 our $VERSION = "v3.2.2";
 ################################################################################
 use CSS::Sass qw(import_sv);
+use CSS::Sass qw(sass_operation);
+use CSS::Sass qw(sass_stringify);
 ################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
-use overload '==' => 'equals';
-use overload 'ne' => 'nequals';
-use overload '!=' => 'nequals';
+use overload '""' => 'stringify'; # allow further overloading
+################################################################################
+use overload '&' => sub { sass_operation(CSS::Sass::AND, $_[0], $_[1])->value ? 1 : 0; };
+use overload '|' => sub { sass_operation(CSS::Sass::OR, $_[0], $_[1])->value ? 1 : 0; };
+use overload 'bool' => sub { sass_operation(CSS::Sass::OR, $_[0], undef)->value ? 1 : 0; };
+################################################################################
+use overload 'eq' => sub { sass_stringify($_[0])->value eq sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'ne' => sub { sass_stringify($_[0])->value ne sass_stringify($_[1])->value ? 1 : 0; };
+use overload '==' => sub { sass_operation(CSS::Sass::EQ, $_[0], $_[1])->value ? 1 : 0; };
+use overload '!=' => sub { sass_operation(CSS::Sass::NEQ, $_[0], $_[1])->value ? 1 : 0; };
+################################################################################
+use overload 'lt' => sub { sass_stringify($_[0])->value lt sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'le' => sub { sass_stringify($_[0])->value le sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'gt' => sub { sass_stringify($_[0])->value gt sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'ge' => sub { sass_stringify($_[0])->value ge sass_stringify($_[1])->value ? 1 : 0; };
+################################################################################
+use overload '<'  => sub { sass_operation(CSS::Sass::LT , $_[0], $_[1])->value ? 1 : 0; };
+use overload '<=' => sub { sass_operation(CSS::Sass::LTE, $_[0], $_[1])->value ? 1 : 0; };
+use overload '>'  => sub { sass_operation(CSS::Sass::GT , $_[0], $_[1])->value ? 1 : 0; };
+use overload '>=' => sub { sass_operation(CSS::Sass::GTE, $_[0], $_[1])->value ? 1 : 0; };
+################################################################################
+use overload '+' => sub { sass_operation(CSS::Sass::ADD, $_[0], $_[1]); };
+use overload '-' => sub { sass_operation(CSS::Sass::SUB, $_[0], $_[1]); };
+use overload '*' => sub { sass_operation(CSS::Sass::MUL, $_[0], $_[1]); };
+use overload '/' => sub { sass_operation(CSS::Sass::DIV, $_[0], $_[1]); };
+use overload '%' => sub { sass_operation(CSS::Sass::MOD, $_[0], $_[1]); };
 ################################################################################
 
 sub new { import_sv($_[1]) }
 sub clone { import_sv($_[0]) }
 
 # default implementations
-sub quoted { shift->stringify(@_) }
-
-# generic implementations
-sub equals { $_[0]->stringify eq $_[1] ? 1 : 0; }
-sub nequals { $_[0]->equals($_[1]) ? 0 : 1; }
+sub quoted { sass_stringify($_[0])->value }
+sub stringify { sass_stringify($_[0])->value }
 
 ################################################################################
 package CSS::Sass::Value::Null;
@@ -60,11 +76,6 @@ sub new {
 }
 
 sub value { undef }
-
-sub stringify { "null" }
-
-sub equals { defined $_[1] ? 0 : 1 }
-sub nequals { defined $_[1] ? 1 : 0 }
 
 ################################################################################
 package CSS::Sass::Value::Error;
@@ -83,12 +94,6 @@ sub new {
 sub message {
 	wantarray ? @{${${$_[0]}}} :
 	            join "", @{${${$_[0]}}};
-}
-
-sub stringify {
-	scalar(@{${${$_[0]}}}) ?
-	  join "", @{${${$_[0]}}}
-	  : "error";
 }
 
 ################################################################################
@@ -110,18 +115,12 @@ sub value {
 	${${$_[0]}};
 }
 
-sub stringify {
-	shift->value ? "true" : "false";
-}
-
 ################################################################################
 package CSS::Sass::Value::String;
 ################################################################################
 use base 'CSS::Sass::Value';
 ################################################################################
-use overload '.'=> 'concat';
-################################################################################
-use CSS::Sass qw(quote need_quotes);
+use CSS::Sass qw(quote need_quotes sass_stringify);
 ################################################################################
 
 sub new {
@@ -139,10 +138,6 @@ sub value {
 		${$_[0]} = defined $_[1] ? $_[1] : "";
 	}
 	defined ${$_[0]} ? ${$_[0]} : "";
-}
-
-sub stringify {
-	$_[0]->is_quoted ? quote(${$_[0]}) : ${$_[0]};
 }
 
 sub is_quoted {
@@ -210,10 +205,6 @@ sub unit {
 		${$_[0]}->[1] = defined $_[1] ? $_[1] : "";
 	}
 	${$_[0]}->[1];
-}
-
-sub stringify {
-	sprintf "%g%s", @{${$_[0]}};
 }
 
 ################################################################################
@@ -284,35 +275,6 @@ sub stringify {
 			CORE::keys %{$_[0]};
 }
 
-# ignore different separators
-# they have different stringifies
-# so we must overload generic method
-sub equals {
-	# compare to native type
-	unless (ref $_[1]) {
-		return $_[0]->stringify eq $_[1]
-	}
-	# compare to another list (compore arrays)
-	elsif ($_[1]->isa('CSS::Sass::Value::Map')) {
-		# both maps must have same amount of keys
-		return 0 if CORE::keys %{$_[0]} != CORE::keys %{$_[1]};
-		# all items must be equal to the other items
-		for (CORE::keys %{$_[0]}) {
-			return 0 if $_[0]->{$_} ne $_[1]->{$_};
-		}
-		# no diffs
-		return 1;
-	}
-	# other value
-	else
-	{
-		return 0;
-		# is always false
-		# $_[0] !== $_[1];
-	}
-}
-
-
 ################################################################################
 package CSS::Sass::Value::List;
 ################################################################################
@@ -339,33 +301,6 @@ sub stringify
 			# force quotes around values
 			map { ref $_ ? $_->quoted(1) : $_ }
 			@{$_[0]};
-}
-
-# ignore different separators
-# they have different stringifies
-# so we must overload generic method
-sub equals {
-	# compare to native type
-	unless (ref $_[1]) {
-		return $_[0]->stringify eq $_[1]
-	}
-	# compare to another list (compore arrays)
-	elsif ($_[1]->isa('CSS::Sass::Value::List')) {
-		# both arrays must have same length
-		return 0 if $#{$_[0]} != $#{$_[1]};
-		# all items must be equal to the other items
-		for (my ($i, $L) = (0, scalar(@{$_[0]})); $i < $L; $i++)
-		{ return 0 if $_[0]->[$i] ne $_[1]->[$i]; }
-		# no diffs
-		return 1;
-	}
-	# other value
-	else
-	{
-		return 0;
-		# is always false
-		# $_[0] !== $_[1];
-	}
 }
 
 ################################################################################

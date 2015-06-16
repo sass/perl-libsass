@@ -1,18 +1,29 @@
-// Copyright © 2013 David Caldwell.
-// Copyright © 2014 Marcel Greter.
+// Copyright © 2015 Marcel Greter.
 //
 // This library is free software; you can redistribute it and/or modify
 // it under the same terms as Perl itself, either Perl version 5.12.4 or,
 // at your option, any later version of Perl 5 you may have available.
 
+// dont hook libc calls
+#define NO_XSLOCKS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "EXTERN.h"
+#undef my_setlocale
 #include "perl.h"
 #include "XSUB.h"
+#include "ppport.h"
+
+#ifdef __cplusplus
+}
+#endif
+
 #include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
-
-#include "ppport.h"
 
 #include "sass.h"
 #include "sass2scss.h"
@@ -101,12 +112,12 @@ union Sass_Value* sv_to_sass_value(SV* sv)
             // coerce all other scalars into a string
             // IMO there should only be strings left!?
             if (sv_derived_from(org, "CSS::Sass::Value::String::Quoted"))
-            { return sass_make_qstring(str); }
+            { return sass_make_string(str); }
             else if (sv_derived_from(org, "CSS::Sass::Value::String"))
             { return sass_make_string(str); }
             // perl-libsass specific behavior
             if (sass_string_need_quotes(str))
-            { return sass_make_qstring(str); }
+            { return sass_make_string(str); }
             else { return sass_make_string(str); }
         }
 
@@ -200,7 +211,13 @@ union Sass_Value* sv_to_sass_value(SV* sv)
         int i = 0;
         hv_iterinit(hv);
         while (NULL != (key = hv_iternext(hv))) {
-            sass_map_set_key(map, i, sv_to_sass_value(HeSVKEY_force(key)));
+            void* key_ptr = HeKEY(key);
+            // using the HePV makros gave me strange gcc warnings here:
+            // dereferencing type-punned pointer will break strict-aliasing rules
+            union Sass_Value* key_val = (HeKLEN(key) < 0)
+              ? sv_to_sass_value((SV*) key_ptr)
+              : sass_make_string((char*) key_ptr);
+            sass_map_set_key(map, i, key_val);
             sass_map_set_value(map, i,  sv_to_sass_value(HeVAL(key)));
             i++;
         }
@@ -293,7 +310,7 @@ SV* sass_value_to_sv(union Sass_Value* val)
         case SASS_STRING: {
             sv = new_sv_sass_string(
                      newSVpv(sass_string_get_value(val), 0),
-                     sass_string_is_quoted(val)
+                     false
                  );
         }   break;
         case SASS_LIST: {
@@ -356,11 +373,13 @@ Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, str
 
     void* cookie = sass_importer_get_cookie(cb);
     struct Sass_Import* previous = sass_compiler_get_last_import(comp);
-    const char* prev_path = sass_import_get_path(previous);
+    const char* prev_abs_path = sass_import_get_abs_path(previous);
+    const char* prev_imp_path = sass_import_get_imp_path(previous);
 
     PUSHMARK(SP);
     XPUSHs(sv_2mortal(newSVpv(cur_path, 0)));
-    XPUSHs(sv_2mortal(newSVpv(prev_path, 0)));
+    XPUSHs(sv_2mortal(newSVpv(prev_abs_path, 0)));
+    XPUSHs(sv_2mortal(newSVpv(prev_imp_path, 0)));
     PUTBACK;
 
     // call the static function by soft name reference
@@ -761,6 +780,21 @@ BOOT:
     Constant(SASS2SCSS_KEEP_COMMENT);
     Constant(SASS2SCSS_STRIP_COMMENT);
     Constant(SASS2SCSS_CONVERT_COMMENT);
+
+    // enum Sass_OP
+    Constant(AND);
+    Constant(OR);
+    Constant(EQ);
+    Constant(NEQ);
+    Constant(GT);
+    Constant(GTE);
+    Constant(LT);
+    Constant(LTE);
+    Constant(ADD);
+    Constant(SUB);
+    Constant(MUL);
+    Constant(DIV);
+    Constant(MOD);
 }
 
 
@@ -773,7 +807,9 @@ compile_sass(input_string, options)
         sv_2mortal((SV*)RETVAL);
     {
 
-        struct Sass_Data_Context* data_ctx = sass_make_data_context(strdup(input_string));
+        char* src = strdup(input_string);
+        // input_string will be freed by libsass (first "loaded" source)
+        struct Sass_Data_Context* data_ctx = sass_make_data_context(src);
         struct Sass_Context* ctx = sass_data_context_get_context(data_ctx);
         struct Sass_Options* ctx_opt = sass_context_get_options(ctx);
         SV* err = init_sass_options(ctx_opt, options);
@@ -860,6 +896,62 @@ unquote(str)
         RETVAL = newSVpv(unquoted, 0);
 
         free (unquoted);
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+sass_operation(op, a, b)
+             SV* op
+             SV* a
+             SV* b
+    CODE:
+    {
+
+        union Sass_Value* lhs = sv_to_sass_value(a);
+        union Sass_Value* rhs = sv_to_sass_value(b);
+
+        union Sass_Value* rv = 0;
+        switch ((enum Sass_OP) SvNV(op)) {
+          case ADD: rv = sass_value_op(ADD, lhs, rhs); break;
+          case MUL: rv = sass_value_op(MUL, lhs, rhs); break;
+          case AND: rv = sass_value_op(AND, lhs, rhs); break;
+          case OR:  rv = sass_value_op(OR,  lhs, rhs); break;
+          case EQ:  rv = sass_value_op(EQ,  lhs, rhs); break;
+          case NEQ: rv = sass_value_op(NEQ, lhs, rhs); break;
+          case GT:  rv = sass_value_op(GT,  lhs, rhs); break;
+          case GTE: rv = sass_value_op(GTE, lhs, rhs); break;
+          case LT:  rv = sass_value_op(LT,  lhs, rhs); break;
+          case LTE: rv = sass_value_op(LTE, lhs, rhs); break;
+          case SUB: rv = sass_value_op(SUB, lhs, rhs); break;
+          case DIV: rv = sass_value_op(DIV, lhs, rhs); break;
+          case MOD: rv = sass_value_op(MOD, lhs, rhs); break;
+          default: rv = sass_make_error("invalid op"); break;
+        }
+
+        RETVAL = sass_value_to_sv(rv);
+
+        sass_delete_value(rhs);
+        sass_delete_value(lhs);
+        sass_delete_value(rv);
+
+    }
+    OUTPUT:
+             RETVAL
+
+SV*
+sass_stringify(v)
+             SV* v
+    CODE:
+    {
+
+        union Sass_Value* val = sv_to_sass_value(v);
+        // ToDo: make compressed and precision option configurable
+        union Sass_Value* rv = sass_value_stringify(val, false, 5);
+        RETVAL = sass_value_to_sv(rv);
+        sass_delete_value(val);
+        sass_delete_value(rv);
 
     }
     OUTPUT:

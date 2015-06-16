@@ -236,14 +236,14 @@ END
 	# check if we actually are the parent
 	if ($parent_pid && $parent_pid == $$)
 	{
-		print "parent is terminating\n";
+		# print "parent is terminating\n";
 		# make sure our child is terminated
 		kill 'TERM', $child_pid if $child_pid;
 	}
 	# check if we actually are the parent
 	elsif ($parent_pid && $parent_pid != $$)
 	{
-		print "file watcher was terminated\n";
+		# print "file watcher was terminated\n";
 	}
 }
 
@@ -352,7 +352,7 @@ L<CSS::Sass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>  
+David Caldwell E<lt>david@porkrind.orgE<gt>
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE

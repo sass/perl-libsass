@@ -6,7 +6,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 518;
+use Test::More tests => 519;
 BEGIN { use_ok('CSS::Sass') };
 
 use CSS::Sass qw(SASS_ERROR);
@@ -165,25 +165,25 @@ is $err->message, "foobar", "error correctly parsed";
 
 # force stringification
 is (CSS::Sass::Value->new(undef) . "", "null", "null stringify ok");
-is (CSS::Sass::Value->new(42.35), "42.35", "number stringify ok");
+is (CSS::Sass::Value->new(42.35) . "", "42.35", "number stringify ok");
 is (CSS::Sass::Value->new(42.35)->unit, "", "number unit ok");
 is (CSS::Sass::Value->new(42.35)->value, "42.35", "number value ok");
 is (CSS::Sass::Value->new("foobar"), "foobar", "string stringify ok");
-is (CSS::Sass::Value->new("foo bar"), '"foo bar"', "string stringify ok");
-is (CSS::Sass::Value->new({ "key" => "foobar" }), '{ key: foobar }', "map stringify ok");
-is (CSS::Sass::Value->new([ "foo baz", 42, "bar" ]), '[ "foo baz", 42, bar ]', "list stringify ok");
-is (CSS::Sass::Value->new(["foo", "bar"]), '[ foo, bar ]', "list comma stringify ok");
+is (CSS::Sass::Value->new("foo bar"), 'foo bar', "string stringify ok");
+is (CSS::Sass::Value->new({ "key" => "foobar" }) . "", '{ key: foobar }', "map stringify ok");
+is (CSS::Sass::Value->new([ "foo baz", 42, "bar" ]) . "", '[ foo baz, 42, bar ]', "list stringify ok");
+is (CSS::Sass::Value->new(["foo", "bar"]) . "", '[ foo, bar ]', "list comma stringify ok");
 
 # force stringification
 is (CSS::Sass::Value::Null->new(undef) . "", "null", "null stringify ok");
-is (CSS::Sass::Value::Number->new(42.35), "42.35", "number stringify ok");
+is (CSS::Sass::Value::Number->new(42.35) . "", "42.35", "number stringify ok");
 is (CSS::Sass::Value::String->new("foobar"), "foobar", "string stringify ok");
-is (CSS::Sass::Value::String::Quoted->new("foobar"), "\"foobar\"", "string stringify ok");
+is (CSS::Sass::Value::String::Quoted->new("foobar"), "foobar", "string stringify ok");
 is (CSS::Sass::Value::String::Constant->new("foo bar"), "foo bar", "string stringify ok");
-is (CSS::Sass::Value::Map->new("key" => "foobar"), '{ key: foobar }', "map stringify ok");
-is (CSS::Sass::Value::List->new("foo baz", 42, "bar"), '[ "foo baz", 42, bar ]', "list stringify ok");
-is (CSS::Sass::Value::List::Comma->new("foo", "bar"), '[ foo, bar ]', "list comma stringify ok");
-is (CSS::Sass::Value::List::Space->new("foo", "bar"), '[ foo bar ]', "list space stringify ok");
+is (CSS::Sass::Value::Map->new("key" => "foobar") . "", '{ key: foobar }', "map stringify ok");
+is (CSS::Sass::Value::List->new("foo baz", 42, "bar") . "", '[ foo baz, 42, bar ]', "list stringify ok");
+is (CSS::Sass::Value::List::Comma->new("foo", "bar") . "", '[ foo, bar ]', "list comma stringify ok");
+is (CSS::Sass::Value::List::Space->new("foo", "bar") . "", '[ foo bar ]', "list space stringify ok");
 
 ################################################################################
 ################################################################################
@@ -213,6 +213,8 @@ my $error = CSS::Sass::Value::Error->new();
 my $error_msg = CSS::Sass::Value::Error->new('message');
 my $regex = CSS::Sass::Value->new(qr/regex/);
 
+# print STDERR "HEO ", sass_operation(CSS::Sass::ADD, $string_foobar, $string_foobar), "\n";
+
 ################################################################################
 
 test_null($null);
@@ -227,13 +229,13 @@ test_bool($bool_null);
 test_bool($bool_true);
 test_bool($bool_false);
 
-is $bool, 'false', "bool stringify value is correct";
+is "$bool", 'false', "bool stringify value is correct";
 is $bool->value, 0, "bool value is correct";
-is $bool_null, "false", "bool_null stringify value is correct";
+is $bool_null . "", "false", "bool_null stringify value is correct";
 is $bool_null->value, 0, "bool_null value is correct";
-is $bool_true, "true", "bool_true stringify value is correct";
+is "$bool_true", "true", "bool_true stringify value is correct";
 is $bool_true->value, 1, "bool_true value is correct";
-is $bool_false, "false", "bool_false stringify value is correct";
+is "$bool_false", "false", "bool_false stringify value is correct";
 is $bool_false->value, 0, "bool_false value is correct";
 
 ################################################################################
@@ -255,25 +257,25 @@ test_color($color);
 test_color($color_rgb);
 test_color($color_rgba);
 
-is $color, "null", "color stringify is correct";
+is "$color", "null", "color stringify is correct";
 is $color->r, undef, "color r is correct";
 is $color->g, undef, "color g is correct";
 is $color->b, undef, "color b is correct";
 is $color->a, 1, "color a is correct";
 
-is $color_rgb, "rgb(42, 43, 44)", "color_rgb stringify is correct";
+is "$color_rgb", "rgb(42, 43, 44)", "color_rgb stringify is correct";
 is $color_rgb->r, 42, "color_rgb r is correct";
 is $color_rgb->g, 43, "color_rgb g is correct";
 is $color_rgb->b, 44, "color_rgb b is correct";
 is $color_rgb->a, 1, "color_rgb a is correct";
 
-is $color_rgba, "rgba(1, 2, 3, 0.4)", "color_rgba stringify is correct";
+is "$color_rgba", "rgba(1, 2, 3, 0.4)", "color_rgba stringify is correct";
 is $color_rgba->r, 1, "color_rgba r is correct";
 is $color_rgba->g, 2, "color_rgba g is correct";
 is $color_rgba->b, 3, "color_rgba b is correct";
 is $color_rgba->a, 0.4, "color_rgba a is correct";
 
-is $color_trans, "transparent", "color without opacity is transparent";
+is "$color_trans", "transparent", "color without opacity is transparent";
 
 ################################################################################
 
@@ -283,23 +285,23 @@ test_number($number_42);
 test_number($number_px);
 test_number($number_percent);
 
-is $number, "0", "number stringify is correct";
+is "$number", "0", "number stringify is correct";
 is $number->value, 0, "number value is correct";
 is $number->unit, "", "number unit is correct";
 
-is $number_null, "0", "number_null stringify is correct";
+is "$number_null", "0", "number_null stringify is correct";
 is $number_null->value, 0, "number_null value is correct";
 is $number_null->unit, "", "number_null unit is correct";
 
-is $number_42, "42", "number_42 stringify is correct";
+is "$number_42", "42", "number_42 stringify is correct";
 is $number_42->value, 42, "number_42 value is correct";
 is $number_42->unit, "", "number_42 unit is correct";
 
-is $number_px, "42px", "number_px stringify is correct";
+is "$number_px", "42px", "number_px stringify is correct";
 is $number_px->value, 42, "number_px value is correct";
 is $number_px->unit, "px", "number_px unit is correct";
 
-is $number_percent, "42%", "number_percent stringify is correct";
+is "$number_percent", "42%", "number_percent stringify is correct";
 is $number_percent->value, 42, "number_percent value is correct";
 is $number_percent->unit, "%", "number_percent unit is correct";
 
@@ -309,18 +311,18 @@ test_list($list);
 test_list($list_comma);
 test_list($list_space);
 
-is $list, '[ foo, bar ]', "list stringify is correct";
+is "$list", '[ foo, bar ]', "list stringify is correct";
 is $list->[0], 'foo', "list[0] is correct";
 is $list->[1], 'bar', "list[1] is correct";
 is $list->[-1], 'bar', "list[-1] is correct";
 
-is $list_comma, '[ foo, bar, baz ]', "list_comma stringify is correct";
+is "$list_comma", '[ foo, bar, baz ]', "list_comma stringify is correct";
 is $list_comma->[0], 'foo', "list_comma[0] is correct";
 is $list_comma->[1], 'bar', "list_comma[1] is correct";
 is $list_comma->[2], 'baz', "list_comma[2] is correct";
 is $list_comma->[-1], 'baz', "list_comma[-1] is correct";
 
-is $list_space, '[ foo bar baz ]', "list_space stringify is correct";
+is "$list_space", '[ foo bar baz ]', "list_space stringify is correct";
 is $list_space->[0], 'foo', "list_space[0] is correct";
 is $list_space->[1], 'bar', "list_space[1] is correct";
 is $list_space->[2], 'baz', "list_space[2] is correct";
@@ -334,7 +336,7 @@ is $list_space->separator, SASS_SPACE, "space separator method works";
 
 test_map($map);
 
-is $map, '{ foo: bar }', "map stringify is correct";
+is "$map", '{ foo: bar }', "map stringify is correct";
 is $map->{'foo'}, 'bar', "map->foo is correct";
 
 is join("", $map->keys), "foo", "map keys method works";
@@ -345,8 +347,9 @@ is join("", $map->values), "bar", "map values method works";
 test_error($error);
 test_error($error_msg);
 
-is $error, 'error', "error stringify is correct";
-is $error_msg, 'message', "error_msg stringify is correct";
+is "$error", 'error', "error stringify is correct";
+is $error->message, '', "error message method return ok";
+is "$error_msg", 'message', "error_msg stringify is correct";
 is $error_msg->message, 'message', "error message method return ok";
 
 ################################################################################
@@ -373,9 +376,9 @@ my $bar_q3 = CSS::Sass::Value::String::Quoted->new('b a r');
 
 is $bar . "baz", "barbaz", "string concat test #01";
 is $bar_c1 . "baz", "barbaz", "string concat test #02";
-is $bar_q1 . "baz", '"barbaz"', "string concat test #03";
+is $bar_q1 . "baz", 'barbaz', "string concat test #03";
 is $bar_c2 . "baz", "barbaz", "string concat test #04";
-is $bar_q2 . "baz", '"barbaz"', "string concat test #05";
+is $bar_q2 . "baz", 'barbaz', "string concat test #05";
 
 is "foo" . $bar . "baz", "foobarbaz", "string concat test #06";
 is "foo" . $bar_c1 . "baz", "foobarbaz", "string concat test #07";
@@ -385,7 +388,7 @@ is "foo" . $bar_q2 . "baz", 'foobarbaz', "string concat test #10";
 
 is $bar_3 . "baz", "b a rbaz", "string concat test #01";
 is $bar_c3 . "baz", "b a rbaz", "string concat test #02";
-is $bar_q3 . "baz", '"b a rbaz"', "string concat test #03";
+is $bar_q3 . "baz", 'b a rbaz', "string concat test #03";
 
 is "foo" . $bar_3 . "baz", 'foob a rbaz', "string concat test #11";
 is "foo" . $bar_c3 . "baz", "foob a rbaz", "string concat test #12";
@@ -450,11 +453,11 @@ is $css_str, "A{color:foo bar}\n", "function returned native string type";
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "\"foo\\\"s\"" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, "A{color:foo\"s}\n", "function returned native string type";
+is $css_str, "A{color:\'foo\"s\'}\n", "function returned native string type";
 
 $sass->options->{'sass_functions'}->{'var-pl-str-quote'} = sub { return "\'foo\\'s\'" };
 $css_str = $sass->compile('$str: var-pl-str-quote(); A { color: $str; }');
-is $css_str, "A{color:foo\'s}\n", "function returned native string type";
+is $css_str, "A{color:\"foo\'s\"}\n", "function returned native string type";
 
 ################################################################################
 # test if functions get passed correct var structures
@@ -492,8 +495,8 @@ is $sass->compile('$dbl: test-dbl(var-pl-dbl()); A { value: $dbl; }'),
    "A{value:4.2}\n", 'test returned blessed variable of type double number';
 is $sass->compile('$str: test-str(var-pl-str()); A { value: $str; }'),
    "A{value:foobar}\n", 'test returned blessed variable of type string';
-is $sass->compile('$map: test-map(var-pl-map()); A { value: $map; }'),
-   "A{value:(foo:bar)}\n", 'test returned blessed variable of type map';
+is $sass->compile('$map: test-map(var-pl-map()); A { value: inspect($map); }'),
+   "A{value:(foo: bar)}\n", 'test returned blessed variable of type map';
 is $sass->compile('$err: test-err(var-pl-die()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 is $sass->compile('$lst: test-lst(var-pl-list()); A { value: $lst; }'),
@@ -507,8 +510,8 @@ is $sass->compile('$dbl: test-dbl(var-pl-new-dbl()); A { value: $dbl; }'),
    "A{value:4.2}\n", 'test returned blessed variable of type double number';
 is $sass->compile('$str: test-str(var-pl-new-str()); A { value: $str; }'),
    "A{value:foobar}\n", 'test returned blessed variable of type string';
-is $sass->compile('$map: test-map(var-pl-new-map()); A { value: $map; }'),
-   "A{value:(foo:bar)}\n", 'test returned blessed variable of type map';
+is $sass->compile('$map: test-map(var-pl-new-map()); A { value: inspect($map); }'),
+   "A{value:(foo: bar)}\n", 'test returned blessed variable of type map';
 is $sass->compile('$lst: test-lst(var-pl-new-list-comma()); A { value: $lst; }'),
    "A{value:foo,bar}\n", 'test returned blessed variable of type comma list';
 is $sass->compile('$lst: test-lst(var-pl-new-list-space()); A { value: $lst; }'),
