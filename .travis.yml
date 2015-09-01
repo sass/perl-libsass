@@ -17,6 +17,8 @@ install:
   - cpanm --installdeps --verbose .
   - cpanm -n Devel::Cover
   - cpanm -n Devel::Cover::Report::Coveralls
+  # Add additional dependency for tests (not yet available on CPAN)
+  - cpanm -i "https://github.com/mgreter/OCBNET-SourceMap/archive/master.tar.gz"
 script:
   - perl Makefile.PL
   - make -j5
