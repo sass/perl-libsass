@@ -1,9 +1,23 @@
-# Copyright © 2013 David Caldwell.
-# Copyright © 2014 Marcel Greter.
+# Copyright (c) 2013 David Caldwell.
+# Copyright (c) 2014 Marcel Greter.
 #
-# This library is free software; you can redistribute it and/or modify
-# it under the same terms as Perl itself, either Perl version 5.12.4 or,
-# at your option, any later version of Perl 5 you may have available.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 package CSS::Sass;
 
@@ -18,14 +32,17 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
 	quote
 	unquote
-	safequote
+	auto_quote
 	need_quotes
+	resolve_file
 	sass2scss
 	import_sv
 	sass_compile
 	sass_compile_file
 	libsass_version
 	sass2scss_version
+	sass_operation
+	sass_stringify
 	SASS_COMMA
 	SASS_SPACE
 	SASS_ERROR
@@ -52,7 +69,7 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = "v3.2.2";
+our $VERSION = "3.3.0_01";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
@@ -586,7 +603,7 @@ L<The CSS::Sass Home Page|https://github.com/sass/perl-libsass>
 
 =head1 AUTHOR
 
-David Caldwell E<lt>david@porkrind.orgE<gt>  
+David Caldwell E<lt>david@porkrind.orgE<gt>
 Marcel Greter E<lt>perl-libsass@ocbnet.chE<gt>
 
 =head1 LICENSE

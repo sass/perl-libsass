@@ -33,7 +33,7 @@ use Test::More;
 
 if (eval { require OCBNET::SourceMap; 1 })
 {
-	plan(tests => 1 + @tests * 2);
+	plan(tests => 2 + @tests * 2);
 }
 else
 {
@@ -41,6 +41,7 @@ else
 }
 
 use_ok('OCBNET::SourceMap');
+use_ok('OCBNET::SourceMap::V3');
 
 use CSS::Sass qw(SASS_STYLE_NESTED);
 
@@ -111,6 +112,8 @@ foreach my $test (@tests)
 					$cur = $smap_cur->{'mappings'}->[$i]->[$n]; ++$n;
 				}
 				# check if we have found it
+				# unless ($cur) { print STDERR "\n", $stats->{'output_string'}, "\n"; }
+				# unless ($cur) { print STDERR $stats->{'source_map_string'}, "\n"; }
 				unless ($cur) { return fail($test->[0] . "/" . $srcmap_file); }
 			}
 			++ $i;
