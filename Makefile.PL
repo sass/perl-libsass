@@ -284,6 +284,7 @@ WriteMakefile(
 	# test dependencies
 	TEST_REQUIRES      => {
 		'File::chdir'          => 0.01,
+		'Test::Differences'    => 0.01,
 	},
 	# build dependencies
 	BUILD_REQUIRES     => {

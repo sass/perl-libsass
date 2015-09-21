@@ -25,7 +25,8 @@
             "ExtUtils::CppGuess" : "0.09",
             "ExtUtils::MakeMaker" : "6.52",
             "File::chdir" : "0.01",
-            "Getopt::Long" : "0.01"
+            "Getopt::Long" : "0.01",
+            "Test::Differences" : "0.01"
          }
       },
       "configure" : {
