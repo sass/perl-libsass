@@ -268,6 +268,25 @@ $compiler_flags{'CCFLAGS'} =~ s/\s+/ /g;
 # disable all optimizations when doing code profiling
 $compiler_flags{'CCFLAGS'} =~ s/\s*\-O[1-9]//g if $profiling;
 
+# parse source files directly from libsass makefile
+open(my $fh, "<", "libsass/Makefile.conf");
+die "libsass/Makefile.conf not found" unless $fh;
+my $srcfiles = join "", <$fh>; close $fh;
+
+my (@CFILES, @CPPFILES);
+# parse variable out (this is hopefully tolerant enough)
+if ($srcfiles =~ m/^\s*SOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
+  @CPPFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
+} else { die "Did not find c++ SOURCES in libsass/Makefile.conf"; }
+if ($srcfiles =~ m/^\s*CSOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
+  @CFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
+} else { die "Did not find c++ CSOURCES in libsass/Makefile.conf"; }
+
+# prefix paths and filter the c and c++ sources
+my @SOURCES = map { join '/', 'libsass', 'src', $_ } 
+              grep { s/\.c(?:pp)?$/\.o/ }
+              (@CFILES, @CPPFILES);
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to
 # influence content of the Makefile that is written.
 WriteMakefile(
@@ -320,14 +339,6 @@ WriteMakefile(
 	%compiler_flags,
 	OPTIMIZE           => $optimize,
 	TYPEMAPS           => [ 'perlobject.map' ],
-	OBJECT             => join(" ", (sort grep { s/\.c(?:pp)?$/\.o/ } map { join '/', 'libsass', 'src', $_ } qw(
-		ast.cpp sass2scss.cpp node.cpp sass_util.cpp remove_placeholders.cpp json.cpp
-		base64vlq.cpp bind.cpp constants.cpp context.cpp plugins.cpp color_maps.cpp
-		error_handling.cpp eval.cpp expand.cpp cencode.c functions.cpp inspect.cpp
-		extend.cpp file.cpp output.cpp parser.cpp prelexer.cpp emitter.cpp position.cpp
-		sass.cpp sass_interface.cpp sass_functions.cpp sass_values.cpp sass_context.cpp
-		source_map.cpp to_c.cpp to_string.cpp units.cpp utf8_string.cpp util.cpp cssize.cpp
-		listize.cpp lexer.cpp memory_manager.cpp environment.cpp to_value.cpp values.cpp
-	)), '$(O_FILES)'),
+	OBJECT             => join(" ", (sort @SOURCES), '$(O_FILES)'),
 	EXE_FILES          => [ 'bin/psass' ],
 );

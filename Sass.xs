@@ -523,7 +523,7 @@ Sass_Import_List sass_importer(const char* cur_path, Sass_Importer_Entry cb, str
 }
 
 // we are called by libsass to dispatch to registered functions
-union Sass_Value* call_sass_function(const union Sass_Value* s_args, Sass_Function_Entry cb, struct Sass_Options* opts)
+union Sass_Value* call_sass_function(const union Sass_Value* s_args, Sass_Function_Entry cb, struct Sass_Compiler* comp)
 {
 
     dSP;

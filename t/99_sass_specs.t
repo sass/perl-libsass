@@ -34,6 +34,7 @@ BEGIN
 	$die_first = 0;
 	my $skip_huge = 0;
 	my $skip_todo = 1;
+	my $skip_err_tst = 1;
 
 	@dirs = ('t/sass-spec/spec');
 
@@ -52,6 +53,7 @@ BEGIN
 				$ent eq "libsass-todo-issues";
 			my $path = join("/", $dir, $ent);
 			next if $ent eq "huge" && $skip_huge;
+			next if $skip_err_tst && -e join("/", $dir, $ent, "error");
 			next if($todo && $skip_todo);
 			push @dirs, $path if -d $path;
 			if ($ent =~ m/^input\./)

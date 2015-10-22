@@ -22,6 +22,8 @@ TYPEMAP
 HV *		T_HvRV
 AV *		T_AvRV
 
+struct Sass_Options *		T_OBJECT
+struct Sass_Compiler *		T_OBJECT
 
 ######################################################################
 OUTPUT
