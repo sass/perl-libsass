@@ -1,3 +1,10 @@
+CSS::Sass (3.3.0-rc1)
+
+  * Update to latest libsass release (3.3.0-rc1)
+  * Implement native operations for sass values
+  * Add missing `source-map-root` context option
+  * Move build to more portable ExtUtils::MakeMaker
+
 CSS::Sass (3.2.2)
 
   * Update to latest libsass release (3.2.4)

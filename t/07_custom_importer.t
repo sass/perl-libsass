@@ -49,9 +49,9 @@ like  ($r,   qr/color:\s*yellow;/,                     "Custom importer works");
 is    ($err, undef,                                    "Custom importer returns no errors");
 
 is    (scalar(@{$stat->{'included_files'}}), 3,        "included_files has correct size");
-is    ($stat->{'included_files'}->[0], "green", "included_files[0] has correct url");
-is    ($stat->{'included_files'}->[1], "http://www.host.dom/red", "included_files[1] has correct url");
-is    ($stat->{'included_files'}->[2], "yellow", "included_files[2] has correct url");
+is    ($stat->{'included_files'}->[0], "http://www.host.dom/final", "included_files[0] has correct url");
+is    ($stat->{'included_files'}->[1], "http://www.host.dom/green", "included_files[1] has correct url");
+is    ($stat->{'included_files'}->[2], "red.css", "included_files[2] has correct url");
 
 is    (scalar(@{$stat->{'included_files'}}), 3,        "included_files has correct size");
 
