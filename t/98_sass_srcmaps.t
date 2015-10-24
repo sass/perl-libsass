@@ -53,12 +53,10 @@ sub read_file
 	binmode $fh; return <$fh>;
 }
 
-use File::chdir;
-
 foreach my $test (@tests)
 {
 
-	local $CWD =$test->[0];
+	chdir $test->[0];
 
 	my $input_file = $test->[1];
 	my $config_file = 'config';

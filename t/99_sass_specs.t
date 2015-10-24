@@ -124,6 +124,8 @@ sub res_expected_file {
 	return -f $name ? $name : $_[0];
 }
 
+my $sass_cmd = "C:\\Ruby\\64\\2.2.3\\bin\\sass.bat";
+
 my %options;
 my @cmds;
 foreach my $test (@tests)
@@ -146,10 +148,10 @@ foreach my $test (@tests)
 	if ($redo_sass)
 	{
 		unless (-f join("/", $test->[0], 'redo.skip')) {
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t nested -C \"$input_file\" \"$output_nested\"", $input_file] if ($do_nested);
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t compact -C \"$input_file\" \"$output_compact\"", $input_file] if ($do_compact);
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t expanded -C \"$input_file\" \"$output_expanded\"", $input_file] if ($do_expanded);
-			push @cmds, ["C:\\Ruby\\193\\bin\\sass -E utf-8 --unix-newlines --sourcemap=none -t compressed -C \"$input_file\" \"$output_compressed\"", $input_file] if ($do_compressed);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t nested -C \"$input_file\" \"$output_nested\"", $input_file] if ($do_nested);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compact -C \"$input_file\" \"$output_compact\"", $input_file] if ($do_compact);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t expanded -C \"$input_file\" \"$output_expanded\"", $input_file] if ($do_expanded);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compressed -C \"$input_file\" \"$output_compressed\"", $input_file] if ($do_compressed);
 		} else {
 			SKIP: { skip("dont redo expected_output.css", 1) if ($do_nested); }
 			SKIP: { skip("dont redo expected.compact.css", 1) if ($do_compact); }
@@ -165,7 +167,7 @@ foreach my $cmd (@cmds) {
 
     my $ProcessObj;
     Win32::Process::Create($ProcessObj,
-                                "C:\\Ruby\\193\\bin\\sass.bat",
+                                $sass_cmd,
                                 $cmd->[0],
                                 0,
                                 Win32::Process::NORMAL_PRIORITY_CLASS(),

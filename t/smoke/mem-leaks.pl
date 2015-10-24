@@ -167,7 +167,7 @@ sub run_sass_value_test
 	my $css_str = $sass->compile('$str: var-pl-str(); A { color: $str; }');
 	my $css_list_a = $sass->compile('$list: var-pl-list(); A { color: nth($list, 1); }');
 	my $css_list_b = $sass->compile('$list: var-pl-list(); A { color: nth($list, -1); }');
-	my $css_map = $sass->compile('$map: var-pipe(var-pl-map()); A { color: $map; }');
+	# my $css_map = $sass->compile('$map: var-pipe(var-pl-map()); A { color: $map; }');
 
 	$css_nil1 = $sass->compile('A { color: var-pipe(var-pl-nil()); }');
 	$css_nil2 = $sass->compile('$nill: var-pipe(null); A { color: $nill; }');
@@ -178,7 +178,7 @@ sub run_sass_value_test
 	$css_str = $sass->compile('$str: var-pipe(var-pl-str()); A { color: $str; }');
 	$css_list_a = $sass->compile('$list: var-pipe(var-pl-list()); A { color: nth($list, 1); }');
 	$css_list_b = $sass->compile('$list: var-pipe(var-pl-list()); A { color: nth($list, -1); }');
-	$css_map = $sass->compile('$map: var-pipe(var-pl-map()); A { color: $map; }');
+	# $css_map = $sass->compile('$map: var-pipe(var-pl-map()); A { color: $map; }');
 
 	$css_nil1 = $sass->compile('A { color: var-pipe2(var-pl-nil()); }');
 	$css_nil2 = $sass->compile('$nill: var-pipe2(null); A { color: $nill; }');
@@ -189,7 +189,7 @@ sub run_sass_value_test
 	$css_str = $sass->compile('$str: var-pipe2(var-pl-str()); A { color: $str; }');
 	$css_list_a = $sass->compile('$list: var-pipe2(var-pl-list()); A { color: nth($list, 1); }');
 	$css_list_b = $sass->compile('$list: var-pipe2(var-pl-list()); A { color: nth($list, -1); }');
-	$css_map = $sass->compile('$map: var-pipe2(var-pl-map()); A { color: $map; }');
+	# $css_map = $sass->compile('$map: var-pipe2(var-pl-map()); A { color: $map; }');
 
 	$css_nil1 = $sass->compile('A { color: var-pipe(var-pipe2(var-pl-nil())); }');
 	$css_nil2 = $sass->compile('$nill: var-pipe(var-pipe2(null)); A { color: $nill; }');
@@ -200,7 +200,7 @@ sub run_sass_value_test
 	$css_str = $sass->compile('$str: var-pipe(var-pipe2(var-pl-str())); A { color: $str; }');
 	$css_list_a = $sass->compile('$list: var-pipe(var-pipe2(var-pl-list())); A { color: nth($list, 1); }');
 	$css_list_b = $sass->compile('$list: var-pipe(var-pipe2(var-pl-list())); A { color: nth($list, -1); }');
-	$css_map = $sass->compile('$map: var-pipe(var-pipe2(var-pl-map())); A { color: $map; }');
+	# $css_map = $sass->compile('$map: var-pipe(var-pipe2(var-pl-map())); A { color: $map; }');
 
 	$css_nil1 = $sass->compile('A { color: var-pipe2(var-pipe(var-pl-nil())); }');
 	$css_nil2 = $sass->compile('$nill: var-pipe2(var-pipe(null)); A { color: $nill; }');
@@ -211,7 +211,7 @@ sub run_sass_value_test
 	$css_str = $sass->compile('$str: var-pipe2(var-pipe(var-pl-str())); A { color: $str; }');
 	$css_list_a = $sass->compile('$list: var-pipe2(var-pipe(var-pl-list())); A { color: nth($list, 1); }');
 	$css_list_b = $sass->compile('$list: var-pipe2(var-pipe(var-pl-list())); A { color: nth($list, -1); }');
-	$css_map = $sass->compile('$map: var-pipe2(var-pipe(var-pl-map())); A { color: $map; }');
+	# $css_map = $sass->compile('$map: var-pipe2(var-pipe(var-pl-map())); A { color: $map; }');
 
 }
 

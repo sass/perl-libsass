@@ -4,7 +4,7 @@
       "Marcel Greter <perl-libsass@ocbnet.ch>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 7.04, CPAN::Meta::Converter version 2.143240",
+   "generated_by" : "ExtUtils::MakeMaker version 7.1, CPAN::Meta::Converter version 2.150001",
    "license" : [
       "mit"
    ],
@@ -39,6 +39,10 @@
       "runtime" : {
          "requires" : {
             "Carp" : "1.01",
+            "Encode::Locale" : "0.01",
+            "File::Slurp" : "0.01",
+            "Getopt::Long" : "0.01",
+            "List::MoreUtils" : "0.01",
             "perl" : "5.008",
             "strict" : "0",
             "version" : "0",
@@ -59,5 +63,5 @@
          "url" : "https://github.com/sass/perl-libsass"
       }
    },
-   "version" : "v3.3.0_01"
+   "version" : "v3.3.0_03"
 }
