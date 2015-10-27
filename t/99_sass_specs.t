@@ -53,7 +53,6 @@ BEGIN
 				$ent eq "libsass-todo-issues";
 			my $path = join("/", $dir, $ent);
 			next if $ent eq "huge" && $skip_huge;
-			next if $skip_err_tst && -e join("/", $dir, $ent, "error");
 			next if($todo && $skip_todo);
 			push @dirs, $path if -d $path;
 			if ($ent =~ m/^input\./)
@@ -228,14 +227,46 @@ foreach my $test (@tests)
 
 	no warnings 'once';
 	open OLDFH, '>&STDERR';
-	open(STDERR, ">>", "specs.stderr.log");
 
+	open(STDERR, "+>", "specs.stderr.nested.log"); select(STDERR); $| = 1;
 	my $css_nested = eval { $do_nested && $comp_nested->compile_file($input_file) }; my $error_nested = $@;
+	seek(STDERR, 0, 0); my $stderr_nested = join("", <STDERR>); die $stderr_nested if $stderr_nested;
+	print STDERR "\n"; close(STDERR);
+	open(STDERR, "+>", "specs.stderr.compact.log"); select(STDERR); $| = 1;
 	my $css_compact = eval { $do_compact && $comp_compact->compile_file($input_file) }; my $error_compact = $@;
+	print STDERR "\n"; close(STDERR);
+	open(STDERR, "+>", "specs.stderr.expanded.log"); select(STDERR); $| = 1;
 	my $css_expanded = eval { $do_expanded && $comp_expanded->compile_file($input_file) }; my $error_expanded = $@;
+	print STDERR "\n"; close(STDERR);
+	open(STDERR, "+>", "specs.stderr.compressed.log"); select(STDERR); $| = 1;
 	my $css_compressed = eval { $do_compressed && $comp_compressed->compile_file($input_file) }; my $error_compressed = $@;
+	print STDERR "\n"; close(STDERR);
+
+	sub cleanerr {
+		my $str = $_[0];
+		$str =~ s/\`/\'/;
+		$str =~ s/^(?:.|\n|\r|\s)*//;
+		$str =~ s/\s*Backtrace:(?:.|\n|\r|\s)*//;
+		$str =~ s/\s*on\s+line\s*\d*\s*of(?:.|\n|\r|\s)*//;
+		$str =~ s/\s*Use \-\-trace for backtrace(?:.|\n|\r|\s)*//m;
+		return $str;
+	}
+
+	# special case for error tests
+	if (-e join("/", $test->[0], "error")) {
+		my $err_expected = cleanerr(read_file(join("/", $test->[0], "error")));
+		my $stderr_nested = read_file("specs.stderr.nested.log") . $error_nested;
+		my $stderr_compact = read_file("specs.stderr.compact.log") . $error_compact;
+		my $stderr_expanded = read_file("specs.stderr.expanded.log") . $error_expanded;
+		my $stderr_compressed = read_file("specs.stderr.compressed.log") . $error_compressed;
+		eq_or_diff ($err_expected, cleanerr($stderr_nested), "nested error does not match");
+		eq_or_diff ($err_expected, cleanerr($stderr_compact), "compact error does not match");
+		eq_or_diff ($err_expected, cleanerr($stderr_expanded), "expanded error does not match");
+		eq_or_diff ($err_expected, cleanerr($stderr_compressed), "compressed error does not match");
+	next }
 
 	open STDERR, '>&OLDFH';
+	use warnings 'once';
 
 	# warn $output_nested unless defined $css_nested;
 	$css_nested = "[$error_nested]" unless defined $css_nested;
