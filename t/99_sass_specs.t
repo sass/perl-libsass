@@ -2,6 +2,8 @@
 
 use strict;
 use warnings;
+use File::Basename;
+use File::Spec::Functions;
 
 my (@dirs, @tests, @todos);
 
@@ -34,7 +36,6 @@ BEGIN
 	$die_first = 0;
 	my $skip_huge = 0;
 	my $skip_todo = 1;
-	my $skip_err_tst = 1;
 
 	@dirs = ('t/sass-spec/spec');
 
@@ -91,7 +92,15 @@ sub read_file
   use Carp;
   local $/ = undef;
   open my $fh, "<:raw:utf8", $_[0] or croak "Couldn't open file: <", $_[0], ">: $!";
-  binmode $fh; return <$fh>;
+  binmode $fh; return join "", <$fh>;
+}
+
+sub write_file
+{
+  use Carp;
+  local $/ = undef;
+  open my $fh, ">:raw:utf8", $_[0] or croak "Couldn't open file: <", $_[0], ">: $!";
+  binmode $fh; return print $fh $_[1];
 }
 
 my $sass;
@@ -115,6 +124,22 @@ sub norm_output ($) {
 	$_[0] =~ s/;\s*}/}/g;
 }
 
+my $cwd = File::Spec->rel2abs("t");
+my $cwd_url = $cwd; $cwd_url =~ tr/\\/\//;
+my $cwd_path = $cwd; $cwd_path =~ tr/\//\\/;
+
+sub clean_err {
+	my $str = $_[0];
+	return unless defined $_[0];
+	$str =~ s/(?:\r\n)/\n/g;
+	$str =~ s/^(?:\n|\r)+//;
+	$str =~ s/\Q$cwd_url\E/\/sass/g;
+	$str =~ s/\Q$cwd_path\E/\/sass/g;
+	$str =~ s/libsass\-[a-z]+\-issue/libsass\-issue/g;
+	$str =~ s/[a-z]+\/sass-spec\//\/sass\/sass-spec\//g;
+	return $str;
+}
+
 my @false_negatives;
 
 sub res_expected_file {
@@ -123,7 +148,8 @@ sub res_expected_file {
 	return -f $name ? $name : $_[0];
 }
 
-my $sass_cmd = "C:\\Ruby\\64\\2.2.3\\bin\\sass.bat";
+my $sass_cmd = "C:\\Ruby\\193\\bin\\sass.bat";
+warn "\nRegenerate specs using ", `$sass_cmd -v`, "\n" if ($redo_sass);
 
 my %options;
 my @cmds;
@@ -131,10 +157,17 @@ foreach my $test (@tests)
 {
 
 	my $input_file = join("/", $test->[0], $test->[1]);
+	my $options_file = join("/", $test->[0], 'options');
 	my $output_nested = join("/", $test->[0], 'expected_output.css');
 	my $output_compact = join("/", $test->[0], 'expected.compact.css');
 	my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
 	my $output_compressed = join("/", $test->[0], 'expected.compressed.css');
+
+	my %custom;
+	if (-f $options_file) {
+		my $options = read_file($options_file); $options =~ s/(?:\r\n|\n)+$//;
+		%custom = map { split /\s*:\s*/ } split(/(?:\r\n|\n)+/, $options);
+	}
 
 	$output_nested = res_expected_file($output_nested);
 	$output_compact = res_expected_file($output_compact);
@@ -146,53 +179,144 @@ foreach my $test (@tests)
 
 	if ($redo_sass)
 	{
-		unless (-f join("/", $test->[0], 'redo.skip')) {
-			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t nested -C \"$input_file\" \"$output_nested\"", $input_file] if ($do_nested);
-			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compact -C \"$input_file\" \"$output_compact\"", $input_file] if ($do_compact);
-			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t expanded -C \"$input_file\" \"$output_expanded\"", $input_file] if ($do_expanded);
-			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compressed -C \"$input_file\" \"$output_compressed\"", $input_file] if ($do_compressed);
+		my $cmd_opt = join "", map { sprintf " --%s=%s", $_, $custom{$_} } keys %custom;
+		unless (-f join("/", $test->[0], 'redo.skip') || -f join("/", $test->[0], 'error.todo')) {
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t nested $cmd_opt -C \"$input_file\" \"$output_nested\" 2>\"$output_nested.stderr\"", $input_file, $output_nested, $test] if ($do_nested);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compact $cmd_opt -C \"$input_file\" \"$output_compact\" 2>\"$output_compact.stderr\"", $input_file, $output_compact, $test] if ($do_compact);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t expanded $cmd_opt -C \"$input_file\" \"$output_expanded\" 2>\"$output_expanded.stderr\"", $input_file, $output_expanded, $test] if ($do_expanded);
+			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compressed $cmd_opt -C \"$input_file\" \"$output_compressed\" 2>\"$output_compressed.stderr\"", $input_file, $output_compressed, $test] if ($do_compressed);
 		} else {
-			SKIP: { skip("dont redo expected_output.css", 1) if ($do_nested); }
-			SKIP: { skip("dont redo expected.compact.css", 1) if ($do_compact); }
-			SKIP: { skip("dont redo expected.expanded.css", 1) if ($do_expanded); }
-			SKIP: { skip("dont redo expected.compressed.css", 1) if ($do_compressed); }
+			SKIP: { skip("redo of $output_nested", 1) if ($do_nested); }
+			SKIP: { skip("redo of $output_compact", 1) if ($do_compact); }
+			SKIP: { skip("redo of $output_expanded", 1) if ($do_expanded); }
+			SKIP: { skip("redo of $output_compressed", 1) if ($do_compressed); }
 		}
 	}
+}
+
+sub postproc
+{
+	my ($proc, $cmd) = @_;
+	$proc->GetExitCode($cmd->[4]);
+	write_file($cmd->[2] . ".status", $cmd->[4]);
+	pass("regenerated: " . $cmd->[2]);
+
 }
 
 
 my @running; my $i = 0;
 foreach my $cmd (@cmds) {
 
-    my $ProcessObj;
-    Win32::Process::Create($ProcessObj,
-                                $sass_cmd,
-                                $cmd->[0],
-                                0,
-                                Win32::Process::NORMAL_PRIORITY_CLASS(),
-                                ".")|| die "error $!";
+	my $ProcessObj;
+	Win32::Process::Create($ProcessObj,
+	                       $sass_cmd,
+	                       $cmd->[0],
+	                       0,
+	                       Win32::Process::NORMAL_PRIORITY_CLASS(),
+	                       ".")
+	|| die "error $!";
 
-    push @running, $ProcessObj;
+	push @running, [ $ProcessObj, $cmd ];
 
-    while (scalar(@running) >= 12) {
-    	@running = grep {
-    		! $_->Wait(0);
-    	} @running;
+	while (scalar(@running) >= 12) {
+		@running = grep {
+			my $rv = $_->[0]->Wait(0);
+			postproc($_->[0], $_->[1]) if $rv;
+			! $rv;
+		} @running;
+		select undef, undef, undef, 0.0125;
+	}
 
-  select undef, undef, undef, 0.0125;
-
-    }
-
-  pass("regenerated " . $cmd->[1]);
-
-  select undef, undef, undef, 0.0125;
+	select undef, undef, undef, 0.0125;
 
 }
 
 while (scalar(@running)) {
 	@running = grep {
-		! $_->Wait(0);
+		my $rv = $_->[0]->Wait(0);
+		postproc($_->[0], $_->[1]) if $rv;
+		! $rv;
 	} @running;
+}
+
+if ($redo_sass) {
+	foreach my $test (@tests)
+	{
+
+		unless (-f join("/", $test->[0], 'redo.skip') || -f join("/", $test->[0], 'error.todo')) {
+			my $output_nested = join("/", $test->[0], 'expected_output.css');
+			my $output_compact = join("/", $test->[0], 'expected.compact.css');
+			my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
+			my $output_compressed = join("/", $test->[0], 'expected.compressed.css');
+			$output_nested = res_expected_file($output_nested);
+			$output_compact = res_expected_file($output_compact);
+			$output_expanded = res_expected_file($output_expanded);
+			$output_compressed = res_expected_file($output_compressed);
+			die "not found: ", $output_nested . ".stderr" unless -f $output_nested . ".stderr";
+			die "not found: ", $output_compact . ".stderr" unless -f $output_compact . ".stderr";
+			die "not found: ", $output_expanded . ".stderr" unless -f $output_expanded . ".stderr";
+			die "not found: ", $output_compressed . ".stderr" unless -f $output_compressed . ".stderr";
+			my $stderr_nested = clean_err(read_file($output_nested . ".stderr"));
+			my $stderr_compact = clean_err(read_file($output_compact . ".stderr"));
+			my $stderr_expanded = clean_err(read_file($output_expanded . ".stderr"));
+			my $stderr_compressed = clean_err(read_file($output_compressed . ".stderr"));
+			die "not found: ", $output_nested . ".status" unless -f $output_nested . ".status";
+			die "not found: ", $output_compact . ".status" unless -f $output_compact . ".status";
+			die "not found: ", $output_expanded . ".status" unless -f $output_expanded . ".status";
+			die "not found: ", $output_compressed . ".status" unless -f $output_compressed . ".status";
+			my $exitcode_nested = read_file($output_nested . ".status");
+			my $exitcode_compact = read_file($output_compact . ".status");
+			my $exitcode_expanded = read_file($output_expanded . ".status");
+			my $exitcode_compressed = read_file($output_compressed . ".status");
+
+
+			# only write the error file once if all results are the same
+			if ($exitcode_nested eq $exitcode_compact && $exitcode_nested eq $exitcode_expanded && $exitcode_nested eq $exitcode_compressed)
+			{
+				write_file(catfile(dirname($output_nested), "status"), $exitcode_nested) if $exitcode_nested != 0;
+				# clean up individual files
+				unlink $output_nested . ".status";
+				unlink $output_compact . ".status";
+				unlink $output_expanded . ".status";
+				unlink $output_compressed . ".status";
+			}
+			# error in case of mismatch
+			else {
+				warn "nested:     [[" . $exitcode_nested . "]]\n";
+				warn "compact:    [[" . $exitcode_compact . "]]\n";
+				warn "expanded:   [[" . $exitcode_expanded . "]]\n";
+				warn "compressed: [[" . $exitcode_compressed . "]]\n";
+				die "detected exit code mismatch for different output styles"
+			}
+
+			if ($stderr_nested eq $stderr_compact && $stderr_nested eq $stderr_expanded && $stderr_nested eq $stderr_compressed)
+			{
+				write_file(catfile(dirname($output_nested), "error"), $stderr_nested) if $stderr_nested ne "";
+				# clean up individual files
+				if ($exitcode_nested != 0) {
+					unlink $output_compact;
+					unlink $output_expanded;
+					unlink $output_compressed;
+					write_file($output_nested, "");
+				}
+				# clean up individual files
+				unlink $output_nested . ".stderr";
+				unlink $output_compact . ".stderr";
+				unlink $output_expanded . ".stderr";
+				unlink $output_compressed . ".stderr";
+			}
+			# error in case of mismatch
+			else {
+				warn "nested:     [[" . $stderr_nested . "]]\n";
+				warn "compact:    [[" . $stderr_compact . "]]\n";
+				warn "expanded:   [[" . $stderr_expanded . "]]\n";
+				warn "compressed: [[" . $stderr_compressed . "]]\n";
+				die "detected error spec mismatch for different output styles"
+			}
+		}
+
+
+	}
 }
 
 # check if the benchmark module is available
@@ -205,67 +329,87 @@ foreach my $test (@tests)
 {
 
 	my $input_file = join("/", $test->[0], $test->[1]);
+	my $options_file = join("/", $test->[0], 'options');
 	my $output_nested = join("/", $test->[0], 'expected_output.css');
 	my $output_compact = join("/", $test->[0], 'expected.compact.css');
 	my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
 	my $output_compressed = join("/", $test->[0], 'expected.compressed.css');
 
+	my %custom;
+	if (-f $options_file) {
+		my $options = read_file($options_file); $options =~ s/(?:\r\n|\n)+$//;
+		%custom = map { split /\s*:\s*/ } split(/(?:\r\n|\n)+/, $options);
+	}
 	# warn $input_file;
 
-	my $last_error; my $on_error;
-	$options{"sass_functions"} = {
-		'reset-error()' => sub { $last_error = undef; },
-		'last-error()' => sub { return ${$last_error || \ undef}; },
-		'mock-errors($on)' => sub { $on_error = $_[0]; return undef; },
-		'@error' => sub { $last_error = $_[0]; return "thrown"; }
-	};
+	#my $last_error; my $on_error;
+	#$options{"sass_functions"} = {
+	#	'reset-error()' => sub { $last_error = undef; },
+	#	'last-error()' => sub { return ${$last_error || \ undef}; },
+	#	'mock-errors($on)' => sub { $on_error = $_[0]; return undef; },
+	#	'@error' => sub { $last_error = $_[0]; warn $_[0]; return "thrown"; }
+	#};
 
-	my $comp_nested = CSS::Sass->new(%options, output_style => SASS_STYLE_NESTED);
-	my $comp_compact = CSS::Sass->new(%options, output_style => SASS_STYLE_COMPACT);
-	my $comp_expanded = CSS::Sass->new(%options, output_style => SASS_STYLE_EXPANDED);
-	my $comp_compressed = CSS::Sass->new(%options, output_style => SASS_STYLE_COMPRESSED);
+	my $comp_nested = CSS::Sass->new(%options, %custom, output_style => SASS_STYLE_NESTED);
+	my $comp_compact = CSS::Sass->new(%options, %custom, output_style => SASS_STYLE_COMPACT);
+	my $comp_expanded = CSS::Sass->new(%options, %custom, output_style => SASS_STYLE_EXPANDED);
+	my $comp_compressed = CSS::Sass->new(%options, %custom, output_style => SASS_STYLE_COMPRESSED);
 
 	no warnings 'once';
 	open OLDFH, '>&STDERR';
 
 	open(STDERR, "+>", "specs.stderr.nested.log"); select(STDERR); $| = 1;
 	my $css_nested = eval { $do_nested && $comp_nested->compile_file($input_file) }; my $error_nested = $@;
-	seek(STDERR, 0, 0); my $stderr_nested = join("", <STDERR>); die $stderr_nested if $stderr_nested;
-	print STDERR "\n"; close(STDERR);
+	print STDERR "\n"; sysseek(STDERR, 0, 0); close(STDERR);
 	open(STDERR, "+>", "specs.stderr.compact.log"); select(STDERR); $| = 1;
 	my $css_compact = eval { $do_compact && $comp_compact->compile_file($input_file) }; my $error_compact = $@;
-	print STDERR "\n"; close(STDERR);
+	print STDERR "\n"; sysseek(STDERR, 0, 0); close(STDERR);
 	open(STDERR, "+>", "specs.stderr.expanded.log"); select(STDERR); $| = 1;
 	my $css_expanded = eval { $do_expanded && $comp_expanded->compile_file($input_file) }; my $error_expanded = $@;
-	print STDERR "\n"; close(STDERR);
+	print STDERR "\n"; sysseek(STDERR, 0, 0); close(STDERR);
 	open(STDERR, "+>", "specs.stderr.compressed.log"); select(STDERR); $| = 1;
 	my $css_compressed = eval { $do_compressed && $comp_compressed->compile_file($input_file) }; my $error_compressed = $@;
-	print STDERR "\n"; close(STDERR);
+	print STDERR "\n"; sysseek(STDERR, 0, 0); close(STDERR);
 
-	sub cleanerr {
-		my $str = $_[0];
-		$str =~ s/\`/\'/;
-		$str =~ s/^(?:.|\n|\r|\s)*//;
-		$str =~ s/\s*Backtrace:(?:.|\n|\r|\s)*//;
-		$str =~ s/\s*on\s+line\s*\d*\s*of(?:.|\n|\r|\s)*//;
-		$str =~ s/\s*Use \-\-trace for backtrace(?:.|\n|\r|\s)*//m;
-		return $str;
-	}
+	open STDERR, '>&OLDFH';
 
 	# special case for error tests
 	if (-e join("/", $test->[0], "error")) {
-		my $err_expected = cleanerr(read_file(join("/", $test->[0], "error")));
-		my $stderr_nested = read_file("specs.stderr.nested.log") . $error_nested;
-		my $stderr_compact = read_file("specs.stderr.compact.log") . $error_compact;
-		my $stderr_expanded = read_file("specs.stderr.expanded.log") . $error_expanded;
-		my $stderr_compressed = read_file("specs.stderr.compressed.log") . $error_compressed;
-		eq_or_diff ($err_expected, cleanerr($stderr_nested), "nested error does not match");
-		eq_or_diff ($err_expected, cleanerr($stderr_compact), "compact error does not match");
-		eq_or_diff ($err_expected, cleanerr($stderr_expanded), "expanded error does not match");
-		eq_or_diff ($err_expected, cleanerr($stderr_compressed), "compressed error does not match");
+		my $err_expected = clean_err(read_file(join("/", $test->[0], "error")));
+		my $stderr_nested = clean_err(read_file("specs.stderr.nested.log") . "\n" . $error_nested);
+		my $stderr_compact = clean_err(read_file("specs.stderr.compact.log") . "\n" . $error_compact);
+		my $stderr_expanded = clean_err(read_file("specs.stderr.expanded.log") . "\n" . $error_expanded);
+		my $stderr_compressed = clean_err(read_file("specs.stderr.compressed.log") . "\n" . $error_compressed);
+		# only compare first line ...
+		$err_expected =~ s/(?:\n|\r)(?:\n|\r|.)*$//;
+		$stderr_nested =~ s/(?:\n|\r)(?:\n|\r|.)*$//;
+		$stderr_compact =~ s/(?:\n|\r)(?:\n|\r|.)*$//;
+		$stderr_expanded =~ s/(?:\n|\r)(?:\n|\r|.)*$//;
+		$stderr_compressed =~ s/(?:\n|\r)(?:\n|\r|.)*$//;
+		unless ($input_file =~ m/todo/)
+		{
+			eq_or_diff ($stderr_nested, $err_expected, $test->[0] . "/stderr.nested.log matches");
+			eq_or_diff ($stderr_compact, $err_expected, $test->[0] . "/stderr.compact.log matches");
+			eq_or_diff ($stderr_expanded, $err_expected, $test->[0] . "/stderr.expanded.log matches");
+			eq_or_diff ($stderr_compressed, $err_expected, $test->[0] . "/stderr.compressed.log matches");
+		}
+		else {
+			my $surprise = sub { fail("suprprise in: " . $_[0]); push @surprises, [ @_ ]; };
+			if ($stderr_nested eq $err_expected)
+			{ $surprise->(join("/", $test->[0], 'expected.stderr.nested')); }
+			else { pass(join("/", $test->[0], 'expected.stderr.nested') . " is still failing"); }
+			if ($stderr_compact eq $err_expected)
+			{ $surprise->(join("/", $test->[0], 'expected.stderr.compact')); }
+			else { pass(join("/", $test->[0], 'expected.stderr.compact') . " is still failing"); }
+			if ($stderr_expanded eq $err_expected)
+			{ $surprise->(join("/", $test->[0], 'expected.stderr.expanded')); }
+			else { pass(join("/", $test->[0], 'expected.stderr.expanded') . " is still failing"); }
+			if ($stderr_compressed eq $err_expected)
+			{ $surprise->(join("/", $test->[0], 'expected.stderr.compressed')); }
+			else { pass(join("/", $test->[0], 'expected.stderr.compressed') . " is still failing"); }
+		}
 	next }
 
-	open STDERR, '>&OLDFH';
 	use warnings 'once';
 
 	# warn $output_nested unless defined $css_nested;
@@ -370,13 +514,14 @@ END {
 
 	# only print benchmark result when module is available
 	if ($benchmark) { warn "\nin ", timestr(timediff($t1, $t0)), "\n"; }
-
+	# report all surprises before exiting
 	foreach my $surprise (@surprises)
 	{
 		my $file = $surprise->[0];
 		$file =~ s/\//\\/g if $^O eq 'MSWin32';
-		printf STDERR "at %s\n", $file;
+		warn sprintf "at %s\n", $file;
 	}
+
 }
 
 __DATA__

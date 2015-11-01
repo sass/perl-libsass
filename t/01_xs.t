@@ -104,7 +104,7 @@ is (auto_quote("foobar"), "foobar", "auto_quote test #1");
 is (auto_quote("foo bar"), "\"foo bar\"", "auto_quote test #2");
 is (auto_quote("baz\""), "'baz\"'", "auto_quote test #3");
 
-is (resolve_file("inc/simple"), "t/inc/simple.css", "resolve file test #1");
+is (resolve_file("inc/styles"), "t/inc/styles.css", "resolve file test #1");
 is (resolve_file("inc/colors"), "t/inc/_colors.scss", "resolve file test #2");
 is (resolve_file("nonexisting"), "", "resolve file test #3");
 

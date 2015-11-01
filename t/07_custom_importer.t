@@ -122,18 +122,18 @@ is    ($stat->{'included_files'}->[2], "foo.scss",  "included_files[2] has corre
     }
 );
 
-is ($r, "foo {\n  color: #ff1111; }\n", "correctly report error file");
+is ($r, "foo {\n  color: #ff1111; }\n", "custom importer test");
 
 ####### load handling #######
 
 ($r, $err, $stat) = CSS::Sass::sass_compile(
     '@import "foobar";',
     importer => sub {
-      return "t/inc/simple"
+      return "t/inc/styles"
     }
 );
 
-is ($r, "foo {\n  color: red; }\n", "correctly report error file");
+is ($r, "foo {\n  color: red; }\n", "custom importer test");
 
 ####### error handling #######
 
