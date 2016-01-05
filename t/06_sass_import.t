@@ -75,6 +75,6 @@ is    ($r, $expect,                                    "Handle SASS imports rela
 is    ($err, undef,                                    "Handle SASS imports relative to inc path (string data)");
 # ok    ($map =~ m/virtual\.sass/,                       "Can overwrite input_path for string compilation");
 SKIP: { skip("need to fix source-maps and add more tests", 1); }
-is    ($stats->{'included_files'}->[0], 'inc/sass/test-inc-01.sass', "Got the correct include in status array");
+like    ($stats->{'included_files'}->[0], qr{inc/sass/test-inc-02.sass}, "Got the correct include in status array");
 
 chdir "..";

@@ -157,6 +157,10 @@ sub sass_compile
     no warnings 'uninitialized';
     $normalize_options->(\%options);
     my $r = compile_sass($sass_code, \%options);
+    # decode the streams (maybe move directly to XS code)
+    #utf8::decode($r->{output_string}) if defined $r->{output_string};
+    #utf8::decode($r->{output_string}) if defined $r->{output_string};
+    #utf8::decode($r->{error_message}) if defined $r->{error_message};
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
@@ -166,6 +170,9 @@ sub sass_compile_file
     no warnings 'uninitialized';
     $normalize_options->(\%options);
     my $r = compile_sass_file($input_path, \%options);
+    # decode the streams (maybe move directly to XS code)
+    #utf8::decode($r->{output_string}) if defined $r->{output_string};
+    #utf8::decode($r->{error_message}) if defined $r->{error_message};
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 

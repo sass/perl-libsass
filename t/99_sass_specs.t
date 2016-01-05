@@ -49,7 +49,7 @@ BEGIN
 			next if $ent eq "..";
 			next if $ent =~ m/^\./;
 			next if $ent =~ m/input\.disabled\.scss$/;
-			$todo = $todo || $ent eq "todo" ||
+			$todo = $todo || $ent =~ m/(?:todo_|_todo)/ ||
 				$ent eq "libsass-todo-tests" ||
 				$ent eq "libsass-todo-issues";
 			my $path = join("/", $dir, $ent);
@@ -58,6 +58,7 @@ BEGIN
 			push @dirs, $path if -d $path;
 			if ($ent =~ m/^input\./)
 			{
+				next unless $redo_sass || -f catfile($dir, dirname($ent), "expected_output.css");
 				push @tests, [$dir, $ent];
 			}
 		}
@@ -114,12 +115,15 @@ sub clean_output ($) {
 	$_[0] =~ s/[\r\n\s	 ]+,/,/g;
 	$_[0] =~ s/,[\r\n\s	 ]+/,/g;
 }
+sub comp_output ($) {
+	# $_[0] =~ s/(?<!\d)0(\.\d)/$1/g;
+}
 sub norm_output ($) {
-	$_[0] =~ s/\r//g;
+	# $_[0] =~ s/\r//g;
 	# $_[0] =~ s/\s+([{,])/$1/g;
 	# $_[0] =~ s/#ff0/yellow/g;
-	$_[0] =~ s/(?:\r?\n)+/\n/g;
-	$_[0] =~ s/(?:\r?\n)+$/\n/g;
+	$_[0] =~ s/(?:\n)+/\n/g;
+	$_[0] =~ s/(?:\r\n)+/\r\n/g;
 	$_[0] =~ s/;(?:\s*;)+/;/g;
 	$_[0] =~ s/;\s*}/}/g;
 }
@@ -131,13 +135,32 @@ my $cwd_path = $cwd; $cwd_path =~ tr/\//\\/;
 sub clean_err {
 	my $str = $_[0];
 	return unless defined $_[0];
-	$str =~ s/(?:\r\n)/\n/g;
-	$str =~ s/^(?:\n|\r)+//;
-	$str =~ s/\Q$cwd_url\E/\/sass/g;
-	$str =~ s/\Q$cwd_path\E/\/sass/g;
-	$str =~ s/libsass\-[a-z]+\-issue/libsass\-issue/g;
-	$str =~ s/[a-z]+\/sass-spec\//\/sass\/sass-spec\//g;
-	return $str;
+	$str =~ s/(?:\/todo_|_todo\/)/\//g;
+	$str =~ s/\/libsass\-[a-z]+\-tests\//\//g;
+	$str =~ s/\/libsass\-[a-z]+\-issues\//\/libsass\-issues\//g;
+	$str =~ s/[\w\/\-\\:]+?[\/\\]spec[\/\\]+/\/sass\/spec\//g;
+	$str =~ s/(?:\r?\n)*\z/\n/;
+	$str =~ s/\A(?:\r?\n)+\z//;
+	# sometimes we want to skip these
+	my (@blocks);
+	my $head = my $block = [];
+	$str =~ s/\A(?:\r?\n)+//;
+	my @lines = split /\r?\n/, $str;
+	foreach my $line (@lines) {
+		# next if ($line eq "");
+		if ($line =~ m/^DEPRECATION WARNING/) {
+			$block = [ $line ];
+			unless ($line =~ m/interpolation near operators will be simplified/) {
+				push @blocks, $block;
+			}
+		} elsif ($line =~ m/^Error:/) {
+			$block = [ $line ];
+			push @blocks, $block;
+		} else {
+			push @{$block}, $line;
+		}
+	}
+	return join("\n", map { @{$_} } ($head, @blocks, [""]));
 }
 
 my @false_negatives;
@@ -158,6 +181,8 @@ foreach my $test (@tests)
 
 	my $input_file = join("/", $test->[0], $test->[1]);
 	my $options_file = join("/", $test->[0], 'options');
+	my $output_error = join("/", $test->[0], 'error');
+	my $output_status = join("/", $test->[0], 'status');
 	my $output_nested = join("/", $test->[0], 'expected_output.css');
 	my $output_compact = join("/", $test->[0], 'expected.compact.css');
 	my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
@@ -181,6 +206,16 @@ foreach my $test (@tests)
 	{
 		my $cmd_opt = join "", map { sprintf " --%s=%s", $_, $custom{$_} } keys %custom;
 		unless (-f join("/", $test->[0], 'redo.skip') || -f join("/", $test->[0], 'error.todo')) {
+			unlink $output_error if -f $output_error;
+			unlink $output_status if -f $output_status;
+			unlink $output_nested if -f $output_nested;
+			unlink $output_compact if -f $output_compact;
+			unlink $output_expanded if -f $output_expanded;
+			unlink $output_compressed if -f $output_compressed;
+			unlink "$output_nested.stderr" if -f "$output_nested.stderr";
+			unlink "$output_compact.stderr" if -f "$output_compact.stderr";
+			unlink "$output_expanded.stderr" if -f "$output_expanded.stderr";
+			unlink "$output_compressed.stderr" if -f "$output_compressed.stderr";
 			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t nested $cmd_opt -C \"$input_file\" \"$output_nested\" 2>\"$output_nested.stderr\"", $input_file, $output_nested, $test] if ($do_nested);
 			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t compact $cmd_opt -C \"$input_file\" \"$output_compact\" 2>\"$output_compact.stderr\"", $input_file, $output_compact, $test] if ($do_compact);
 			push @cmds, ["$sass_cmd -E utf-8 --unix-newlines --sourcemap=none -t expanded $cmd_opt -C \"$input_file\" \"$output_expanded\" 2>\"$output_expanded.stderr\"", $input_file, $output_expanded, $test] if ($do_expanded);
@@ -244,6 +279,7 @@ if ($redo_sass) {
 	{
 
 		unless (-f join("/", $test->[0], 'redo.skip') || -f join("/", $test->[0], 'error.todo')) {
+			my $output_error = join("/", $test->[0], 'error');
 			my $output_nested = join("/", $test->[0], 'expected_output.css');
 			my $output_compact = join("/", $test->[0], 'expected.compact.css');
 			my $output_expanded = join("/", $test->[0], 'expected.expanded.css');
@@ -275,9 +311,13 @@ if ($redo_sass) {
 			{
 				write_file(catfile(dirname($output_nested), "status"), $exitcode_nested) if $exitcode_nested != 0;
 				# clean up individual files
+				# unlink $output_nested . ".stderr";
 				unlink $output_nested . ".status";
+				# unlink $output_compact . ".stderr";
 				unlink $output_compact . ".status";
+				# unlink $output_expanded . ".stderr";
 				unlink $output_expanded . ".status";
+				# unlink $output_compressed . ".stderr";
 				unlink $output_compressed . ".status";
 			}
 			# error in case of mismatch
@@ -289,30 +329,31 @@ if ($redo_sass) {
 				die "detected exit code mismatch for different output styles"
 			}
 
-			if ($stderr_nested eq $stderr_compact && $stderr_nested eq $stderr_expanded && $stderr_nested eq $stderr_compressed)
+			unless ($stderr_nested eq $stderr_compact && $stderr_nested eq $stderr_expanded && $stderr_nested eq $stderr_compressed)
 			{
-				write_file(catfile(dirname($output_nested), "error"), $stderr_nested) if $stderr_nested ne "";
-				# clean up individual files
-				if ($exitcode_nested != 0) {
-					unlink $output_compact;
-					unlink $output_expanded;
-					unlink $output_compressed;
-					write_file($output_nested, "");
-				}
-				# clean up individual files
-				unlink $output_nested . ".stderr";
-				unlink $output_compact . ".stderr";
-				unlink $output_expanded . ".stderr";
-				unlink $output_compressed . ".stderr";
-			}
-			# error in case of mismatch
-			else {
 				warn "nested:     [[" . $stderr_nested . "]]\n";
 				warn "compact:    [[" . $stderr_compact . "]]\n";
 				warn "expanded:   [[" . $stderr_expanded . "]]\n";
 				warn "compressed: [[" . $stderr_compressed . "]]\n";
-				die "detected error spec mismatch for different output styles"
+				warn "detected error spec mismatch for different output styles"
 			}
+
+			write_file(catfile(dirname($output_nested), "error"), $stderr_nested) if $stderr_nested ne "";
+			# clean up individual files
+			if ($exitcode_nested != 0) {
+				unlink $output_compact;
+				unlink $output_expanded;
+				unlink $output_compressed;
+				write_file($output_nested, "");
+			} else {
+				# unlink $output_error;
+			}
+			# clean up individual files
+			unlink $output_nested . ".stderr";
+			unlink $output_compact . ".stderr";
+			unlink $output_expanded . ".stderr";
+			unlink $output_compressed . ".stderr";
+
 		}
 
 
@@ -421,10 +462,10 @@ foreach my $test (@tests)
 	# warn $output_compressed unless defined $css_compressed;
 	$css_compressed = "[$error_compressed]" unless defined $css_compressed;
 
-	my $sass_nested = $do_nested ? read_file($output_nested) : '';
-	my $sass_compact = $do_compact ? read_file($output_compact) : '';
-	my $sass_expanded = $do_expanded ? read_file($output_expanded) : '';
-	my $sass_compressed = $do_compressed ? read_file($output_compressed) : '';
+	my $sass_nested = $do_nested && -f $output_nested  ? read_file($output_nested) : '';
+	my $sass_compact = $do_compact && -f $output_compact ? read_file($output_compact) : '';
+	my $sass_expanded = $do_expanded && -f $output_expanded  ? read_file($output_expanded) : '';
+	my $sass_compressed = $do_compressed && -f $output_compressed  ? read_file($output_compressed) : '';
 
 	die "read $output_nested" unless defined $sass_nested;
 	die "read $output_compact" unless defined $sass_compact;
@@ -454,6 +495,7 @@ foreach my $test (@tests)
 	norm_output $css_compact; norm_output $sass_compact;
 	norm_output $css_expanded; norm_output $sass_expanded;
 	norm_output $css_compressed; norm_output $sass_compressed;
+	comp_output $css_compressed; comp_output $sass_compressed;
 
 	unless ($input_file =~ m/todo/)
 	{
@@ -466,16 +508,19 @@ foreach my $test (@tests)
 
 		unless ($do_compact) { }
 		elsif (-f join("/", $test->[0], 'expected.compact.skip')) { SKIP: { skip("compact", 1) } }
+		elsif (!-f join("/", $test->[0], 'expected.compact.css')) { SKIP: { skip("compact", 1) } }
 		else { eq_or_diff ($css_compact, $sass_compact, "compact $output_compact") }
 		die if ($do_compact && $die_first && $css_compact ne $sass_compact);
 
 		unless ($do_expanded) { }
 		elsif (-f join("/", $test->[0], 'expected.expanded.skip')) { SKIP: { skip("expanded", 1) } }
+		elsif (!-f join("/", $test->[0], 'expected.expanded.css')) { SKIP: { skip("expanded", 1) } }
 		else { eq_or_diff ($css_expanded, $sass_expanded, "expanded $output_expanded") }
 		die if ($do_expanded && $die_first && $css_expanded ne $sass_expanded);
 
 		unless ($do_compressed) { }
 		elsif (-f join("/", $test->[0], 'expected.compressed.skip')) { SKIP: { skip("compressed", 1) } }
+		elsif (!-f join("/", $test->[0], 'expected.compressed.css')) { SKIP: { skip("compressed", 1) } }
 		else { eq_or_diff ($css_compressed, $sass_compressed, "compressed $output_compressed") }
 		die if ($do_compressed && $die_first && $css_compressed ne $sass_compressed);
 

@@ -3,6 +3,7 @@
 # Usefult for debugging the xs with prints:
 # cd text-sass-xs && ./Build && perl -Mlib=blib/arch -Mlib=blib/lib t/01_xs.t
 
+use utf8;
 use strict;
 use warnings;
 
