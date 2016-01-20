@@ -3,6 +3,7 @@
 # sass (scss) compiler
 ####################################################################################################
 
+use utf8;
 use strict;
 use warnings;
 
@@ -23,6 +24,12 @@ use CSS::Sass qw(SASS_STYLE_NESTED);
 use CSS::Sass qw(SASS_STYLE_COMPRESSED);
 use CSS::Sass qw(SASS_STYLE_COMPACT);
 use CSS::Sass::Watchdog qw(start_watchdog);
+
+# setup encodings for std streams
+# not sure why this is not default
+binmode(STDIN,":encoding(locale)");
+binmode(STDOUT,":encoding(locale)");
+binmode(STDERR,":encoding(locale)");
 
 ####################################################################################################
 # normalize command arguments to utf8
@@ -47,6 +54,7 @@ my $output_file;
 my $output_style;
 my $source_comments;
 my $source_map_file;
+my $source_map_root;
 my $source_map_embed;
 my $source_map_contents;
 my $omit_source_map_url;
@@ -80,6 +88,7 @@ GetOptions (
 	'output-style|t=s' => \ $output_style,
 	'source-comments|c!' => \ $source_comments,
 	'source-map-file|m=s' => \ $source_map_file,
+	'source-map-root|m=s' => \ $source_map_root,
 	'source-map-embed|e!' => \ $source_map_embed,
 	'source-map-contents|s!' => \ $source_map_contents,
 	'no-source-map-url!' => \ $omit_source_map_url,
@@ -140,6 +149,7 @@ sub sass_options ()
 		include_paths => \ @include_paths,
 		source_comments => $source_comments,
 		source_map_file => $source_map_file,
+		source_map_root => $source_map_root,
 		source_map_embed => $source_map_embed,
 		source_map_contents => $source_map_contents,
 		omit_source_map_url => $omit_source_map_url,
@@ -180,7 +190,7 @@ sub compile ()
 	# get benchmark stamp after compiling
 	my $t1 = $benchmark ? Benchmark->new : 0;
 	# only print benchmark result when module is available
-	if ($benchmark) { print timestr(timediff($t1, $t0), 'auto', '5.4f'), "\n"; }
+	if ($benchmark) { warn timestr(timediff($t1, $t0), 'auto', '5.4f'), "\n"; }
 
 	# process return status values
 	if (defined $css)
@@ -245,6 +255,7 @@ psass [options] [ path_in | - ] [ path_out | - ]
    -e, --source-map-embed        embed source-map in mapping url
    -s, --source-map-contents     include original contents
    -m, --source-map-file=file    create and write source-map to file
+       --source-map-root=.       specific root for relative paths
        --no-source-map-url       omit sourceMappingUrl from output
        --benchmark               print benchmark for compilation time
 

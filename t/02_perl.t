@@ -180,7 +180,7 @@ print $fh "\n\$foo: 1; .valid {\n padding: \$foo / 3; }";
 close $fh;
 ($r, $err) = sass_compile_file($filename, output_style => SASS_STYLE_COMPRESSED, precision => 10);
 is    ($err,                undef,       "custom precision works without error");
-like  ($r,                  qr/padding\:0.3333333333\W/,     "custom precision has correct output");
+like  ($r,                  qr/padding\:.3333333333\W/,     "custom precision has correct output");
 
 close($fh);
 

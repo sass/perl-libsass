@@ -1,6 +1,23 @@
-# Copyright (c) 2013 David Caldwell,
-# Copyright (c) 2014 Marcel Greter,
-# All Rights Reserved. -*- cperl -*-
+# Copyright (c) 2013 David Caldwell.
+# Copyright (c) 2014 Marcel Greter.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
 # internal representation
 # accepted from functions
@@ -14,11 +31,7 @@
 # \4.2 -> number (no unit)
 
 # internal representations differ slightly
-
 # for list only the blessed class is important
-
-# missing: error, boolean, color, number with unit
-
 
 use strict;
 use warnings;
@@ -26,26 +39,46 @@ use CSS::Sass;
 
 ################################################################################
 package CSS::Sass::Value;
-our $VERSION = "v3.2.2";
+our $VERSION = "3.3.0_03";
 ################################################################################
 use CSS::Sass qw(import_sv);
+use CSS::Sass qw(sass_operation);
+use CSS::Sass qw(sass_stringify);
 ################################################################################
-use overload '""' => 'stringify';
-use overload 'eq' => 'equals';
-use overload '==' => 'equals';
-use overload 'ne' => 'nequals';
-use overload '!=' => 'nequals';
+use overload '""' => 'stringify'; # allow further overloading
+################################################################################
+use overload '&' => sub { sass_operation(CSS::Sass::AND, $_[0], $_[1])->value ? 1 : 0; };
+use overload '|' => sub { sass_operation(CSS::Sass::OR, $_[0], $_[1])->value ? 1 : 0; };
+use overload 'bool' => sub { sass_operation(CSS::Sass::OR, $_[0], undef)->value ? 1 : 0; };
+################################################################################
+use overload 'eq' => sub { sass_stringify($_[0])->value eq sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'ne' => sub { sass_stringify($_[0])->value ne sass_stringify($_[1])->value ? 1 : 0; };
+use overload '==' => sub { sass_operation(CSS::Sass::EQ, $_[0], $_[1])->value ? 1 : 0; };
+use overload '!=' => sub { sass_operation(CSS::Sass::NEQ, $_[0], $_[1])->value ? 1 : 0; };
+################################################################################
+use overload 'lt' => sub { sass_stringify($_[0])->value lt sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'le' => sub { sass_stringify($_[0])->value le sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'gt' => sub { sass_stringify($_[0])->value gt sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'ge' => sub { sass_stringify($_[0])->value ge sass_stringify($_[1])->value ? 1 : 0; };
+################################################################################
+use overload '<'  => sub { sass_operation(CSS::Sass::LT , $_[0], $_[1])->value ? 1 : 0; };
+use overload '<=' => sub { sass_operation(CSS::Sass::LTE, $_[0], $_[1])->value ? 1 : 0; };
+use overload '>'  => sub { sass_operation(CSS::Sass::GT , $_[0], $_[1])->value ? 1 : 0; };
+use overload '>=' => sub { sass_operation(CSS::Sass::GTE, $_[0], $_[1])->value ? 1 : 0; };
+################################################################################
+use overload '+' => sub { sass_operation(CSS::Sass::ADD, $_[0], $_[1]); };
+use overload '-' => sub { sass_operation(CSS::Sass::SUB, $_[0], $_[1]); };
+use overload '*' => sub { sass_operation(CSS::Sass::MUL, $_[0], $_[1]); };
+use overload '/' => sub { sass_operation(CSS::Sass::DIV, $_[0], $_[1]); };
+use overload '%' => sub { sass_operation(CSS::Sass::MOD, $_[0], $_[1]); };
 ################################################################################
 
 sub new { import_sv($_[1]) }
 sub clone { import_sv($_[0]) }
 
 # default implementations
-sub quoted { shift->stringify(@_) }
-
-# generic implementations
-sub equals { $_[0]->stringify eq $_[1] ? 1 : 0; }
-sub nequals { $_[0]->equals($_[1]) ? 0 : 1; }
+sub quoted { sass_stringify($_[0])->value }
+sub stringify { sass_stringify($_[0])->value }
 
 ################################################################################
 package CSS::Sass::Value::Null;
@@ -60,11 +93,6 @@ sub new {
 }
 
 sub value { undef }
-
-sub stringify { "null" }
-
-sub equals { defined $_[1] ? 0 : 1 }
-sub nequals { defined $_[1] ? 1 : 0 }
 
 ################################################################################
 package CSS::Sass::Value::Error;
@@ -83,12 +111,6 @@ sub new {
 sub message {
 	wantarray ? @{${${$_[0]}}} :
 	            join "", @{${${$_[0]}}};
-}
-
-sub stringify {
-	scalar(@{${${$_[0]}}}) ?
-	  join "", @{${${$_[0]}}}
-	  : "error";
 }
 
 ################################################################################
@@ -110,18 +132,12 @@ sub value {
 	${${$_[0]}};
 }
 
-sub stringify {
-	shift->value ? "true" : "false";
-}
-
 ################################################################################
 package CSS::Sass::Value::String;
 ################################################################################
 use base 'CSS::Sass::Value';
 ################################################################################
-use overload '.'=> 'concat';
-################################################################################
-use CSS::Sass qw(quote need_quotes);
+use CSS::Sass qw(quote need_quotes sass_stringify);
 ################################################################################
 
 sub new {
@@ -141,33 +157,11 @@ sub value {
 	defined ${$_[0]} ? ${$_[0]} : "";
 }
 
-sub stringify {
-	$_[0]->is_quoted ? quote(${$_[0]}) : ${$_[0]};
-}
-
-sub is_quoted {
-	need_quotes(${$_[0]});
+sub has_quotes {
+	need_quotes(${$_[0]}) ? 1 : 0;
 }
 
 sub quoted { "$_[0]" }
-
-sub concat {
-	if ($_[2]) {
-		if (UNIVERSAL::isa($_[1], "CSS::Sass::Value::String")) {
-			my $clone = $_[1]->clone;
-			${$clone} .= "$_[0]";
-			return $clone;
-		} else {
-			my $clone = CSS::Sass::Value::String->new($_[1], 0);
-			${$clone} .= ${$_[0]};
-			return $clone;
-		}
-	} else {
-		my $clone = $_[0]->clone;
-		${$clone} .= "$_[1]";
-		return $clone;
-	}
-}
 
 ################################################################################
 package CSS::Sass::Value::String::Constant;
@@ -175,7 +169,9 @@ package CSS::Sass::Value::String::Constant;
 use base 'CSS::Sass::Value::String';
 ################################################################################
 
-sub is_quoted { 0 }
+sub new { shift->SUPER::new($_[0], 0); }
+
+sub has_quotes { 0 }
 
 ################################################################################
 package CSS::Sass::Value::String::Quoted;
@@ -183,7 +179,9 @@ package CSS::Sass::Value::String::Quoted;
 use base 'CSS::Sass::Value::String';
 ################################################################################
 
-sub is_quoted { 1 }
+sub new { shift->SUPER::new($_[0], 1); }
+
+sub has_quotes { 1 }
 
 ################################################################################
 package CSS::Sass::Value::Number;
@@ -210,10 +208,6 @@ sub unit {
 		${$_[0]}->[1] = defined $_[1] ? $_[1] : "";
 	}
 	${$_[0]}->[1];
-}
-
-sub stringify {
-	sprintf "%g%s", @{${$_[0]}};
 }
 
 ################################################################################
@@ -249,8 +243,8 @@ sub stringify {
 		"transparent"
 	} elsif (defined $a && $a != 1) {
 		sprintf("rgba(%s, %s, %s, %s)", $r, $g, $b, $a)
-	} elsif ($r || $g || $b) {
-		sprintf("rgb(%s, %s, %s)", $r, $g, $b)
+	} elsif (defined $r || defined $g || defined $b) {
+		sprintf("rgb(%s, %s, %s)", $r || 0, $g || 0, $b || 0)
 	} else {
 		"null"
 	}
@@ -284,35 +278,6 @@ sub stringify {
 			CORE::keys %{$_[0]};
 }
 
-# ignore different separators
-# they have different stringifies
-# so we must overload generic method
-sub equals {
-	# compare to native type
-	unless (ref $_[1]) {
-		return $_[0]->stringify eq $_[1]
-	}
-	# compare to another list (compore arrays)
-	elsif ($_[1]->isa('CSS::Sass::Value::Map')) {
-		# both maps must have same amount of keys
-		return 0 if CORE::keys %{$_[0]} != CORE::keys %{$_[1]};
-		# all items must be equal to the other items
-		for (CORE::keys %{$_[0]}) {
-			return 0 if $_[0]->{$_} ne $_[1]->{$_};
-		}
-		# no diffs
-		return 1;
-	}
-	# other value
-	else
-	{
-		return 0;
-		# is always false
-		# $_[0] !== $_[1];
-	}
-}
-
-
 ################################################################################
 package CSS::Sass::Value::List;
 ################################################################################
@@ -339,33 +304,6 @@ sub stringify
 			# force quotes around values
 			map { ref $_ ? $_->quoted(1) : $_ }
 			@{$_[0]};
-}
-
-# ignore different separators
-# they have different stringifies
-# so we must overload generic method
-sub equals {
-	# compare to native type
-	unless (ref $_[1]) {
-		return $_[0]->stringify eq $_[1]
-	}
-	# compare to another list (compore arrays)
-	elsif ($_[1]->isa('CSS::Sass::Value::List')) {
-		# both arrays must have same length
-		return 0 if $#{$_[0]} != $#{$_[1]};
-		# all items must be equal to the other items
-		for (my ($i, $L) = (0, scalar(@{$_[0]})); $i < $L; $i++)
-		{ return 0 if $_[0]->[$i] ne $_[1]->[$i]; }
-		# no diffs
-		return 1;
-	}
-	# other value
-	else
-	{
-		return 0;
-		# is always false
-		# $_[0] !== $_[1];
-	}
 }
 
 ################################################################################
