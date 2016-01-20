@@ -53,12 +53,10 @@ sub read_file
 	binmode $fh; return <$fh>;
 }
 
-use File::chdir;
-
 foreach my $test (@tests)
 {
 
-	local $CWD =$test->[0];
+	chdir $test->[0];
 
 	my $input_file = $test->[1];
 	my $config_file = 'config';
@@ -114,7 +112,10 @@ foreach my $test (@tests)
 				# check if we have found it
 				# unless ($cur) { print STDERR "\n", $stats->{'output_string'}, "\n"; }
 				# unless ($cur) { print STDERR $stats->{'source_map_string'}, "\n"; }
-				unless ($cur) { return fail($test->[0] . "/" . $srcmap_file); }
+				unless ($cur) {
+					warn "input    ", $srcmap, "\n";
+					warn "expected ", $stats->{'source_map_string'}, "\n";
+				return fail($test->[0] . "/" . $srcmap_file); }
 			}
 			++ $i;
 			$n = 0;

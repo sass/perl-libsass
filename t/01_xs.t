@@ -3,6 +3,7 @@
 # Usefult for debugging the xs with prints:
 # cd text-sass-xs && ./Build && perl -Mlib=blib/arch -Mlib=blib/lib t/01_xs.t
 
+use utf8;
 use strict;
 use warnings;
 
@@ -104,7 +105,7 @@ is (auto_quote("foobar"), "foobar", "auto_quote test #1");
 is (auto_quote("foo bar"), "\"foo bar\"", "auto_quote test #2");
 is (auto_quote("baz\""), "'baz\"'", "auto_quote test #3");
 
-is (resolve_file("inc/simple"), "t/inc/simple.css", "resolve file test #1");
+is (resolve_file("inc/styles"), "t/inc/styles.css", "resolve file test #1");
 is (resolve_file("inc/colors"), "t/inc/_colors.scss", "resolve file test #2");
 is (resolve_file("nonexisting"), "", "resolve file test #3");
 

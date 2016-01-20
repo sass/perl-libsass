@@ -8,7 +8,7 @@ BEGIN {
 	use Test::More;
 }
 
-use Test::More tests => 39;
+use Test::More tests => 40;
 
 BEGIN { use_ok('CSS::Sass') };
 
@@ -57,7 +57,7 @@ is($num_add_1, CSS::Sass::Value::Number->new(42 + 42, "px"), "number_42 + number
 is($num_sub_1, CSS::Sass::Value::Number->new(42 - 42, "px"), "number_42 - number_42px ok");
 is($num_mod_1, CSS::Sass::Value::Number->new(42 % 42, "px"), "number_42 % number_42px ok");
 is($num_eq_1, CSS::Sass::Value::Boolean->new(1), "number_42 == number_42 ok");
-is($num_eq_2, CSS::Sass::Value::Boolean->new(0), "number_42 == number_42px ok");
+is($num_eq_2, CSS::Sass::Value::Boolean->new(1), "number_42 == number_42px ok");
 is($num_eq_3, CSS::Sass::Value::Boolean->new(1), "number_42px == number_42px ok");
 
 # test string with string operations
@@ -70,11 +70,11 @@ my $str_eq_1 = sass_operation(CSS::Sass::EQ, $string_foobar, $string_foobar);
 my $str_eq_2 = sass_operation(CSS::Sass::EQ, $string_foobar, "foobar");
 my $str_eq_3 = sass_operation(CSS::Sass::EQ, "foobar", $string_foobar);
 
-is($str_mul_1, CSS::Sass::Value::Error->new("invalid operands for multiplication"), "string multiplication error ok");
+is($str_mul_1, CSS::Sass::Value::Error->new("Undefined operation: \"foobar times foobar\"."), "string multiplication error ok");
 is($str_div_1, CSS::Sass::Value::String->new("foobar/foobar"), "string_foobar / string_foobar ok");
 is($str_add_1, CSS::Sass::Value::String->new("foobarfoobar"), "string_foobar + string_foobar ok");
 is($str_sub_1, CSS::Sass::Value::String->new("foobar-foobar"), "string_foobar - string_foobar ok");
-is($str_mod_1, CSS::Sass::Value::Error->new("invalid operands for modulo"), "string modulo error ok");
+is($str_mod_1, CSS::Sass::Value::Error->new("Undefined operation: \"foobar mod foobar\"."), "string modulo error ok");
 is($str_eq_1, CSS::Sass::Value::Boolean->new(1), "string_foobar eq string_foobar ok");
 is($str_eq_2, CSS::Sass::Value::Boolean->new(1), "string_foobar eq 'foobar' ok");
 is($str_eq_3, CSS::Sass::Value::Boolean->new(1), "'foobar' eq string_foobar ok");
@@ -224,9 +224,9 @@ my ($r, $err) = CSS::Sass::sass_compile(
     test-native: inspect(($a % $b));
   }
   numbers {
-    @include test_comp_op(42, 42px);
-    @include test_base_op(42, 42px);
-    @include test_mul_op(42, 42px);
+    @include test_comp_op(42px, 42);
+    @include test_base_op(42px, 42);
+    @include test_mul_op(42px, 42);
   }
   colors {
     @include test_base_op(red, #F36);
@@ -256,24 +256,24 @@ my ($r, $err) = CSS::Sass::sass_compile(
 
 my $expected = <<END_OF_EXPECTED;
 numbers {
-  test-native: 42px;
   test-native: 42;
-  /*! false == false */
-  test-eq: true;
-  test-custom: false;
-  test-native: false;
+  test-native: 42px;
   /*! true == true */
+  test-eq: true;
+  test-custom: true;
+  test-native: true;
+  /*! false == false */
   test-neq: true;
-  test-custom: true;
-  test-native: true;
-  test-custom: true;
-  test-native: true;
-  test-custom: true;
-  test-native: true;
   test-custom: false;
   test-native: false;
   test-custom: false;
   test-native: false;
+  test-custom: true;
+  test-native: true;
+  test-custom: false;
+  test-native: false;
+  test-custom: true;
+  test-native: true;
   /*! 84px == 84px */
   test-add: true;
   test-custom: 84px;
@@ -282,11 +282,11 @@ numbers {
   test-sub: true;
   test-custom: 0px;
   test-native: 0px;
-  /*! 1/px == 1/px */
+  /*! 1px == 1px */
   test-div: true;
-  test-custom: 1/px;
-  test-native: 1/px;
-  /*! 1/px == 1764px */
+  test-custom: 1px;
+  test-native: 1px;
+  /*! 1px == 1764px */
   test-mul: true;
   test-custom: 1764px;
   test-native: 1764px;
@@ -322,14 +322,15 @@ booleans {
   test-add: true;
   test-custom: truefalse;
   test-native: truefalse;
-  /*! true-"false" == true-"false" */
+  /*! true-false == true-false */
   test-sub: true;
-  test-custom: true-"false";
-  test-native: true-"false";
-  /*! true/"false" == true/"false" */
+  test-custom: true-false;
+  test-native: true-false;
+  /*! true/false == true / false */
   test-div: true;
-  test-custom: true/"false";
-  test-native: true/"false"; }
+  test-custom: true/false;
+  test-native: true/false; }
 END_OF_EXPECTED
 
 is ($r, $expected, "big custom operation test");
+is ($err, undef, "big custom operation test has no error");

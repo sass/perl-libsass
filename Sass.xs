@@ -743,16 +743,36 @@ void finalize_sass_context(struct Sass_Context* ctx, HV* RETVAL, SV* err)
       ++it;
     }
 
-    (void)hv_stores(RETVAL, "error_status",      newSViv(error_status || SvOK(err)));
-    (void)hv_stores(RETVAL, "output_string",     output_string ? newSVpv(output_string, 0) : newSV(0));
-    (void)hv_stores(RETVAL, "source_map_string", source_map_string ? newSVpv(source_map_string, 0) : newSV(0));
-    (void)hv_stores(RETVAL, "error_line",        SvOK(err) ? err : error_line ? newSViv(error_line) : newSViv(0));
-    (void)hv_stores(RETVAL, "error_column",      SvOK(err) ? err : error_column ? newSViv(error_column) : newSViv(0));
-    (void)hv_stores(RETVAL, "error_src",         SvOK(err) ? err : error_src ? newSVpv(error_src, 0) : newSViv(0));
-    (void)hv_stores(RETVAL, "error_text",        SvOK(err) ? err : error_text ? newSVpv(error_text, 0) : newSV(0));
-    (void)hv_stores(RETVAL, "error_message",     SvOK(err) ? err : error_message ? newSVpv(error_message, 0) : newSV(0));
-    (void)hv_stores(RETVAL, "error_json",        SvOK(err) ? err : error_json ? newSVpv(error_json, 0) : newSV(0));
-    (void)hv_stores(RETVAL, "error_file",        SvOK(err) ? err : error_file ? newSVpv(error_file, 0) : newSV(0));
+    SV* sv_error_status = newSViv(error_status || SvOK(err));
+    SV* sv_output_string = output_string ? newSVpv(output_string, 0) : newSV(0);
+    SV* sv_source_map_string = source_map_string ? newSVpv(source_map_string, 0) : newSV(0);
+    SV* sv_error_line = SvOK(err) ? err : error_line ? newSViv(error_line) : newSViv(0);
+    SV* sv_error_column = SvOK(err) ? err : error_column ? newSViv(error_column) : newSViv(0);
+    SV* sv_error_src = SvOK(err) ? err : error_src ? newSVpv(error_src, 0) : newSViv(0);
+    SV* sv_error_text = SvOK(err) ? err : error_text ? newSVpv(error_text, 0) : newSV(0);
+    SV* sv_error_json = SvOK(err) ? err : error_json ? newSVpv(error_json, 0) : newSV(0);
+    SV* sv_error_file = SvOK(err) ? err : error_file ? newSVpv(error_file, 0) : newSV(0);
+    SV* sv_error_message = SvOK(err) ? err : error_message ? newSVpv(error_message, 0) : newSV(0);
+
+    SvUTF8_on(sv_output_string);
+    SvUTF8_on(sv_source_map_string);
+
+    SvUTF8_on(sv_error_src);
+    SvUTF8_on(sv_error_text);
+    SvUTF8_on(sv_error_json);
+    SvUTF8_on(sv_error_file);
+    SvUTF8_on(sv_error_message);
+
+    (void)hv_stores(RETVAL, "error_status",      sv_error_status);
+    (void)hv_stores(RETVAL, "output_string",     sv_output_string);
+    (void)hv_stores(RETVAL, "source_map_string", sv_source_map_string);
+    (void)hv_stores(RETVAL, "error_line",        sv_error_line);
+    (void)hv_stores(RETVAL, "error_column",      sv_error_column);
+    (void)hv_stores(RETVAL, "error_message",     sv_error_message);
+    (void)hv_stores(RETVAL, "error_src",         sv_error_src);
+    (void)hv_stores(RETVAL, "error_text",        sv_error_text);
+    (void)hv_stores(RETVAL, "error_json",        sv_error_json);
+    (void)hv_stores(RETVAL, "error_file",        sv_error_file);
     (void)hv_stores(RETVAL, "included_files",    newRV_noinc((SV*) sv_included_files));
 
 }

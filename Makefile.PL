@@ -239,6 +239,9 @@ push @defs, 'DEBUG' if $debug_mode;
 # not sure why this does not work otherwise
 push @flags, '-o $*.o' if ($guess->is_gcc);
 
+# this fixes some clang issues (is detected as gcc)
+# push @flags, '-stdlib=libstdc++' if ($guess->is_gcc);
+
 # create compile flags to include the libsass version
 push @defs, qq( LIBSASS_VERSION=\\"$libsass_version\\");
 
@@ -268,6 +271,9 @@ $compiler_flags{'CCFLAGS'} =~ s/\s+/ /g;
 # disable all optimizations when doing code profiling
 $compiler_flags{'CCFLAGS'} =~ s/\s*\-O[1-9]//g if $profiling;
 
+# avoid invalid flag warning when compiling c++ files (already has -Wall and -Wextra)
+$compiler_flags{'CCFLAGS'} =~ s/(?:\s+|\A)-Wimplicit-function-declaration(?:\s+|\z)/ /g;
+
 # parse source files directly from libsass makefile
 open(my $fh, "<", "libsass/Makefile.conf");
 die "libsass/Makefile.conf not found" unless $fh;
@@ -283,7 +289,7 @@ if ($srcfiles =~ m/^\s*CSOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
 } else { die "Did not find c++ CSOURCES in libsass/Makefile.conf"; }
 
 # prefix paths and filter the c and c++ sources
-my @SOURCES = map { join '/', 'libsass', 'src', $_ } 
+my @SOURCES = map { join '/', 'libsass', 'src', $_ }
               grep { s/\.c(?:pp)?$/\.o/ }
               (@CFILES, @CPPFILES);
 
@@ -298,7 +304,16 @@ WriteMakefile(
 		'Carp'                 => 1.01, # core as of 5.008
 		'version'              => 0,
 		'warnings'             => 0, # core as of 5.008
-		'strict'               => 0 # core as of 5.008
+		'strict'               => 0, # core as of 5.008,
+		# dependencies for psass cli tool
+		'File::Slurp'          => 0.01,
+		'Getopt::Long'         => 0.01,
+		'Encode::Locale'       => 0.01,
+		# dependencies for file watcher
+		'List::MoreUtils'      => 0.01,
+		# this is an optional dependency
+		# not sure if we want to force it
+		# 'Filesys::Notify::Simple' => 0.01,
 	},
 	# test dependencies
 	TEST_REQUIRES      => {
