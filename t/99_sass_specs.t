@@ -138,7 +138,7 @@ sub clean_err {
 	$str =~ s/(?:\/todo_|_todo\/)/\//g;
 	$str =~ s/\/libsass\-[a-z]+\-tests\//\//g;
 	$str =~ s/\/libsass\-[a-z]+\-issues\//\/libsass\-issues\//g;
-	$str =~ s/[\w\/\-\\:]+?[\/\\]spec[\/\\]+/\/sass\/spec\//g;
+	$str =~ s/.+?[\/\\]spec[\/\\]+/\/sass\/spec\//g;
 	$str =~ s/(?:\r?\n)*\z/\n/;
 	$str =~ s/\A(?:\r?\n)+\z//;
 	# sometimes we want to skip these
