@@ -1,3 +1,11 @@
+CSS::Sass (3.3.0)
+
+  * Update to latest LibSass release (3.3.3)
+  * Update spec test runner for error specs
+  * Use LibSass functions for compare operations
+  * Switch `Module::Build` with `ExtUtils::MakeMaker`
+  * Improve unicode handling with command line utility
+
 CSS::Sass (3.3.0-rc1)
 
   * Update to latest libsass release (3.3.0-rc1)

@@ -15,7 +15,7 @@ CSS::Sass - Compile .scss files using libsass
     my $css = $sass->compile_file('styles.scss');
 
     # Add custom function to use inside your Sass code
-    sub foobar { CSS::Sass::Type::String->new('blue') }
+    sub foobar { CSS::Sass::Value::String->new('blue') }
     $sass->options->{sass_functions}->{'foobar'} = \ &foobar;
 
     # Compile string and get css output and source-map json
@@ -221,20 +221,20 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
     function should be the function's Sass signature and the value should be a
     Perl subroutine reference. This subroutine will be called whenever the
     function is used in the Sass being compiled. The arguments to the subroutine
-    are [CSS::Sass::Type](https://metacpan.org/pod/CSS::Sass::Type) objects, which map to native perl types if possible.
-    You can return either [CSS::Sass::Type](https://metacpan.org/pod/CSS::Sass::Type) objects or supported native perl data
-    structures. `undef` is an equivalent of CSS::Sass::Type::Null->new.
+    are [CSS::Sass::Value](https://metacpan.org/pod/CSS::Sass::Value) objects, which map to native perl types if possible.
+    You can return either [CSS::Sass::Value](https://metacpan.org/pod/CSS::Sass::Value) objects or supported native perl data
+    structures. `undef` is an equivalent of CSS::Sass::Value::Null->new.
 
     The function is called with an `eval` statement so you may use "die" to
-    throw errors back to libsass (`CSS::Sass::Type::Error`).
+    throw errors back to libsass (`CSS::Sass::Value::Error`).
 
     A simple example:
 
         sass_functions => {
             'append_hello($str)' => sub {
                 my ($str) = @_;
-                die '$str should be a string' unless $str->isa("CSS::Sass::Type::String");
-                return CSS::Sass::Type::String->new($str->value . " hello");
+                die '$str should be a string' unless $str->isa("CSS::Sass::Value::String");
+                return CSS::Sass::Value::String->new($str->value . " hello");
                 # equivalent to return $str->value . " hello";
             }
         }
@@ -282,7 +282,7 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 - `Sass_Value` Types
 
     Sass knowns various `Sass_Value` types. We export the constants for completeness.
-    Each type is mapped to a package inside the `CSS::Sass::Type` namespace.
+    Each type is mapped to a package inside the `CSS::Sass::Value` namespace.
 
         # Value types
         SASS_ERROR
@@ -305,11 +305,11 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
     native data types from your custom functions or use the datastructures
     to access maps and lists.
 
-        undef; # same as CSS::Sass::Type::Null->new;
-        42; # same as CSS::Sass::Type::Number->new(42);
-        "foobar"; # same as CSS::Sass::Type::String->new("foobar");
-        [ 'foo', 'bar' ]; # same as CSS::Sass::Type::List->new('foo', 'bar');
-        { key => 'value' }; # same as CSS::Sass::Type::Map->new(key => 'value');
+        undef; # same as CSS::Sass::Value::Null->new;
+        42; # same as CSS::Sass::Value::Number->new(42);
+        "foobar"; # same as CSS::Sass::Value::String->new("foobar");
+        [ 'foo', 'bar' ]; # same as CSS::Sass::Value::List->new('foo', 'bar');
+        { key => 'value' }; # same as CSS::Sass::Value::Map->new(key => 'value');
 
     We bless native return values from custom functions into the correct package.
 
@@ -362,7 +362,7 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
 # SEE ALSO
 
-[CSS::Sass::Type](https://metacpan.org/pod/CSS::Sass::Type)
+[CSS::Sass::Value](https://metacpan.org/pod/CSS::Sass::Value)
 
 [The Sass Home Page](http://sass-lang.com/)
 

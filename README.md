@@ -74,7 +74,7 @@ psass [options] [ path_in | - ] [ path_out | - ]
 Copyright And Licence
 ---------------------
 
-Copyright © 2013 by David Caldwell  
-Copyright © 2014 by Marcel Greter
+Copyright © 2013-2014 by David Caldwell  
+Copyright © 2014-2016 by Marcel Greter
 
 This library is released under the MIT license.
