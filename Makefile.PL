@@ -158,7 +158,8 @@ if (-d ".git" && !$skip_git)
 	# create manifest file via git
 	# also add files that we generate
 	unless ($skip_manifest) {
-		open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
+		open $manifest, ">:encoding(UTF-8)", "MANIFEST";
+		die "could not create MANIFEST: $!" unless $manifest;
 		print $manifest "MANIFEST\n";
 		print $manifest "libsass/VERSION\n";
 		while (my $module = shift @modules)
@@ -168,7 +169,7 @@ if (-d ".git" && !$skip_git)
 			my $files = `git ls-files` or die "Couldn't run git: $!";
 			my @items = split(/\n+/, $files);
 			my @files = grep { ! -d } @items;
-			print $manifest
+			print $manifest grep { ! /\"/ }
 				map { tr/\\/\//; $_ . "\n" }
 				map { File::Spec->abs2rel($_, $base) } @files;
 			push @modules,

@@ -326,7 +326,7 @@ booleans {
   test-sub: true;
   test-custom: true-false;
   test-native: true-false;
-  /*! true/false == true / false */
+  /*! true/false == true/false */
   test-div: true;
   test-custom: true/false;
   test-native: true/false; }
