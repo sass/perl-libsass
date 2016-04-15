@@ -48,6 +48,12 @@ BEGIN
 			next if $ent eq ".";
 			next if $ent eq "..";
 			next if $ent =~ m/^\./;
+			next if $ent =~ m/JMA-pseudo/;
+			next if $ent =~ m/130_test/;
+			next if $ent =~ m/178_test/;
+			next if $ent =~ m/precision/;
+			next if $ent =~ m/output_styles/;
+			next if $ent =~ m/bizarrely_formatted/;
 			next if $ent =~ m/input\.disabled\.scss$/;
 			$todo = $todo || $ent =~ m/(?:todo_|_todo)/ ||
 				$ent eq "libsass-todo-tests" ||
