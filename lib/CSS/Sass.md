@@ -164,7 +164,7 @@ feature parity and heading towards 3.4. It can compile .scss and .sass files.
 
     Set the linefeed string used for css output.
 
-- `indentation`
+- `indent`
 
     Set the indentation string used for css output.
 
