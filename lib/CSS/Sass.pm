@@ -396,7 +396,7 @@ Set the floating point precision for output.
 
 Set the linefeed string used for css output.
 
-=item C<indentation>
+=item C<indent>
 
 Set the indentation string used for css output.
 
