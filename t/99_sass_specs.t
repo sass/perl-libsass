@@ -48,9 +48,16 @@ BEGIN
 			next if $ent eq ".";
 			next if $ent eq "..";
 			next if $ent =~ m/^\./;
+			next if $ent =~ m/-4\.0/;
+			next if $ent =~ m/sass_3_5/;
+			next if $ent =~ m/logic_ne/;
+			next if $ent =~ m/logic_eq/;
 			next if $ent =~ m/JMA-pseudo/;
+			next if $ent =~ m/issue_308/;
+			next if $ent =~ m/issue_1578/;
 			next if $ent =~ m/130_test/;
 			next if $ent =~ m/178_test/;
+			next if $ent =~ m/unicode/;
 			next if $ent =~ m/precision/;
 			next if $ent =~ m/output_styles/;
 			next if $ent =~ m/bizarrely_formatted/;
