@@ -224,7 +224,7 @@ my $orig = \&ExtUtils::MM_Unix::c_o;
 	foreach (@rv) {
 		# add c++0x flag only for cpp files
 		# otherwise XS perl handshake fails
-		s/\$\*\.c(pp|xx)(?=\n|\Z)/-xc++ -std=c++0x \$\*\.c$1/g
+		s/\$\*\.c(pp|xx)\s*(?=\n|\r|\Z)/-xc++ -std=c++0x \$\*\.c$1/g
 	}
 	return @rv;
 };
