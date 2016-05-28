@@ -88,7 +88,7 @@ GetOptions (
 	'output-style|t=s' => \ $output_style,
 	'source-comments|c!' => \ $source_comments,
 	'source-map-file|m=s' => \ $source_map_file,
-	'source-map-root|m=s' => \ $source_map_root,
+	'source-map-root=s' => \ $source_map_root,
 	'source-map-embed|e!' => \ $source_map_embed,
 	'source-map-contents|s!' => \ $source_map_contents,
 	'no-source-map-url!' => \ $omit_source_map_url,
