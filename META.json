@@ -3,7 +3,7 @@
    "author" : [
       "Marcel Greter <perl-libsass@ocbnet.ch>"
    ],
-   "dynamic_config" : 1,
+   "dynamic_config" : 0,
    "generated_by" : "ExtUtils::MakeMaker version 7.1, CPAN::Meta::Converter version 2.150001",
    "license" : [
       "mit"
@@ -24,9 +24,7 @@
          "requires" : {
             "ExtUtils::CppGuess" : "0.09",
             "ExtUtils::MakeMaker" : "6.52",
-            "File::chdir" : "0.01",
-            "Getopt::Long" : "0.01",
-            "Test::Differences" : "0.01"
+            "Getopt::Long" : "0.01"
          }
       },
       "configure" : {
@@ -47,6 +45,13 @@
             "strict" : "0",
             "version" : "0",
             "warnings" : "0"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "File::chdir" : "0.01",
+            "Test::Differences" : "0.01",
+            "YAML::XS" : "0.01"
          }
       }
    },

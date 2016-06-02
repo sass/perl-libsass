@@ -318,6 +318,7 @@ WriteMakefile(
 	},
 	# test dependencies
 	TEST_REQUIRES      => {
+		'YAML::XS'             => 0.01,
 		'File::chdir'          => 0.01,
 		'Test::Differences'    => 0.01,
 	},
