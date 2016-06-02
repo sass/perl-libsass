@@ -52,8 +52,7 @@ use File::Spec::Functions;
 
 # everything is normalized
 my $norm_output = sub ($) {
-	$_[0] =~ s/(?:\n)+/\n/g;
-	$_[0] =~ s/(?:\r\n)+/\r\n/g;
+	$_[0] =~ s/(?:\r?\n)+/\n/g;
 	$_[0] =~ s/;(?:\s*;)+/;/g;
 	$_[0] =~ s/;\s*}/}/g;
 };

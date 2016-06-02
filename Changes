@@ -1,3 +1,9 @@
+CSS::Sass (3.3.4)
+
+  * Update to latest LibSass dev release (pre 3.3.7)
+  * Fix build edge case with EUMM 7.16 (@genehack)
+  * Remove duplicate "m" arg from psass (@dracos)
+
 CSS::Sass (3.3.3)
 
   * Update to latest LibSass release (3.3.6)
