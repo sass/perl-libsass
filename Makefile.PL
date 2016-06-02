@@ -193,7 +193,7 @@ if (-d ".git" && !$skip_git)
 	{
 		if (-e "$submodule/.git" && !$skip_version) {
 			next unless $submodule eq "libsass"; # skip all others for now
-			system "git -C \"$submodule\" describe --abbrev=4 --dirty --always --tags > \"$submodule/VERSION\"";
+			system "git -C \"$submodule\" describe --abbrev=8 --dirty --always --tags > \"$submodule/VERSION\"";
 		}
 	}
 }
