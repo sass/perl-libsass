@@ -91,6 +91,7 @@ sub expect
 {
 	my $css = $_[0]->expected;
 	return "" unless defined $css;
+	utf8::decode($css);
 	$norm_output->($css);
 	if ($_[0]->query('clean')) {
 		$clean_output->($css);
