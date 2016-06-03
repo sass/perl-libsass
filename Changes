@@ -1,3 +1,8 @@
+CSS::Sass (3.3.5)
+
+  * Fix spec runner to pass on linux (unicode issue)
+  * Add missing test dependency in meta files (YAML::XS)
+
 CSS::Sass (3.3.4)
 
   * Update to latest LibSass dev release (pre 3.3.7)

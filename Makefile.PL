@@ -67,8 +67,9 @@ sub help
 	exit 1;
 }
 
+my $re_vtoken = qr/v?([0-9]+\.[0-9]+\.[0-9]+(?:[\-_].+?)?)/;
 my $re_version = qr/our\s+\$VERSION\s*=\s*[\"\']
-                    v?([0-9]+\.[0-9]+\.[0-9]+(?:[\-_].+?)?)
+                    $re_vtoken
                    [\"\']\s*\;/x;
 
 # needs File::Slurp
@@ -93,14 +94,24 @@ sub versions
 	}
 	$tag =~ s/(?:\A\s+|\Av|\s+\z)//g;
 	if (scalar(@_)) {
-		print "Update *.pm with new version <$tag>\n";
+		print "Update META.* and *.pm with new version <$tag>\n";
 		unless ( $tag =~ m/(\d+\.\d+\.)(\d+)(?:[\-_]|\z)/ )
 		{ die "Tag <$tag> invalid (\\d+.\\d+.\\d+)\n"; }
+		my $metayml = File::Slurp::read_file("META.yml", { 'binmode' => ':raw' });
+		if ($metayml =~ s/version\s*:\s*v($re_vtoken)/version: v$tag/i && $tag ne $1) {
+			print "  update version in META.yml (was $1)\n";
+			File::Slurp::write_file("META.yml", { 'binmode' => ':raw' }, $metayml);
+		}
+		my $metajson = File::Slurp::read_file("META.json", { 'binmode' => ':raw' });
+		if ($metajson =~ s/\"version\"\s*:\s*\"v($re_vtoken)\"/\"version\" : \"v$tag\"/i && $tag ne $1) {
+			print "  update version in META.json (was $1)\n";
+			File::Slurp::write_file("META.json", { 'binmode' => ':raw' }, $metajson);
+		}
 		foreach my $filename (@files) {
 			my $data = File::Slurp::read_file($filename, { 'binmode' => ':raw' });
 			if ($data =~ s/$re_version/our \$VERSION = \"$tag\";/i) {
 				next if $tag eq $1;
-				print "  update version $filename (was $1)\n";
+				print "  update version in $filename (was $1)\n";
 				File::Slurp::write_file($filename, { 'binmode' => ':raw' }, $data);
 			}
 		}
