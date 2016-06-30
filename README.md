@@ -4,8 +4,8 @@ CSS::Sass
 ### Compile .scss and .sass files using libsass
 
 CSS::Sass provides a perl interface to [libsass][1], a fairly complete Sass
-compiler written in C++.  It is currently somewhere around ruby sass 3.2/3.3
-feature parity and heading towards 3.4. It can compile .scss and .sass files.
+compiler written in C++. It is currently around ruby sass 3.3/3.4 feature parity and
+heading towards full 3.4 compatibility. It can compile .scss and .sass files.
 
 [1]: https://github.com/sass/libsass
 
@@ -16,14 +16,40 @@ Installation
 [![Coverage Status](https://img.shields.io/coveralls/sass/perl-libsass.svg)](https://coveralls.io/r/sass/perl-libsass?branch=master)
 [![CPAN version](https://badge.fury.io/pl/CSS-Sass.svg)](http://badge.fury.io/pl/CSS-Sass)
 
-To install this module type the following:
+Manual installation:
+```bash
+  git clone https://github.com/sass/libsass
+  cd libsass
+  perl Makefile.PL
+  make verbose=1
+  make test verbose=1
+  make install verbose=1
+```
 
-    perl Build.PL
-    ./Build verbose=1
-    ./Build test verbose=1
-    ./Build install verbose=1
+Standard CPAN:
+```bash
+  cpan CSS::Sass
+```
 
-On windows you may need to install [Strawberry Perl](http://strawberryperl.com/).
+CPAN-Minus*:
+```bash
+  cpanm CSS::Sass
+```
+
+CPAN-Minus* directly via github:
+```bash
+  cpanm https://github.com/sass/perl-libsass/archive/latest.tar.gz
+```
+
+(*) CPAN-Minus may not be installed by default, but there is a good
+chance your distribution has a package for it:
+```bash
+  # example for ubuntu:
+  apt install cpanminus
+```
+
+On windows I recommend [Strawberry Perl](http://strawberryperl.com/).
+You then also need to use `dmake` instead of `make` for manual installs.
 
 Documentation
 -------------
@@ -39,14 +65,6 @@ After installing:
 Or view [converted markdown version][1]
 
 [1]: https://github.com/sass/perl-libsass/blob/master/lib/CSS/Sass.md
-
-Dependencies
-------------
-
-This module requires these other modules and libraries:
-
-  * Module::Build
-  * Test::More
 
 Command line utility
 --------------------

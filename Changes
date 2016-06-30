@@ -1,7 +1,9 @@
 CSS::Sass (3.3.5)
 
   * Fix spec runner to pass on linux (unicode issue)
+  * Fix broken unicode test comparing on some systems
   * Add missing test dependency in meta files (YAML::XS)
+  * Update README for Module::Build to ExtUtils::MM switch
 
 CSS::Sass (3.3.4)
 

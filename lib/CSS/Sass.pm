@@ -273,8 +273,8 @@ CSS::Sass - Compile .scss files using libsass
 =head1 DESCRIPTION
 
 CSS::Sass provides a perl interface to libsass, a fairly complete Sass
-compiler written in C++. It is currently somewhere around ruby sass 3.3/3.4
-feature parity and heading towards 3.4. It can compile .scss and .sass files.
+compiler written in C++. It is currently around ruby sass 3.3/3.4 feature parity and
+heading towards full 3.4 compatibility. It can compile .scss and .sass files.
 
 =head1 OBJECT ORIENTED INTERFACE
 
