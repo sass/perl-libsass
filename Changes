@@ -1,3 +1,7 @@
+CSS::Sass (3.3.6)
+
+  * Add gcc 4.4 compatibility for libsass
+
 CSS::Sass (3.3.5)
 
   * Fix spec runner to pass on linux (unicode issue)

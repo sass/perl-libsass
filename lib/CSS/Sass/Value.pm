@@ -39,7 +39,7 @@ use CSS::Sass;
 
 ################################################################################
 package CSS::Sass::Value;
-our $VERSION = "3.3.5";
+our $VERSION = "3.3.6";
 ################################################################################
 use CSS::Sass qw(import_sv);
 use CSS::Sass qw(sass_operation);

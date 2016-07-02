@@ -9,11 +9,11 @@ use Pod::Markdown;
 use FindBin qw($Bin);
 
 my $sass_pm_src = $Bin . '/../lib/CSS/Sass.pm';
-my $type_pm_src = $Bin . '/../lib/CSS/Sass/Type.pm';
+my $type_pm_src = $Bin . '/../lib/CSS/Sass/Value.pm';
 my $sass_md_src = $Bin . '/../lib/CSS/Sass.md';
-my $type_md_src = $Bin . '/../lib/CSS/Sass/Type.md';
+my $type_md_src = $Bin . '/../lib/CSS/Sass/Value.md';
 my $sass_pod_src = $Bin . '/../lib/CSS/Sass.pod';
-my $type_pod_src = $Bin . '/../lib/CSS/Sass/Type.pod';
+my $type_pod_src = $Bin . '/../lib/CSS/Sass/Value.pod';
 
 podselect({-output => $sass_pod_src }, $sass_pm_src);
 podselect({-output => $type_pod_src }, $type_pm_src);
