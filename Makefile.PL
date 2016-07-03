@@ -305,6 +305,22 @@ my @SOURCES = map { join '/', 'libsass', 'src', $_ }
               grep { s/\.c(?:pp)?$/\.o/ }
               (@CFILES, @CPPFILES);
 
+# Fix an issue with EU::MM > 7.10 as reported in:
+# https://github.com/sass/perl-libsass/issues/25
+if ($ExtUtils::MakeMaker::VERSION > 7.10) {
+  if (exists $compiler_flags{'dynamic_lib'}) {
+    my $dynlibs = $compiler_flags{'dynamic_lib'};
+    if (exists $dynlibs->{'OTHERLDFLAGS'}) {
+      if ($guess->is_gcc) {
+        $dynlibs->{'OTHERLDFLAGS'} = join " ",
+          '-Wl,--no-as-needed',
+          $dynlibs->{'OTHERLDFLAGS'},
+          '-Wl,--as-needed';
+      }
+    }
+  }
+}
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to
 # influence content of the Makefile that is written.
 WriteMakefile(

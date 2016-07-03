@@ -1,5 +1,6 @@
 CSS::Sass (3.3.6)
 
+  * Fix issue with ExtUtils::MakeMaker 7.12+
   * Add gcc 4.4 compatibility for libsass
 
 CSS::Sass (3.3.5)
