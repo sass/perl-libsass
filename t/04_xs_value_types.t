@@ -354,11 +354,10 @@ is $error_msg->message, 'message', "error message method return ok";
 
 ################################################################################
 
-test_string($regex);
-
 SKIP: {
 	skip ("known regex issue in perl < 5.12", 1) if $] < 5.012000;
 	is $regex, qr/regex/, "regex stringify value is correct";
+	test_string($regex);
 }
 
 ################################################################################

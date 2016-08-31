@@ -75,6 +75,21 @@ sub new
 	}, $pkg;
 }
 
+sub stderr
+{
+	my ($spec) = @_;
+
+	local $/ = undef;
+	my $path = catfile($_[0]->{root}->{root}, "error");
+	return undef unless -f $path;
+	open my $fh, "<:raw:utf8", $path or
+		croak "Error opening <", $path, ">: $!";
+	binmode $fh; my $stderr = join "\n", <$fh>;
+	$norm_output->($stderr);
+	$stderr =~ s/\n.*\Z//s;
+	return $stderr;
+
+}
 sub expected
 {
 	my ($spec) = @_;
@@ -122,6 +137,7 @@ sub err
 	my $err = $_[0]->{err};
 	return $err unless defined $err;
 	$norm_output->($err);
+	$err =~ s/\n.*\Z//s;
 	return $err;
 }
 
@@ -199,7 +215,7 @@ sub load_tests()
 {
 
 	# result
-	my @specs; my $filter = qr/huge/;
+	my @specs; my $filter = qr/huge|unicode\/report/;
 	# initial spec test directory entry
 	my $root = new DIR;
 	$root->{start} = 0;
@@ -273,7 +289,9 @@ use Test::Differences;
 foreach my $spec (@specs)
 {
 	# compare the result with expected data
-	if ($spec->expect) {
+	if ($spec->err) {
+	  eq_or_diff ($spec->err, $spec->stderr, $spec->file)
+	} elsif ($spec->expect) {
 	  eq_or_diff ($spec->result, $spec->expect, $spec->file)
 	} else {
 	  eq_or_diff ($spec->result, $spec->result, $spec->file)
