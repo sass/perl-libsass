@@ -307,7 +307,15 @@ my @SOURCES = map { join '/', 'libsass', 'src', $_ }
 
 # Fix an issue with EU::MM > 7.10 as reported in:
 # https://github.com/sass/perl-libsass/issues/25
-if ($ExtUtils::MakeMaker::VERSION > 7.10) {
+my $EMMV = $ExtUtils::MakeMaker::VERSION;
+# Bug has been fixed in version 7.20
+if ($EMMV > 7.10 && $EMMV < 7.20) {
+  # Fix another issue if as-needed is not supported
+  # https://github.com/sass/perl-libsass/issues/26
+  unless (`ld --help` =~ m/--no-as-needed/) {
+    warn "Your current ExtUtils::MakeMaker has a bug\n";
+    die "You need to upgrade ExtUtils::MakeMaker to 7.20+\n";
+  }
   if (exists $compiler_flags{'dynamic_lib'}) {
     my $dynlibs = $compiler_flags{'dynamic_lib'};
     if (exists $dynlibs->{'OTHERLDFLAGS'}) {
