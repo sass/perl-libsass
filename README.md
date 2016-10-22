@@ -77,22 +77,29 @@ psass [options] [ path_in | - ] [ path_out | - ]
 -v, --version                 print version
 -h, --help                    print this help
 -w, --watch                   start watchdog mode
--p, --precision               precision for float output
+-p, --precision=int           precision for float output
+    --indent=string           set indent string used for output
+    --linefeed=type           linefeed used for output [auto|unix|win|none]
 -o, --output-file=file        output file to write result to
--t, --output-style=style      output style [nested|compressed]
--L, --plugin-path=path        plugin load path (repeatable)
+-t, --output-style=style      output style [expanded|nested|compressed|compact]
+-P, --plugin-path=path        plugin load path (repeatable)
 -I, --include-path=path       sass include path (repeatable)
 -c, --source-comments         enable source debug comments
+-l, --line-comments           synonym for --source-comments
+    --line-numbers            synonym for --source-comments
 -e, --source-map-embed        embed source-map in mapping url
 -s, --source-map-contents     include original contents
 -m, --source-map-file=file    create and write source-map to file
+    --source-map-file-urls    create file urls for source paths
+    --source-map-root=.       specific root for relative paths
     --no-source-map-url       omit sourceMappingUrl from output
+    --benchmark               print benchmark for compilation time
 ```
 
 Copyright And Licence
 ---------------------
 
 Copyright © 2013-2014 by David Caldwell  
-Copyright © 2014-2016 by Marcel Greter
+Copyright © 2014-2017 by Marcel Greter
 
 This library is released under the MIT license.

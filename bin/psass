@@ -15,6 +15,9 @@ use warnings;
 use Pod::Usage;
 use Getopt::Long;
 
+# make the options case sensitive
+Getopt::Long::Configure("bundling");
+
 # convenient file handling
 use File::Slurp qw(write_file);
 
@@ -57,6 +60,7 @@ my $source_map_file;
 my $source_map_root;
 my $source_map_embed;
 my $source_map_contents;
+my $source_map_file_urls;
 my $omit_source_map_url;
 
 # define a sub to print out the version (mimic behaviour of node.js blessc)
@@ -86,13 +90,16 @@ GetOptions (
 	'precision|p=s' => \ $precision,
 	'output-file|o=s' => \ $output_file,
 	'output-style|t=s' => \ $output_style,
+	'line-numbers|c!' => \ $source_comments,
+	'line-comments|c!' => \ $source_comments,
 	'source-comments|c!' => \ $source_comments,
 	'source-map-file|m=s' => \ $source_map_file,
 	'source-map-root=s' => \ $source_map_root,
 	'source-map-embed|e!' => \ $source_map_embed,
 	'source-map-contents|s!' => \ $source_map_contents,
+	'source-map-file-urls!' => \$source_map_file_urls,
 	'no-source-map-url!' => \ $omit_source_map_url,
-	'plugin-path|L=s' => sub { push @plugin_paths, $_[1] },
+	'plugin-path|P|L=s' => sub { push @plugin_paths, $_[1] },
 	'include-path|I=s' => sub { push @include_paths, $_[1] }
 );
 
@@ -152,6 +159,7 @@ sub sass_options ()
 		source_map_root => $source_map_root,
 		source_map_embed => $source_map_embed,
 		source_map_contents => $source_map_contents,
+		source_map_file_urls => $source_map_file_urls,
 		omit_source_map_url => $omit_source_map_url,
 	);
 }
@@ -249,12 +257,15 @@ psass [options] [ path_in | - ] [ path_out | - ]
        --linefeed=type           linefeed used for output [auto|unix|win|none]
    -o, --output-file=file        output file to write result to
    -t, --output-style=style      output style [expanded|nested|compressed|compact]
-   -L, --plugin-path=path        plugin load path (repeatable)
+   -P, --plugin-path=path        plugin load path (repeatable)
    -I, --include-path=path       sass include path (repeatable)
    -c, --source-comments         enable source debug comments
+   -l, --line-comments           synonym for --source-comments
+       --line-numbers            synonym for --source-comments
    -e, --source-map-embed        embed source-map in mapping url
    -s, --source-map-contents     include original contents
    -m, --source-map-file=file    create and write source-map to file
+       --source-map-file-urls    create file urls for source paths
        --source-map-root=.       specific root for relative paths
        --no-source-map-url       omit sourceMappingUrl from output
        --benchmark               print benchmark for compilation time

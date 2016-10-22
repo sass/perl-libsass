@@ -185,11 +185,12 @@ sub execute
 sub style
 {
 	my $style = $_[0]->query('style');
-	return SASS_STYLE_NESTED unless defined $style;
+	return SASS_STYLE_EXPANDED unless defined $style;
 	if ($style =~ m/compact/i) { return SASS_STYLE_COMPACT; }
+	elsif ($style =~ m/nested/i) { return SASS_STYLE_NESTED; }
 	elsif ($style =~ m/compres/i) { return SASS_STYLE_COMPRESSED; }
-	elsif ($style =~ m/expanded/i) { return SASS_STYLE_EXPANDED; }
-	return SASS_STYLE_NESTED;
+	# elsif ($style =~ m/expanded/i) { return SASS_STYLE_EXPANDED; }
+	return SASS_STYLE_EXPANDED;
 }
 
 sub file { shift->{file}; }
@@ -236,9 +237,19 @@ sub load_tests()
 			$test->{style} = $yaml->{':output_style'};
 			$test->{start} = $yaml->{':start_version'};
 			$test->{end} = $yaml->{':end_version'};
+			$test->{ignore} = grep /^libsass$/i,
+				@{$yaml->{':ignore_for'} ||  []};
 			$test->{todo} = grep /^libsass$/i,
-				@{$yaml->{':todo'} || []};
+				@{$yaml->{':todo'} ||  []};
 		}
+
+		$test->{clean} = $parent->{clean} unless $test->{clean};
+		$test->{prec} = $parent->{prec} unless $test->{prec};
+		$test->{style} = $parent->{style} unless $test->{style};
+		$test->{start} = $parent->{start} unless $test->{start};
+		$test->{end} = $parent->{end} unless $test->{end};
+		$test->{ignore} = $parent->{ignore} unless $test->{ignore};
+		$test->{todo} = $parent->{todo} unless $test->{todo};
 
 		my $sass = catfile($dir, "input.sass");
 		my $scss = catfile($dir, "input.scss");
@@ -279,6 +290,7 @@ use vars qw(@specs);
 # before registering tests
 BEGIN { @specs = grep {
 	! $_->query('todo') &&
+	! $_->query('ignore') &&
 	$_->query('start') <= 3.4
 } load_tests }
 

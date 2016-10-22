@@ -67,7 +67,7 @@ like  ($r, qr/# sourceMappingURL=\.\.\/\.\.\/test.map/, "SourceMap relative url 
 $sass = CSS::Sass->new(include_paths => ['t/inc'], %options, source_comments => 1, omit_source_map => 1);
 ($r, $stat) = $sass->compile_file('sass/test-incs.sass');
 ok    ($stat->{'source_map_string'},                    "Created source map 7");
-like  ($r, qr{line 1, .*?/t/inc/sass/test-inc-01.sass}, "SourceMap relative url test 7");
+like  ($r, qr{line 1, t/inc/sass/test-inc-01.sass}, "SourceMap relative url test 7");
 
 $options{'source_map_root'} = '/foo/bar';
 

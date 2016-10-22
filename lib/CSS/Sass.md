@@ -179,6 +179,10 @@ heading towards full 3.4 compatibility. It can compile .scss and .sass files.
     actually be created, but its content will be returned to the caller. It
     will also enable sourceMappingURL comment by default. See `no_src_map_url`.
 
+- `source_map_file_urls`
+
+    Render source entries in the source map json as file urls (`file:///`).
+
 - `source_map_root`
 
     A path (string) that is directly embedded in the source map as `sourceRoot`.

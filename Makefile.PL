@@ -1,5 +1,5 @@
-# Copyright (c) 2013 David Caldwell.
-# Copyright (c) 2014 Marcel Greter.
+# Copyright (c) 2013-2014 David Caldwell.
+# Copyright (c) 2014-2017 Marcel Greter.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -53,10 +53,10 @@ sub help
 {
 	print "CSS::Sass Makefile.PL options (developers only):\n\n";
 	print "  --debug              Build libsass in debug mode\n";
-	print "  --compiler           Skips compiler autodetection\n";
 	print "  --profiling          Enable gcov profiling switches\n";
-	print "  --skip-manifest      Skips manifest generation (needs git repo)\n";
-	print "  --skip-version       Skips generating libsass/VERSION (needs git repo)\n";
+	print "  --compiler           Skips compiler autodetection (passed to CppGuess)\n";
+	print "  --skip-manifest      Skips manifest generation (would need git repo)\n";
+	print "  --skip-version       Skips generating libsass/VERSION (would need git repo)\n";
 	print "  --update-deps        Update libsass and specs to latest master (needs git repo)\n";
 	print "  --checkout-deps      Checkout submodules at linked commit (needs git repo)\n";
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
@@ -391,6 +391,6 @@ WriteMakefile(
 	%compiler_flags,
 	OPTIMIZE           => $optimize,
 	TYPEMAPS           => [ 'perlobject.map' ],
-	OBJECT             => join(" ", (sort @SOURCES), '$(O_FILES)'),
+	OBJECT             => join(" ", (@SOURCES), '$(O_FILES)'),
 	EXE_FILES          => [ 'bin/psass' ],
 );

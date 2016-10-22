@@ -1,5 +1,5 @@
-# Copyright (c) 2013 David Caldwell.
-# Copyright (c) 2014 Marcel Greter.
+# Copyright (c) 2013-2014 David Caldwell.
+# Copyright (c) 2014-2017 Marcel Greter.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ use CSS::Sass;
 
 ################################################################################
 package CSS::Sass::Watchdog;
-our $VERSION = "3.3.6";
+our $VERSION = "3.4.0";
 ################################################################################
 
 use Exporter 'import'; # gives you Exporter's import() method directly

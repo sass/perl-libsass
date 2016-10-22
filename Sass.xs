@@ -1,5 +1,5 @@
-// Copyright (c) 2013 David Caldwell.
-// Copyright (c) 2014 Marcel Greter.
+// Copyright (c) 2013-2014 David Caldwell.
+// Copyright (c) 2014-2017 Marcel Greter.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -587,42 +587,44 @@ union Sass_Value* call_sass_function(const union Sass_Value* s_args, Sass_Functi
 SV* init_sass_options(struct Sass_Options* sass_options, HV* perl_options)
 {
 
-    SV** input_path_sv          = hv_fetchs(perl_options, "input_path",           false);
-    SV** output_path_sv         = hv_fetchs(perl_options, "output_path",          false);
-    SV** output_style_sv        = hv_fetchs(perl_options, "output_style",         false);
-    SV** source_comments_sv     = hv_fetchs(perl_options, "source_comments",      false);
-    SV** omit_source_map_sv     = hv_fetchs(perl_options, "omit_source_map",      false);
-    SV** omit_source_map_url_sv = hv_fetchs(perl_options, "omit_source_map_url",  false);
-    SV** source_map_contents_sv = hv_fetchs(perl_options, "source_map_contents",  false);
-    SV** source_map_embed_sv    = hv_fetchs(perl_options, "source_map_embed",     false);
-    SV** include_paths_sv       = hv_fetchs(perl_options, "include_paths",        false);
-    SV** plugin_paths_sv        = hv_fetchs(perl_options, "plugin_paths",         false);
-    SV** precision_sv           = hv_fetchs(perl_options, "precision",            false);
-    SV** linefeed_sv            = hv_fetchs(perl_options, "linefeed",             false);
-    SV** indent_sv              = hv_fetchs(perl_options, "indent",               false);
-    SV** source_map_root_sv     = hv_fetchs(perl_options, "source_map_root",      false);
-    SV** source_map_file_sv     = hv_fetchs(perl_options, "source_map_file",      false);
-    SV** sass_headers_sv        = hv_fetchs(perl_options, "headers",              false);
-    SV** sass_importers_sv      = hv_fetchs(perl_options, "importers",            false);
-    SV** sass_functions_sv      = hv_fetchs(perl_options, "functions",            false);
+    SV** input_path_sv           = hv_fetchs(perl_options, "input_path",           false);
+    SV** output_path_sv          = hv_fetchs(perl_options, "output_path",          false);
+    SV** output_style_sv         = hv_fetchs(perl_options, "output_style",         false);
+    SV** source_comments_sv      = hv_fetchs(perl_options, "source_comments",      false);
+    SV** omit_source_map_sv      = hv_fetchs(perl_options, "omit_source_map",      false);
+    SV** omit_source_map_url_sv  = hv_fetchs(perl_options, "omit_source_map_url",  false);
+    SV** source_map_file_urls_sv = hv_fetchs(perl_options, "source_map_file_urls", false);
+    SV** source_map_contents_sv  = hv_fetchs(perl_options, "source_map_contents",  false);
+    SV** source_map_embed_sv     = hv_fetchs(perl_options, "source_map_embed",     false);
+    SV** include_paths_sv        = hv_fetchs(perl_options, "include_paths",        false);
+    SV** plugin_paths_sv         = hv_fetchs(perl_options, "plugin_paths",         false);
+    SV** precision_sv            = hv_fetchs(perl_options, "precision",            false);
+    SV** linefeed_sv             = hv_fetchs(perl_options, "linefeed",             false);
+    SV** indent_sv               = hv_fetchs(perl_options, "indent",               false);
+    SV** source_map_root_sv      = hv_fetchs(perl_options, "source_map_root",      false);
+    SV** source_map_file_sv      = hv_fetchs(perl_options, "source_map_file",      false);
+    SV** sass_headers_sv         = hv_fetchs(perl_options, "headers",              false);
+    SV** sass_importers_sv       = hv_fetchs(perl_options, "importers",            false);
+    SV** sass_functions_sv       = hv_fetchs(perl_options, "functions",            false);
 
-    if (input_path_sv)          sass_option_set_input_path          (sass_options, safe_svpv(*input_path_sv, ""));
-    if (output_path_sv)         sass_option_set_output_path         (sass_options, safe_svpv(*output_path_sv, ""));
-    if (output_style_sv)        sass_option_set_output_style        (sass_options, SvUV(*output_style_sv));
-    if (source_comments_sv)     sass_option_set_source_comments     (sass_options, SvTRUE(*source_comments_sv));
-    if (omit_source_map_sv)     sass_option_set_omit_source_map_url (sass_options, SvTRUE(*omit_source_map_sv));
-    if (omit_source_map_url_sv) sass_option_set_omit_source_map_url (sass_options, SvTRUE(*omit_source_map_url_sv));
-    if (source_map_contents_sv) sass_option_set_source_map_contents (sass_options, SvTRUE(*source_map_contents_sv));
-    if (source_map_embed_sv)    sass_option_set_source_map_embed    (sass_options, SvTRUE(*source_map_embed_sv));
-    if (include_paths_sv)       sass_option_set_include_path        (sass_options, safe_svpv(*include_paths_sv, ""));
-    if (plugin_paths_sv)        sass_option_set_plugin_path         (sass_options, safe_svpv(*plugin_paths_sv, ""));
-    if (source_map_root_sv)     sass_option_set_source_map_root     (sass_options, safe_svpv(*source_map_root_sv, ""));
-    if (source_map_file_sv)     sass_option_set_source_map_file     (sass_options, safe_svpv(*source_map_file_sv, ""));
+    if (input_path_sv)           sass_option_set_input_path           (sass_options, safe_svpv(*input_path_sv, ""));
+    if (output_path_sv)          sass_option_set_output_path          (sass_options, safe_svpv(*output_path_sv, ""));
+    if (output_style_sv)         sass_option_set_output_style         (sass_options, SvUV(*output_style_sv));
+    if (source_comments_sv)      sass_option_set_source_comments      (sass_options, SvTRUE(*source_comments_sv));
+    if (omit_source_map_sv)      sass_option_set_omit_source_map_url  (sass_options, SvTRUE(*omit_source_map_sv));
+    if (omit_source_map_url_sv)  sass_option_set_omit_source_map_url  (sass_options, SvTRUE(*omit_source_map_url_sv));
+    if (source_map_file_urls_sv) sass_option_set_source_map_file_urls (sass_options, SvTRUE(*source_map_file_urls_sv));
+    if (source_map_contents_sv)  sass_option_set_source_map_contents  (sass_options, SvTRUE(*source_map_contents_sv));
+    if (source_map_embed_sv)     sass_option_set_source_map_embed     (sass_options, SvTRUE(*source_map_embed_sv));
+    if (include_paths_sv)        sass_option_set_include_path         (sass_options, safe_svpv(*include_paths_sv, ""));
+    if (plugin_paths_sv)         sass_option_set_plugin_path          (sass_options, safe_svpv(*plugin_paths_sv, ""));
+    if (source_map_root_sv)      sass_option_set_source_map_root      (sass_options, safe_svpv(*source_map_root_sv, ""));
+    if (source_map_file_sv)      sass_option_set_source_map_file      (sass_options, safe_svpv(*source_map_file_sv, ""));
 
     // do not set anything if the option is set to undef
-    if (isSafeSv(indent_sv))     sass_option_set_indent              (sass_options, SvPV_nolen(*indent_sv));
-    if (isSafeSv(linefeed_sv))   sass_option_set_linefeed            (sass_options, SvPV_nolen(*linefeed_sv));
-    if (isSafeSv(precision_sv))  sass_option_set_precision           (sass_options, SvUV(*precision_sv));
+    if (isSafeSv(indent_sv))     sass_option_set_indent               (sass_options, SvPV_nolen(*indent_sv));
+    if (isSafeSv(linefeed_sv))   sass_option_set_linefeed             (sass_options, SvPV_nolen(*linefeed_sv));
+    if (isSafeSv(precision_sv))  sass_option_set_precision            (sass_options, SvUV(*precision_sv));
 
     if (sass_importers_sv) {
         int i;

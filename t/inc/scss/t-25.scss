@@ -1,0 +1,19 @@
+@mixin inc() {
+  mix: in; }
+
+.a {
+  + {
+    .c, .b {
+      margin: 10px;
+      @include inc; } } }
+
+.a {
+  + b {
+    .c, .b {
+      margin: 10px; } } }
+
+
+.a {
+  > {
+    .c, .b {
+      margin: 10px; } } }

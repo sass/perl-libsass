@@ -1,5 +1,5 @@
-# Copyright (c) 2013 David Caldwell.
-# Copyright (c) 2014 Marcel Greter.
+# Copyright (c) 2013-2014 David Caldwell.
+# Copyright (c) 2014-2017 Marcel Greter.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ our @EXPORT = qw(
 	SASS2SCSS_CONVERT_COMMENT
 );
 
-our $VERSION = "3.3.6";
+our $VERSION = "3.4.0";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
@@ -410,6 +410,10 @@ line the code corresponds to.
 Setting this option enables the source-map generating. The file will not
 actually be created, but its content will be returned to the caller. It
 will also enable sourceMappingURL comment by default. See C<no_src_map_url>.
+
+=item C<source_map_file_urls>
+
+Render source entries in the source map json as file urls (`file:///`).
 
 =item C<source_map_root>
 
