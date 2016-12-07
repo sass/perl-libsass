@@ -962,7 +962,8 @@ sass_operation(op, a, b)
           default: rv = sass_make_error("invalid op"); break;
         }
 
-        RETVAL = sass_value_to_sv(rv);
+        if (rv) RETVAL = sass_value_to_sv(rv);
+        else RETVAL = new_sv_sass_null();
 
         sass_delete_value(rhs);
         sass_delete_value(lhs);

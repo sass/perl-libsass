@@ -5,6 +5,7 @@ CSS::Sass (3.4.1)
   * Bundle experimental LibSass plugins (alpha)
   * Improve command line utility for plugins
   * Fix tests due to wrong skip count (Perl < 5.12)
+  * Fix AND/OR operations and enable test case
 
  -- Marcel Greter <perl-libsass@ocbnet.ch>  Wed, 11 Jan 2017 14:18:43 +0200
 

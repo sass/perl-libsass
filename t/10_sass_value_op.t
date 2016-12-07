@@ -8,6 +8,7 @@ BEGIN {
 	use Test::More;
 }
 
+use Test::Differences;
 use Test::More tests => 40;
 
 BEGIN { use_ok('CSS::Sass') };
@@ -166,13 +167,13 @@ is(
 my ($r, $err) = CSS::Sass::sass_compile(
   '
   @mixin test_comp_op($a, $b) {
-    // /*! #{inspect(op_and($a, $b))} == #{($a and $b)} */
-    // test-and: op_and($a, $b) == ($a and $b);
-    // test-custom: inspect(op_and($a, $b));
+    /*! #{inspect(op_and($a, $b))} == #{($a and $b)} */
+    test-and: op_and($a, $b) == ($a and $b);
+    test-custom: inspect(op_and($a, $b));
     test-native: inspect(($a and $b));
-    // /*! #{inspect(op_or($a, $b))} == #{($a or $b)} */
-    // test-or: op_or($a, $b) == ($a or $b);
-    // test-custom: inspect(op_or($a, $b));
+    /*! #{inspect(op_or($a, $b))} == #{($a or $b)} */
+    test-or: op_or($a, $b) == ($a or $b);
+    test-custom: inspect(op_or($a, $b));
     test-native: inspect(($a or $b));
     /*! #{inspect(op_eq($a, $b))} == #{($a == $b)} */
     test-eq: op_eq($a, $b) == ($a == $b);
@@ -256,7 +257,13 @@ my ($r, $err) = CSS::Sass::sass_compile(
 
 my $expected = <<END_OF_EXPECTED;
 numbers {
+  /*! 42 == 42 */
+  test-and: true;
+  test-custom: 42;
   test-native: 42;
+  /*! 42px == 42px */
+  test-or: true;
+  test-custom: 42px;
   test-native: 42px;
   /*! true == true */
   test-eq: true;
@@ -332,5 +339,5 @@ booleans {
   test-native: true/false; }
 END_OF_EXPECTED
 
-is ($r, $expected, "big custom operation test");
+eq_or_diff ($r, $expected, "big custom operation test");
 is ($err, undef, "big custom operation test has no error");
