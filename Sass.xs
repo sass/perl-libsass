@@ -895,7 +895,7 @@ sass2scss(sass, options = SASS2SCSS_PRETTIFY_1)
 
         char* css = sass2scss(sass, options);
         RETVAL = newSVpv(css, 0);
-        free (css);
+        sass_free_memory (css);
 
     }
     OUTPUT:
@@ -911,7 +911,7 @@ quote(str)
 
         RETVAL = newSVpv(quoted, 0);
 
-        free (quoted);
+        sass_free_memory (quoted);
 
     }
     OUTPUT:
@@ -927,7 +927,7 @@ unquote(str)
 
         RETVAL = newSVpv(unquoted, 0);
 
-        free (unquoted);
+        sass_free_memory (unquoted);
 
     }
     OUTPUT:
@@ -1001,7 +1001,7 @@ auto_quote(str)
 
             RETVAL = newSVpv(string, 0);
 
-            free (string);
+            sass_free_memory (string);
 
         } else {
 

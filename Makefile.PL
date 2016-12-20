@@ -29,6 +29,10 @@ use ExtUtils::MakeMaker;
 use strict;
 use warnings;
 
+################################################################################
+# commandline options
+################################################################################
+
 # command line options
 my $optimize = '-O3';
 my $debug_mode = 0;
@@ -71,6 +75,11 @@ my $re_vtoken = qr/v?([0-9]+\.[0-9]+\.[0-9]+(?:[\-_].+?)?)/;
 my $re_version = qr/our\s+\$VERSION\s*=\s*[\"\']
                     $re_vtoken
                    [\"\']\s*\;/x;
+
+
+################################################################################
+# helper for version cli option
+################################################################################
 
 # needs File::Slurp
 # no hard dependency!
@@ -123,28 +132,37 @@ sub versions
 	}
 }
 
+################################################################################
+# parse options via GetOptions ("posix standard")
+################################################################################
+
 GetOptions(
 	'--help' => \&help,
-	'--debug' => \$debug_mode,
+	'--debug!' => \$debug_mode,
 	'--compiler:s' => \$compiler,
-	'--profiling' => \$profiling,
-	'--skip-git' => \$skip_git,
-	'--skip-version' => \$skip_version,
-	'--skip-manifest' => \$skip_manifest,
+	'--profiling!' => \$profiling,
+	'--skip-git!' => \$skip_git,
+	'--skip-version!' => \$skip_version,
+	'--skip-manifest!' => \$skip_manifest,
 	# options for git submodules
-	'--update-deps' => \$update_deps,
-	'--checkout-deps' => \$checkout_deps,
+	'--update-deps!' => \$update_deps,
+	'--checkout-deps!' => \$checkout_deps,
 	# manipulate versions of all perl packages
 	'--get-versions' => sub { versions(); exit 1; },
 	'--set-versions:s' => sub { versions($_[1]); exit 1; },
 );
 
+################################################################################
+# some git helper utilities (devs only)
+################################################################################
+
 # declare git submodules that are used
 my @submodules = qw(libsass t/sass-spec);
 
 # print some debug messages to console
-print "You enabled debug build\n" if $debug_mode;
-print "You enabled code profiling\n" if $profiling;
+print "Compiling with code profiling\n" if $profiling;
+print "Compiling release build\n" unless $debug_mode;
+print "Compiling debug build\n" if $debug_mode;
 
 # Are we in our development tree?
 # If so, create the MANIFEST file.
@@ -209,6 +227,10 @@ if (-d ".git" && !$skip_git)
 	}
 }
 
+################################################################################
+# get the libsass version from source
+################################################################################
+
 # read version from version file
 if (-f "libsass/VERSION") {
 	open (my $fh, "<", "libsass/VERSION");
@@ -219,6 +241,10 @@ if (-f "libsass/VERSION") {
 	# give a warning if the version could not be determined (probably not generated yet)
 	warn "Could not get version for libsass (", $libsass_version, ")\n";
 }
+
+################################################################################
+# compiler configurations
+################################################################################
 
 my $guess = ExtUtils::CppGuess->new(
 	(defined($compiler) ? (cc => $compiler) : ()),
@@ -293,10 +319,10 @@ my $srcfiles = join "", <$fh>; close $fh;
 
 my (@CFILES, @CPPFILES);
 # parse variable out (this is hopefully tolerant enough)
-if ($srcfiles =~ m/^\s*SOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
+if ($srcfiles =~ /^\s*SOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
   @CPPFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
 } else { die "Did not find c++ SOURCES in libsass/Makefile.conf"; }
-if ($srcfiles =~ m/^\s*CSOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
+if ($srcfiles =~ /^\s*CSOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
   @CFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
 } else { die "Did not find c++ CSOURCES in libsass/Makefile.conf"; }
 
@@ -312,7 +338,7 @@ my $EMMV = $ExtUtils::MakeMaker::VERSION;
 if ($EMMV > 7.10 && $EMMV < 7.20) {
   # Fix another issue if as-needed is not supported
   # https://github.com/sass/perl-libsass/issues/26
-  unless (`ld --help` =~ m/--no-as-needed/) {
+  unless (`ld --help` =~ /--no-as-needed/) {
     warn "Your current ExtUtils::MakeMaker has a bug\n";
     die "You need to upgrade ExtUtils::MakeMaker to 7.20+\n";
   }
@@ -329,9 +355,12 @@ if ($EMMV > 7.10 && $EMMV < 7.20) {
   }
 }
 
+################################################################################
 # See lib/ExtUtils/MakeMaker.pm for details of how to
 # influence content of the Makefile that is written.
-WriteMakefile(
+################################################################################
+
+my %WriteMakefile = (
 	NAME               => 'CSS::Sass',
 	VERSION_FROM       => 'lib/CSS/Sass.pm', # finds $VERSION, requires EU::MM from perl >= 5.5
 	# runtime dependencies
@@ -394,3 +423,19 @@ WriteMakefile(
 	OBJECT             => join(" ", (@SOURCES), '$(O_FILES)'),
 	EXE_FILES          => [ 'bin/psass' ],
 );
+
+# remove unknown key (as seen in Dist::Zilla)
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.63_03) } ) {
+  delete $WriteMakefile{TEST_REQUIRES};
+  delete $WriteMakefile{BUILD_REQUIRES};
+  # $WriteMakefile{PREREQ_PM} = \%fallback;
+}
+
+# remove unknown key (as seen in Dist::Zilla)
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.52) } ) {
+  delete $WriteMakefile{CONFIGURE_REQUIRES}
+}
+
+# See lib/ExtUtils/MakeMaker.pm for details of how to
+# influence content of the Makefile that is written.
+WriteMakefile(%WriteMakefile);
