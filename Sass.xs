@@ -204,7 +204,7 @@ union Sass_Value* sv_to_sass_value(SV* sv)
         enum Sass_Separator sep = SASS_COMMA;
         // special check for space separated lists
         if (sv_derived_from(org, "CSS::Sass::Value::List::Space")) sep = SASS_SPACE;
-        union Sass_Value* list = sass_make_list(av_len(av) + 1, sep);
+        union Sass_Value* list = sass_make_list(av_len(av) + 1, sep); // , false
         size_t i;
         for (i = 0; i < sass_list_get_length(list); i++) {
             SV** value_svp = av_fetch(av, i, false);
@@ -1020,23 +1020,6 @@ need_quotes(str)
     {
 
       RETVAL = sass_string_need_quotes(str) ? &PL_sv_yes : &PL_sv_no;
-
-    }
-    OUTPUT:
-             RETVAL
-
-SV*
-resolve_file(file)
-             char* file
-    CODE:
-    {
-
-        const char* paths[4] = { ".", "t", "bin", NULL };
-        char* resolved = sass_resolve_file(file, paths);
-
-        RETVAL = newSVpv(resolved, 0);
-
-        free (resolved);
 
     }
     OUTPUT:

@@ -36,6 +36,9 @@ use warnings;
 # command line options
 my $optimize = '-O3';
 my $debug_mode = 0;
+my $install_sassc = 0;
+my $install_plugins = 1;
+my $install_library = 0;
 my $compiler = undef;
 my $profiling = 0;
 my $skip_manifest = 0;
@@ -55,7 +58,12 @@ my $libsass_version = '[na]';
 
 sub help
 {
-	print "CSS::Sass Makefile.PL options (developers only):\n\n";
+	print "CSS::Sass Makefile.PL end-user options:\n\n";
+	print "  --sassc              Install optional sassc cli utility\n";
+	print "  --plugins            Install optional libsass plugins (default)\n";
+	print "  --library            Install libsass library (auto-enabled)\n";
+	print "  --help               This help screen\n";
+	print "\n  The following options are for developers only:\n\n";
 	print "  --debug              Build libsass in debug mode\n";
 	print "  --profiling          Enable gcov profiling switches\n";
 	print "  --compiler           Skips compiler autodetection (passed to CppGuess)\n";
@@ -67,7 +75,6 @@ sub help
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
 	print "  --set-versions       Set versions of all perl package (.pm) files\n";
 	print "  --skip-git           Do not try to use anything git related\n";
-	print "  --help               This help screen\n";
 	exit 1;
 }
 
@@ -139,6 +146,9 @@ sub versions
 GetOptions(
 	'--help' => \&help,
 	'--debug!' => \$debug_mode,
+	'--sassc!' => \$install_sassc,
+	'--plugins!' => \$install_plugins,
+	'--library!' => \$install_library,
 	'--compiler:s' => \$compiler,
 	'--profiling!' => \$profiling,
 	'--skip-git!' => \$skip_git,
@@ -159,7 +169,32 @@ GetOptions(
 # declare git submodules that are used
 my @submodules = qw(libsass t/sass-spec);
 
+if ($install_sassc) {
+	push @submodules, "plugins/sassc";
+}
+
+if ($install_plugins) {
+	# add optional libsass-math plugin
+	push @submodules, "plugins/math";
+	# add optional libsass-glob plugin
+	push @incs, 'plugins/glob/vendor';
+	push @submodules, "plugins/glob";
+	# add optional libsass-digest plugin
+	push @incs, 'plugins/digest/vendor';
+	push @incs, 'plugins/digest/vendor/crc';
+	push @incs, 'plugins/digest/vendor/md5';
+	push @submodules, "plugins/digest";
+}
+
+# make some options depending on others
+# no-library (static) is not yet handled
+$install_library = 1 if $install_sassc;
+$install_library = 1 if $install_plugins;
+
 # print some debug messages to console
+print "Building sassc cli util\n" if $install_sassc;
+print "Building libsass plugins\n" if $install_plugins;
+print "Building shared libsass lib\n" if $install_library;
 print "Compiling with code profiling\n" if $profiling;
 print "Compiling release build\n" unless $debug_mode;
 print "Compiling debug build\n" if $debug_mode;
@@ -439,3 +474,170 @@ unless ( eval { ExtUtils::MakeMaker->VERSION(6.52) } ) {
 # See lib/ExtUtils/MakeMaker.pm for details of how to
 # influence content of the Makefile that is written.
 WriteMakefile(%WriteMakefile);
+
+################################################################################
+# extend EU::MM to compile additional LibSass tools
+# there is a good chance the commands below will fail
+# due to different systems this is more than unflexible
+# but I also do not have an idea how to make it better
+################################################################################
+
+# subclass EU::MM
+package MY;
+use Config;
+
+my @targets;
+my $static = 0;
+
+sub compile_lib {
+  my ($name) = @_;
+  my @args = (
+    '$(LD) $(OPTIMIZE) -shared', "-o ${name}",
+  );
+  # need special path on windows and MSVC (cl)
+  if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
+    die "plugins are not available under MSVC";
+  }
+  elsif ($^O eq 'MSWin32' && $Config{cc} =~ /^gcc/) {
+    push @args, "-Wl,--out-implib,${name}.a";
+    push @args, '-Wl,--major-image-version,0.0.9';
+	push @args, '-Wl,--minor-image-version,0.0.9';
+  }
+  # -static-libgcc -static-libstdc++
+  return join(' ', @args, @libs);
+}
+
+
+sub libsass_sassc
+{
+  # register our source and object files
+  my @ret = 'SASSC_OBJ = plugins/sassc/sassc$(OBJ_EXT)';
+  # location of the created object
+  push @ret, 'SASSC_EXE = $(INST_BIN)/sassc$(EXE_EXT)';
+  # create the target for the makefile
+  push @ret, '$(SASSC_EXE): $(SASSC_OBJ) $(LIBSASS_LIB)';
+  # need special path on windows and MSVC (cl)
+  if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
+    die "plugins are not available under MSVC";
+  }
+  # otherwise we asume gcc
+  else {
+    # create the sassc executable by linking against sassc and libsass
+    push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) $(SASSC_OBJ) $(LIBS)'
+      . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass')
+      . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
+	  . ($^O eq "linux" ? ' -ldl' : '');
+  }
+  # add target to virtual "pure_all"
+  push @targets, '$(SASSC_EXE)';
+  # return makefile part
+  return join "\n", @ret;
+}
+
+sub libsass_lib
+{
+  # register our source and object files
+  my @ret = 'LIBSASS_OBJ = ' . join(" ", @SOURCES);
+  # location of the created object
+  push @ret, 'LIBSASS_LIB = $(INST_LIB)/libsass.$(SO)';
+  # create the target for the makefile
+  push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
+  # create the libsass shared library by linking against all objects
+  push @ret, "\t" . compile_lib('$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
+  # add target to virtual "pure_all"
+  push @targets, '$(LIBSASS_LIB)';
+  # return makefile part
+  return join "\n", @ret;
+}
+
+sub libsass_plugin_math
+{
+  my @ret = 'MATH_OBJ = plugins/math/src/math$(OBJ_EXT)';
+  # location of the created object
+  push @ret, 'MATH_LIB = $(INST_ARCHAUTODIR)/plugins/math/math.$(SO)';
+  # create the target for the makefile
+  push @ret, '$(MATH_LIB): $(LIBSASS_LIB) $(MATH_OBJ)';
+  # make sure the plugin path exists for output
+  push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
+  # create the libsass shared library by linking against all objects
+  push @ret, "\t" . compile_lib('$(MATH_LIB)') . ' $(MATH_OBJ)'
+             . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+  # add target to virtual "pure_all"
+  push @targets, '$(MATH_LIB)';
+  # return makefile part
+  return join "\n", @ret;
+}
+
+sub libsass_plugin_digest
+{
+  my @ret = 'DIGEST_OBJ = ' . join' ',
+    'plugins/digest/src/digest$(OBJ_EXT)',
+    'plugins/digest/vendor/md5/md5$(OBJ_EXT)',
+    'plugins/digest/vendor/b64/cencode$(OBJ_EXT)',
+    'plugins/digest/vendor/crc/crc_16$(OBJ_EXT)',
+    'plugins/digest/vendor/crc/crc_32$(OBJ_EXT)';
+  # location of the created object
+  push @ret, 'DIGEST_LIB = $(INST_ARCHAUTODIR)/plugins/digest/digest.$(SO)';
+  # create the target for the makefile
+  push @ret, '$(DIGEST_LIB): $(LIBSASS_LIB) $(DIGEST_OBJ)';
+  # make sure the plugin path exists for output
+  push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
+  # create the libsass shared library by linking against all objects
+  push @ret, "\t" . compile_lib('$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
+             . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+  # add target to virtual "pure_all"
+  push @targets, '$(DIGEST_LIB)';
+  # return makefile part
+  return join "\n", @ret;
+}
+
+sub libsass_plugin_glob
+{
+  my @ret = 'GLOB_OBJ = plugins/glob/src/glob$(OBJ_EXT)'
+          . ' plugins/glob/vendor/FS$(OBJ_EXT)';
+  # location of the created object
+  push @ret, 'GLOB_LIB = $(INST_ARCHAUTODIR)/plugins/glob/glob.$(SO)';
+  # special case (does not compile with perl inc path)
+  # readdir and friends were not available from headers
+  push @ret, 'plugins/glob/vendor/FS$(OBJ_EXT):';
+  push @ret, "\t" . '$(CCCMD) $(CCCDLFLAGS) $(PASTHRU_DEFINE) $(DEFINE) -xc++ -std=c++0x $*.cpp';
+  # create the target for the makefile
+  push @ret, '$(GLOB_LIB): $(LIBSASS_LIB) $(GLOB_OBJ)';
+  # make sure the plugin path exists for output
+  push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
+  # create the libsass shared library by linking against all objects
+  push @ret, "\t" . compile_lib('$(GLOB_LIB)') . ' $(GLOB_OBJ)'
+             . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+  # add target to virtual "pure_all"
+  push @targets, '$(GLOB_LIB)';
+  # return makefile part
+  return join "\n", @ret;
+}
+
+# the main overload
+sub postamble
+{
+  # get instance
+  my $self = shift;
+  # collect Makefile commands
+  my @commands = (
+    # call parent class first
+    $self->SUPER::postamble,
+  );
+  if ($install_plugins || $install_sassc) {
+    push @commands, '', libsass_lib();
+  }
+  if ($install_sassc) {
+    push @commands, '', libsass_sassc();
+  }
+  if ($install_plugins) {
+    push @commands, '', libsass_plugin_glob();
+    push @commands, '', libsass_plugin_math();
+    # needs a few C-API changes not yet released
+    # push @commands, '', libsass_plugin_digest();
+  }
+  # add new targets to virtual Makefile targets
+  push @commands, '', 'pure_all :: ' . join(" ", @targets);
+  # return code for Makefile
+  return join "\n", @commands;
+}

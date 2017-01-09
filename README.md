@@ -1,11 +1,11 @@
 CSS::Sass
 =========
 
-### Compile .scss and .sass files using libsass
+### Compile .scss and .sass files using LibSass
 
-CSS::Sass provides a perl interface to [libsass][1], a fairly complete Sass
-compiler written in C++. It is currently around ruby sass 3.3/3.4 feature parity and
-heading towards full 3.4 compatibility. It can compile .scss and .sass files.
+CSS::Sass provides a perl interface to [LibSass][1], a nearly complete Sass
+compiler written in C++. It is currently at ruby sass 3.4 feature parity and
+heading towards 3.5 compatibility. It can compile .scss and .sass files.
 
 [1]: https://github.com/sass/libsass
 
@@ -20,7 +20,8 @@ Manual installation:
 ```bash
   git clone https://github.com/sass/libsass
   cd libsass
-  perl Makefile.PL
+  # disable plugins if you have problems compiling
+  perl Makefile.PL --no-plugins
   make verbose=1
   make test verbose=1
   make install verbose=1
@@ -50,6 +51,38 @@ chance your distribution has a package for it:
 
 On windows I recommend [Strawberry Perl](http://strawberryperl.com/).
 You then also need to use `dmake` instead of `make` for manual installs.
+
+Build Options
+-------------
+
+Since we need LibSass for perl-libsass, we need to compile the sources
+when building CSS::Sass. LibSass can be compiled with different ways and
+Makefile.PL knows some switches to support most common use cases:
+
+```bash
+$ perl Makefile.PL --help
+
+CSS::Sass Makefile.PL end-user options:
+
+  --sassc              Install optional sassc cli utility
+  --plugins            Install optional libsass plugins (default)
+  --library            Install libsass library (auto-enabled)
+  --help               This help screen
+
+  The following options are for developers only:
+
+  --debug              Build libsass in debug mode
+  --profiling          Enable gcov profiling switches
+  --compiler           Skips compiler autodetection (passed to CppGuess)
+  --skip-manifest      Skips manifest generation (would need git repo)
+  --skip-version       Skips generating libsass/VERSION (would need git repo)
+  --update-deps        Update libsass and specs to latest master (needs git repo)
+  --checkout-deps      Checkout submodules at linked commit (needs git repo)
+  --get-versions       Show versions of all perl package (.pm) files
+  --get-versions       Show versions of all perl package (.pm) files
+  --set-versions       Set versions of all perl package (.pm) files
+  --skip-git           Do not try to use anything git related
+``` 
 
 Documentation
 -------------
@@ -94,6 +127,14 @@ psass [options] [ path_in | - ] [ path_out | - ]
     --source-map-root=.       specific root for relative paths
     --no-source-map-url       omit sourceMappingUrl from output
     --benchmark               print benchmark for compilation time
+
+Plugins may be pre-installed by CSS::Sass or from 3rd parties.
+There are some options available for each known plugin.
+
+    --all-plugins             enables all known plugins
+    --list-plugin             print list of all known plugins
+    --[name]-plugin           enables the plugin with [name]
+    --no-[name]-plugin        disabled the plugin with [name]
 ```
 
 Copyright And Licence

@@ -27,6 +27,7 @@ use CSS::Sass qw(SASS_STYLE_NESTED);
 use CSS::Sass qw(SASS_STYLE_COMPRESSED);
 use CSS::Sass qw(SASS_STYLE_COMPACT);
 use CSS::Sass::Watchdog qw(start_watchdog);
+use CSS::Sass::Plugins qw(%plugins);
 
 # setup encodings for std streams
 # not sure why this is not default
@@ -46,7 +47,7 @@ use Encode qw(decode encode);
 @ARGV = map { decode(locale => $_, 1) } @ARGV;
 
 ####################################################################################################
-# config variables
+# options variables
 ####################################################################################################
 
 # init options
@@ -63,14 +64,6 @@ my $source_map_contents;
 my $source_map_file_urls;
 my $omit_source_map_url;
 
-# define a sub to print out the version (mimic behaviour of node.js blessc)
-# this script has it's own version numbering as it's not dependent on any libs
-sub version {
-	printf "psass %s (perl sass/scss compiler)\n", "0.4.0";
-	printf "  libsass: %s\n", CSS::Sass::libsass_version();
-	printf "  sass2scss: %s\n", CSS::Sass::sass2scss_version();
-exit 0 };
-
 # paths arrays
 my @plugin_paths;
 my @include_paths;
@@ -79,8 +72,29 @@ my @include_paths;
 my $indent = "  ";
 my $linefeed = "auto";
 
-# get options
-GetOptions (
+####################################################################################################
+####################################################################################################
+
+# define a sub to print out the version (mimic behaviour of node.js blessc)
+# this script has it's own version numbering as it's not dependent on any libs
+sub version {
+	printf "psass %s (perl sass/scss compiler)\n", "0.5.0";
+	printf "  libsass: %s\n", CSS::Sass::libsass_version();
+	printf "  sass2scss: %s\n", CSS::Sass::sass2scss_version();
+exit 0 };
+
+sub list_plugins {
+
+	foreach my $plugin (sort keys %plugins) {
+		printf "--%s-plugin\n", $plugin;
+	}
+
+exit 0 };
+
+####################################################################################################
+####################################################################################################
+
+my %options = (
 	'help|h' => sub { pod2usage(1); },
 	'watch|w!' => \ $watchdog,
 	'version|v' => \ &version,
@@ -102,6 +116,29 @@ GetOptions (
 	'plugin-path|P|L=s' => sub { push @plugin_paths, $_[1] },
 	'include-path|I=s' => sub { push @include_paths, $_[1] }
 );
+
+my %enable_plugins;
+# add shortcuts for known plugins
+foreach my $plugin (keys %plugins) {
+	$enable_plugins{$plugin} = 0;
+	$options{"${plugin}-plugin!"} =
+		\ $enable_plugins{$plugin};
+}
+$options{'list-plugins'} = sub { list_plugins };
+$options{'all-plugins'} = sub {
+	foreach my $plugin (keys %plugins) {
+		$enable_plugins{$plugin} = 1;
+	}
+};
+
+# get options
+GetOptions %options;
+
+# register the enabled plugin paths
+foreach my $plugin (keys %enable_plugins) {
+	next unless $enable_plugins{$plugin};
+	push @plugin_paths, $plugins{$plugin};
+}
 
 # set default if not configured
 unless (defined $output_style)
@@ -269,6 +306,14 @@ psass [options] [ path_in | - ] [ path_out | - ]
        --source-map-root=.       specific root for relative paths
        --no-source-map-url       omit sourceMappingUrl from output
        --benchmark               print benchmark for compilation time
+
+   Plugins may be pre-installed by CSS::Sass or from 3rd parties.
+   There are some options available for each known plugin.
+
+       --all-plugins             enables all known plugins
+       --list-plugin             print list of all known plugins
+       --[name]-plugin           enables the plugin with [name]
+       --no-[name]-plugin        disabled the plugin with [name]
 
 =head1 OPTIONS
 

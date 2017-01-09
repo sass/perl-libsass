@@ -4,3 +4,15 @@
 [submodule "t/sass-spec"]
 	path = t/sass-spec
 	url = git://github.com/sass/sass-spec.git
+[submodule "plugins/sassc"]
+	path = plugins/sassc
+	url = https://github.com/sass/sassc
+[submodule "plugins/math"]
+	path = plugins/math
+	url = https://github.com/mgreter/libsass-math
+[submodule "plugins/glob"]
+	path = plugins/glob
+	url = https://github.com/mgreter/libsass-glob
+[submodule "plugins/digest"]
+	path = plugins/digest
+	url = https://github.com/mgreter/libsass-digest

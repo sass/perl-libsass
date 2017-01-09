@@ -7,7 +7,7 @@ use utf8;
 use strict;
 use warnings;
 
-use Test::More tests => 52;
+use Test::More tests => 49;
 BEGIN { use_ok('CSS::Sass') };
 
 my $r;
@@ -99,11 +99,15 @@ is    ($r->{error_status},  0,                        "import no error_status");
 is    ($r->{error_message}, undef,                    "import error_message is undef");
 like  ($r->{output_string}, qr/0\.3333333333;/,       "float precision of 10");
 
-use CSS::Sass qw(auto_quote resolve_file);
+use CSS::Sass qw(auto_quote);
 
 is (auto_quote("foobar"), "foobar", "auto_quote test #1");
 is (auto_quote("foo bar"), "\"foo bar\"", "auto_quote test #2");
 is (auto_quote("baz\""), "'baz\"'", "auto_quote test #3");
+
+__DATA__
+
+use CSS::Sass qw(resolve_file);
 
 is (resolve_file("inc/styles"), "t/inc/styles.css", "resolve file test #1");
 is (resolve_file("inc/colors"), "t/inc/_colors.scss", "resolve file test #2");
