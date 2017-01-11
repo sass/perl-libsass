@@ -1,3 +1,13 @@
+CSS::Sass (3.4.1)
+
+  * Update to latest LibSass release (3.4.3)
+  * Remove undocumented `resolve_file` function
+  * Bundle experimental LibSass plugins (alpha)
+  * Improve command line utility for plugins
+  * Fix tests due to wrong skip count (Perl < 5.12)
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Wed, 11 Jan 2017 14:18:43 +0200
+
 CSS::Sass (3.4.0)
 
   * Update to latest LibSass release (3.4.0)
