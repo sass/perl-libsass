@@ -355,7 +355,7 @@ is $error_msg->message, 'message', "error message method return ok";
 ################################################################################
 
 SKIP: {
-	skip ("known regex issue in perl < 5.12", 1) if $] < 5.012000;
+	skip ("known regex issue in perl < 5.12", 8) if $] < 5.012000;
 	is $regex, qr/regex/, "regex stringify value is correct";
 	test_string($regex);
 }
@@ -521,7 +521,7 @@ is $sass->compile('$err: test-err(var-pl-new-error()); A { value: $err; }'),
    undef, 'test returned blessed variable of type error';
 
 SKIP: {
-	skip ("known regex issue in perl < 5.12", 4) if $] < 5.012000;
+	skip ("known regex issue in perl < 5.12", 8) if $] < 5.012000;
 	is $sass->compile('$rgx: test-str(var-pl-regex()); A { value: $rgx; }'),
 	   "A{value:".qr/foobar/."}\n", 'test returned blessed variable of type "regex"';
 }
