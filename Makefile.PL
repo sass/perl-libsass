@@ -230,7 +230,11 @@ if (-d ".git" && !$skip_git)
 		{
 			my $cwd = Cwd::getcwd;
 			chdir ($module) or die "pushd: $!";
-			my $files = `git ls-files` or die "Couldn't run git: $!";
+			my $files = "";
+			if (-e ".git") {
+				$files = `git ls-files` or
+					die "Couldn't run git: $!";
+			}
 			my @items = split(/\n+/, $files);
 			my @files = grep { ! -d } @items;
 			print $manifest grep { ! /\"/ }
