@@ -26,9 +26,13 @@ use warnings;
 package CSS::Sass::Plugins;
 our $VERSION = "3.4.1";
 ################################################################################
-
 # collect plugins
 our %plugins;
+################################################################################
+use Exporter 'import'; # gives you Exporter's import() method directly
+our @EXPORT = qw(%plugins); # symbols to export by default
+################################################################################
+
 # prefix to append to root path
 my $path = '/auto/CSS/Sass/plugins/';
 # get our own path for module file
@@ -46,9 +50,6 @@ while (my $item = readdir($dh)) {
 	next unless $item =~ m/^[a-zA-Z]+$/;
 	$plugins{$item} = $root . $item
 }
-
-use Exporter 'import'; # gives you Exporter's import() method directly
-our @EXPORT = qw(%plugins); # symbols to export by default
 
 ################################################################################
 ################################################################################
