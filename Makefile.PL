@@ -496,7 +496,7 @@ my $static = 0;
 sub compile_lib {
   my ($name) = @_;
   my @args = (
-    '$(LD) $(OPTIMIZE) -shared', "-o ${name}",
+    '$(LD) $(OPTIMIZE) -lstdc++ -shared', "-o ${name}",
   );
   # need special path on windows and MSVC (cl)
   if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
