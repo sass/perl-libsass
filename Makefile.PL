@@ -72,7 +72,6 @@ sub help
 	print "  --update-deps        Update libsass and specs to latest master (needs git repo)\n";
 	print "  --checkout-deps      Checkout submodules at linked commit (needs git repo)\n";
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
-	print "  --get-versions       Show versions of all perl package (.pm) files\n";
 	print "  --set-versions       Set versions of all perl package (.pm) files\n";
 	print "  --skip-git           Do not try to use anything git related\n";
 	exit 1;
