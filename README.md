@@ -79,10 +79,9 @@ CSS::Sass Makefile.PL end-user options:
   --update-deps        Update libsass and specs to latest master (needs git repo)
   --checkout-deps      Checkout submodules at linked commit (needs git repo)
   --get-versions       Show versions of all perl package (.pm) files
-  --get-versions       Show versions of all perl package (.pm) files
   --set-versions       Set versions of all perl package (.pm) files
   --skip-git           Do not try to use anything git related
-``` 
+```
 
 Documentation
 -------------
