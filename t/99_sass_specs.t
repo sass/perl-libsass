@@ -117,6 +117,7 @@ sub stderr
 	# clean todo warnings (remove all warning blocks)
 	$stderr =~ s/^(?:DEPRECATION )?WARNING(?:[^\n]+\n)*\n*//gm;
 	$stderr =~ s/\n.*\Z//s;
+	utf8::decode($stderr);
 	return $stderr;
 }
 
@@ -138,6 +139,7 @@ sub stdmsg
 	# clean error messages
 	$stderr =~ s/^Error(?:[^\n]+\n)*\n*//gm;
 	$stderr =~ s/\n.*\Z//s;
+	utf8::decode($stderr);
 	return $stderr;
 }
 
