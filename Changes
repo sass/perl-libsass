@@ -1,5 +1,11 @@
 CSS::Sass (3.4.2)
 
+  * Meta files once again got corrupted!?
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Min, 20 Feb 2017 09:51:23 +0200
+
+CSS::Sass (3.4.2)
+
   * Fix build issue with plugins on OSX (#28)
   * Fix plugin loader when plugins are disabled
   * Update all plugins to their latest versions
