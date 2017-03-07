@@ -1,4 +1,11 @@
-CSS::Sass (3.4.2)
+CSS::Sass (3.4.4)
+
+  * Bumped libsass version to temporary 3.4 stable branch
+  * Re-added gcc 4.4 compatibility for libsass (cpan release only)
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Tuw, 07 Mar 2017 15:36:05 +0200
+
+CSS::Sass (3.4.3)
 
   * Meta files once again got corrupted!?
 
