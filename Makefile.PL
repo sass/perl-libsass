@@ -288,10 +288,31 @@ my $guess = ExtUtils::CppGuess->new(
 	(defined($compiler) ? (cc => $compiler) : ()),
 );
 
-if ($guess->is_gcc) { print "Detected gcc compiler...\n"; }
-elsif ($guess->is_msvc) { print "Detected MSVC compiler...\n"; }
+# check gcc version
+if ($guess->is_gcc) {
+	# version not exposed by CppGuess!?
+	use Capture::Tiny 'capture_merged';
+	my $cmd = $guess->_cc . " --version";
+	my $cc_version = capture_merged { system($cmd) };
+	if ($cc_version =~ m/gcc\-(\d+)\.(\d+)/i) {
+		$cc_version = sprintf("%d.%d", $1, $2);
+		$guess->{'gcc_version'} = $cc_version;
+		print "Detected GCC compiler $cc_version ...\n";
+		if ($1 < 4 || ($1 == 4 && $2 < 4)) {
+			warn "Your GCC Version is too old for LibSass!\n";
+			warn "Needs at least gcc version 4.4 or higher!\n";
+			die "Please consider upgrading your GCC compiler!\n";
+		}
+	}
+	else {
+		print "Detected GCC compiler (version unknown) ...\n";
+	}
+}
+# we never really tested compilation via MSVC yet ...
+elsif ($guess->is_msvc) { print "Detected MSVC compiler ...\n"; }
 else { print "Unknown compiler, trying anyway...\n"; }
 
+# Fixup CC flags issue
 no warnings 'redefine';
 my $orig = \&ExtUtils::MM_Unix::c_o;
 *ExtUtils::MM_Unix::c_o = sub {
@@ -358,10 +379,10 @@ my $srcfiles = join "", <$fh>; close $fh;
 my (@CFILES, @CPPFILES);
 # parse variable out (this is hopefully tolerant enough)
 if ($srcfiles =~ /^\s*SOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
-  @CPPFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
+	@CPPFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
 } else { die "Did not find c++ SOURCES in libsass/Makefile.conf"; }
 if ($srcfiles =~ /^\s*CSOURCES\s*=\s*((?:.*(?:\\\r?\n))*.*)/m) {
-  @CFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
+	@CFILES = grep { $_ } split /(?:\s|\\\r?\n)+/, $1;
 } else { die "Did not find c++ CSOURCES in libsass/Makefile.conf"; }
 
 # prefix paths and filter the c and c++ sources
@@ -374,23 +395,23 @@ my @SOURCES = map { join '/', 'libsass', 'src', $_ }
 my $EMMV = $ExtUtils::MakeMaker::VERSION;
 # Bug has been fixed in version 7.20
 if ($EMMV > 7.10 && $EMMV < 7.20) {
-  # Fix another issue if as-needed is not supported
-  # https://github.com/sass/perl-libsass/issues/26
-  unless (`ld --help` =~ /--no-as-needed/) {
-    warn "Your current ExtUtils::MakeMaker has a bug\n";
-    die "You need to upgrade ExtUtils::MakeMaker to 7.20+\n";
-  }
-  if (exists $compiler_flags{'dynamic_lib'}) {
-    my $dynlibs = $compiler_flags{'dynamic_lib'};
-    if (exists $dynlibs->{'OTHERLDFLAGS'}) {
-      if ($guess->is_gcc) {
-        $dynlibs->{'OTHERLDFLAGS'} = join " ",
-          '-Wl,--no-as-needed',
-          $dynlibs->{'OTHERLDFLAGS'},
-          '-Wl,--as-needed';
-      }
-    }
-  }
+	# Fix another issue if as-needed is not supported
+	# https://github.com/sass/perl-libsass/issues/26
+	unless (`ld --help` =~ /--no-as-needed/) {
+		warn "Your current ExtUtils::MakeMaker has a bug\n";
+		die "You need to upgrade ExtUtils::MakeMaker to 7.20+\n";
+	}
+	if (exists $compiler_flags{'dynamic_lib'}) {
+		my $dynlibs = $compiler_flags{'dynamic_lib'};
+		if (exists $dynlibs->{'OTHERLDFLAGS'}) {
+			if ($guess->is_gcc) {
+				$dynlibs->{'OTHERLDFLAGS'} = join " ",
+					'-Wl,--no-as-needed',
+					$dynlibs->{'OTHERLDFLAGS'},
+					'-Wl,--as-needed';
+			}
+		}
+	}
 }
 
 ################################################################################
@@ -403,7 +424,7 @@ my %WriteMakefile = (
 	VERSION_FROM       => 'lib/CSS/Sass.pm', # finds $VERSION, requires EU::MM from perl >= 5.5
 	# runtime dependencies
 	PREREQ_PM          => {
-		'perl'                 => 5.008000,
+		# 'perl'                 => 5.008000,
 		'Carp'                 => 1.01, # core as of 5.008
 		'version'              => 0,
 		'warnings'             => 0, # core as of 5.008
@@ -464,14 +485,14 @@ my %WriteMakefile = (
 
 # remove unknown key (as seen in Dist::Zilla)
 unless ( eval { ExtUtils::MakeMaker->VERSION(6.63_03) } ) {
-  delete $WriteMakefile{TEST_REQUIRES};
-  delete $WriteMakefile{BUILD_REQUIRES};
-  # $WriteMakefile{PREREQ_PM} = \%fallback;
+	delete $WriteMakefile{TEST_REQUIRES};
+	delete $WriteMakefile{BUILD_REQUIRES};
+	# $WriteMakefile{PREREQ_PM} = \%fallback;
 }
 
 # remove unknown key (as seen in Dist::Zilla)
 unless ( eval { ExtUtils::MakeMaker->VERSION(6.52) } ) {
-  delete $WriteMakefile{CONFIGURE_REQUIRES}
+	delete $WriteMakefile{CONFIGURE_REQUIRES}
 }
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to
@@ -490,157 +511,191 @@ package MY;
 use Config;
 
 my @targets;
+my @cleanups;
+my @commands;
 my $static = 0;
 
 sub compile_lib {
-  my ($name) = @_;
-  my @args = (
-    '$(LD) $(OPTIMIZE) -lstdc++ -shared', "-o ${name}",
-  );
-  # need special path on windows and MSVC (cl)
-  if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
-    die "plugins are not available under MSVC";
-  }
-  elsif ($^O eq 'MSWin32' && $Config{cc} =~ /^gcc/) {
-    push @args, "-Wl,--out-implib,${name}.a";
-    push @args, '-Wl,--major-image-version,0.0.9';
-	push @args, '-Wl,--minor-image-version,0.0.9';
-  }
-  # -static-libgcc -static-libstdc++
-  return join(' ', @args, @libs);
+	my ($name) = @_;
+	my @args = (
+		'$(LD) $(OPTIMIZE) -lstdc++ -shared', "-o ${name}",
+	);
+	# need special path on windows and MSVC (cl)
+	if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
+		die "plugins are not available under MSVC";
+	}
+	elsif ($^O eq 'MSWin32' && $Config{cc} =~ /^gcc/) {
+		push @args, "-Wl,--out-implib,${name}.a";
+		push @args, '-Wl,--major-image-version,0.0.9';
+		push @args, '-Wl,--minor-image-version,0.0.9';
+	}
+	# -static-libgcc -static-libstdc++
+	return join(' ', @args, @libs);
 }
 
 
 sub libsass_sassc
 {
-  # register our source and object files
-  my @ret = 'SASSC_OBJ = plugins/sassc/sassc$(OBJ_EXT)';
-  # location of the created object
-  push @ret, 'SASSC_EXE = $(INST_BIN)/sassc$(EXE_EXT)';
-  # create the target for the makefile
-  push @ret, '$(SASSC_EXE): $(SASSC_OBJ) $(LIBSASS_LIB)';
-  # need special path on windows and MSVC (cl)
-  if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
-    die "plugins are not available under MSVC";
-  }
-  # otherwise we asume gcc
-  else {
-    # create the sassc executable by linking against sassc and libsass
-    push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) $(SASSC_OBJ) $(LIBS)'
-      . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass')
-      . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
-	  . ($^O eq "linux" ? ' -ldl' : '');
-  }
-  # add target to virtual "pure_all"
-  push @targets, '$(SASSC_EXE)';
-  # return makefile part
-  return join "\n", @ret;
+	# register our source and object files
+	my @ret = 'SASSC_OBJ = plugins/sassc/sassc$(OBJ_EXT)';
+	# location of the created object
+	push @ret, 'SASSC_EXE = $(INST_BIN)/sassc$(EXE_EXT)';
+	# create the target for the makefile
+	push @ret, '$(SASSC_EXE): $(SASSC_OBJ) $(LIBSASS_LIB)';
+	# need special path on windows and MSVC (cl)
+	if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
+		die "plugins are not available under MSVC";
+	}
+	# otherwise we asume gcc
+	else {
+		# create the sassc executable by linking against sassc and libsass
+		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) $(SASSC_OBJ) $(LIBS)'
+		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass')
+		         . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
+		         . ($^O eq "linux" ? ' -ldl' : '');
+	}
+	# add target to virtual "pure_all"
+	push @cleanups, '$(SASSC_OBJ)';
+	push @cleanups, '$(SASSC_EXE)';
+	push @targets, '$(SASSC_EXE)';
+	# return makefile part
+	return join "\n", @ret;
 }
 
 sub libsass_lib
 {
-  # register our source and object files
-  my @ret = 'LIBSASS_OBJ = ' . join(" ", @SOURCES);
-  # location of the created object
-  push @ret, 'LIBSASS_LIB = $(INST_LIB)/libsass.$(SO)';
-  # create the target for the makefile
-  push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
-  # create the libsass shared library by linking against all objects
-  push @ret, "\t" . compile_lib('$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
-  # add target to virtual "pure_all"
-  push @targets, '$(LIBSASS_LIB)';
-  # return makefile part
-  return join "\n", @ret;
+	# register our source and object files
+	my @ret = 'LIBSASS_OBJ = ' . join(" ", @SOURCES);
+	# location of the created object
+	push @ret, 'LIBSASS_LIB = $(INST_LIB)/libsass.$(SO)';
+	# create the target for the makefile
+	push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
+	# create the libsass shared library by linking against all objects
+	push @ret, "\t" . compile_lib('$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
+	# add target to virtual "pure_all"
+	push @cleanups, '$(LIBSASS_OBJ)';
+	push @cleanups, '$(LIBSASS_LIB)';
+	push @targets, '$(LIBSASS_LIB)';
+	# return makefile part
+	return join "\n", @ret;
 }
 
 sub libsass_plugin_math
 {
-  my @ret = 'MATH_OBJ = plugins/math/src/math$(OBJ_EXT)';
-  # location of the created object
-  push @ret, 'MATH_LIB = $(INST_ARCHAUTODIR)/plugins/math/math.$(SO)';
-  # create the target for the makefile
-  push @ret, '$(MATH_LIB): $(LIBSASS_LIB) $(MATH_OBJ)';
-  # make sure the plugin path exists for output
-  push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
-  # create the libsass shared library by linking against all objects
-  push @ret, "\t" . compile_lib('$(MATH_LIB)') . ' $(MATH_OBJ)'
-             . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
-  # add target to virtual "pure_all"
-  push @targets, '$(MATH_LIB)';
-  # return makefile part
-  return join "\n", @ret;
+	my @ret = 'MATH_OBJ = plugins/math/src/math$(OBJ_EXT)';
+	# location of the created object
+	push @ret, 'MATH_LIB = $(INST_ARCHAUTODIR)/plugins/math/math.$(SO)';
+	# create the target for the makefile
+	push @ret, '$(MATH_LIB): $(LIBSASS_LIB) $(MATH_OBJ)';
+	# make sure the plugin path exists for output
+	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
+	# create the libsass shared library by linking against all objects
+	push @ret, "\t" . compile_lib('$(MATH_LIB)') . ' $(MATH_OBJ)'
+		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+	# add target to virtual "pure_all"
+	push @cleanups, '$(MATH_OBJ)';
+	push @cleanups, '$(MATH_LIB)';
+	push @targets, '$(MATH_LIB)';
+	# return makefile part
+	return join "\n", @ret;
 }
 
 sub libsass_plugin_digest
 {
-  my @ret = 'DIGEST_OBJ = ' . join' ',
-    'plugins/digest/src/digest$(OBJ_EXT)',
-    'plugins/digest/vendor/md5/md5$(OBJ_EXT)',
-    'plugins/digest/vendor/b64/cencode$(OBJ_EXT)',
-    'plugins/digest/vendor/crc/crc_16$(OBJ_EXT)',
-    'plugins/digest/vendor/crc/crc_32$(OBJ_EXT)';
-  # location of the created object
-  push @ret, 'DIGEST_LIB = $(INST_ARCHAUTODIR)/plugins/digest/digest.$(SO)';
-  # create the target for the makefile
-  push @ret, '$(DIGEST_LIB): $(LIBSASS_LIB) $(DIGEST_OBJ)';
-  # make sure the plugin path exists for output
-  push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
-  # create the libsass shared library by linking against all objects
-  push @ret, "\t" . compile_lib('$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
-             . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
-  # add target to virtual "pure_all"
-  push @targets, '$(DIGEST_LIB)';
-  # return makefile part
-  return join "\n", @ret;
+	my @ret = 'DIGEST_OBJ = ' . join' ',
+		'plugins/digest/src/digest$(OBJ_EXT)',
+		'plugins/digest/vendor/md5/md5$(OBJ_EXT)',
+		'plugins/digest/vendor/b64/cencode$(OBJ_EXT)',
+		'plugins/digest/vendor/crc/crc_16$(OBJ_EXT)',
+		'plugins/digest/vendor/crc/crc_32$(OBJ_EXT)';
+	# location of the created object
+	push @ret, 'DIGEST_LIB = $(INST_ARCHAUTODIR)/plugins/digest/digest.$(SO)';
+	# create the target for the makefile
+	push @ret, '$(DIGEST_LIB): $(LIBSASS_LIB) $(DIGEST_OBJ)';
+	# make sure the plugin path exists for output
+	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
+	# create the libsass shared library by linking against all objects
+	push @ret, "\t" . compile_lib('$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
+	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+	# add target to virtual "pure_all"
+	push @cleanups, '$(DIGEST_OBJ)';
+	push @cleanups, '$(DIGEST_LIB)';
+	push @targets, '$(DIGEST_LIB)';
+	# return makefile part
+	return join "\n", @ret;
 }
 
 sub libsass_plugin_glob
 {
-  my @ret = 'GLOB_OBJ = plugins/glob/src/glob$(OBJ_EXT)'
-          . ' plugins/glob/vendor/FS$(OBJ_EXT)';
-  # location of the created object
-  push @ret, 'GLOB_LIB = $(INST_ARCHAUTODIR)/plugins/glob/glob.$(SO)';
-  # special case (does not compile with perl inc path)
-  # readdir and friends were not available from headers
-  push @ret, 'plugins/glob/vendor/FS$(OBJ_EXT):';
-  push @ret, "\t" . '$(CCCMD) $(CCCDLFLAGS) $(PASTHRU_DEFINE) $(DEFINE) -xc++ -std=c++0x $*.cpp';
-  # create the target for the makefile
-  push @ret, '$(GLOB_LIB): $(LIBSASS_LIB) $(GLOB_OBJ)';
-  # make sure the plugin path exists for output
-  push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
-  # create the libsass shared library by linking against all objects
-  push @ret, "\t" . compile_lib('$(GLOB_LIB)') . ' $(GLOB_OBJ)'
-             . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
-  # add target to virtual "pure_all"
-  push @targets, '$(GLOB_LIB)';
-  # return makefile part
-  return join "\n", @ret;
+	my @ret = 'GLOB_OBJ = plugins/glob/src/glob$(OBJ_EXT)'
+	        . ' plugins/glob/vendor/FS$(OBJ_EXT)';
+	# location of the created object
+	push @ret, 'GLOB_LIB = $(INST_ARCHAUTODIR)/plugins/glob/glob.$(SO)';
+	# special case (does not compile with perl inc path)
+	# readdir and friends were not available from headers
+	push @ret, 'plugins/glob/vendor/FS$(OBJ_EXT):';
+	push @ret, "\t" . '$(CCCMD) $(CCCDLFLAGS) $(PASTHRU_DEFINE) $(DEFINE) -xc++ -std=c++0x $*.cpp';
+	# create the target for the makefile
+	push @ret, '$(GLOB_LIB): $(LIBSASS_LIB) $(GLOB_OBJ)';
+	# make sure the plugin path exists for output
+	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
+	# create the libsass shared library by linking against all objects
+	push @ret, "\t" . compile_lib('$(GLOB_LIB)') . ' $(GLOB_OBJ)'
+	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+	# add target to virtual "pure_all"
+	push @cleanups, '$(GLOB_OBJ)';
+	push @cleanups, '$(GLOB_LIB)';
+	push @targets, '$(GLOB_LIB)';
+	# return makefile part
+	return join "\n", @ret;
 }
 
-# the main overload
+my $ran = 0;
+sub runOnce
+{
+	return if $ran;
+	# get instance
+	my $self = shift;
+	# collect Makefile commands
+	@commands = (
+		# call parent class first
+		$self->SUPER::postamble,
+	);
+	if ($install_plugins || $install_sassc) {
+		push @commands, '', libsass_lib();
+	}
+	if ($install_sassc) {
+		push @commands, '', libsass_sassc();
+	}
+	if ($install_plugins) {
+		push @commands, '', libsass_plugin_glob();
+		push @commands, '', libsass_plugin_math();
+		# needs a few C-API changes not yet released
+		# push @commands, '', libsass_plugin_digest();
+	}
+	# add new targets to virtual Makefile targets
+	push @commands, '', 'pure_all :: ' . join(" ", @targets);
+	# mark as run once
+	$ran = 1;
+};
+
+# main overload
 sub postamble
 {
-  # get instance
-  my $self = shift;
-  # collect Makefile commands
-  my @commands = (
-    # call parent class first
-    $self->SUPER::postamble,
-  );
-  if ($install_plugins || $install_sassc) {
-    push @commands, '', libsass_lib();
-  }
-  if ($install_sassc) {
-    push @commands, '', libsass_sassc();
-  }
-  if ($install_plugins) {
-    push @commands, '', libsass_plugin_glob();
-    push @commands, '', libsass_plugin_math();
-    # needs a few C-API changes not yet released
-    # push @commands, '', libsass_plugin_digest();
-  }
-  # add new targets to virtual Makefile targets
-  push @commands, '', 'pure_all :: ' . join(" ", @targets);
-  # return code for Makefile
-  return join "\n", @commands;
+	# get instance
+	my $self = shift;
+	runOnce($self);
+	# return code for Makefile
+	return join "\n", @commands;
+}
+
+# cleanups
+sub clean
+{
+	# get instance
+	my $self = shift;
+	runOnce($self);
+	# collect parent clean targets
+	return $self->SUPER::clean . "\t- \$(RM_F) \\\n"
+	       . join("\n",	map { "\t  $_ \\" } @cleanups);
 }
