@@ -1,3 +1,10 @@
+CSS::Sass (3.4.5)
+
+  * Bumped libsass version to latest 3.4 stable branch (3.4.4)
+  * Improve Makefile.PL to check gcc version (and other fixes)
+
+ -- Marcel Greter <perl-libsass@ocbnet.ch>  Tuw, 09 Apr 2017 01:16:37 +0100
+
 CSS::Sass (3.4.4)
 
   * Bumped libsass version to temporary 3.4 stable branch
