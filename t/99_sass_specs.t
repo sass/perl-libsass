@@ -106,7 +106,8 @@ sub stderr
 	my ($spec) = @_;
 
 	local $/ = undef;
-	my $path = catfile($spec->{root}->{root}, "error");
+	my $path = catfile($spec->{root}->{root}, "error-libsass");
+	$path = catfile($spec->{root}->{root}, "error") unless -f $path;
 	return "" unless -f $path;
 	open my $fh, "<:raw:utf8", $path or
 		croak "Error opening <", $path, ">: $!";
@@ -126,7 +127,8 @@ sub stdmsg
 	my ($spec) = @_;
 
 	local $/ = undef;
-	my $path = catfile($spec->{root}->{root}, "error");
+	my $path = catfile($spec->{root}->{root}, "error-libsass");
+	$path = catfile($spec->{root}->{root}, "error") unless -f $path;
 	return '' unless -f $path;
 	open my $fh, "<:raw:utf8", $path or
 		croak "Error opening <", $path, ">: $!";
