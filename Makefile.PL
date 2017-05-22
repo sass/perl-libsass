@@ -292,10 +292,10 @@ my $guess = ExtUtils::CppGuess->new(
 if ($guess->is_gcc) {
 	# version not exposed by CppGuess!?
 	use Capture::Tiny 'capture_merged';
-	my $cmd = $guess->_cc . " --version";
+	my $cmd = $guess->{cc} . " --version";
 	my $cc_version = capture_merged { system($cmd) };
-	if ($cc_version =~ m/gcc\-(\d+)\.(\d+)/i) {
-		$cc_version = sprintf("%d.%d", $1, $2);
+	if ($cc_version =~ m/gcc\s+\([^\)]+\)\s+(\d+)\.(\d+)\.(\d+)\r?\n/i) {
+		$cc_version = sprintf("%d.%d.%d", $1, $2, $3);
 		$guess->{'gcc_version'} = $cc_version;
 		print "Detected GCC compiler $cc_version ...\n";
 		if ($1 < 4 || ($1 == 4 && $2 < 4)) {
