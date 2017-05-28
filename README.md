@@ -22,7 +22,7 @@ Manual installation:
   cd libsass
   # disable plugins if you have problems compiling
   perl Makefile.PL --no-plugins
-  make verbose=1
+  make -j4 verbose=1
   make test verbose=1
   make install verbose=1
 ```
@@ -39,7 +39,7 @@ CPAN-Minus*:
 
 CPAN-Minus* directly via github:
 ```bash
-  cpanm https://github.com/sass/perl-libsass/archive/latest.tar.gz
+  cpanm git://github.com/sass/perl-libsass.git
 ```
 
 (*) CPAN-Minus may not be installed by default, but there is a good
@@ -50,7 +50,7 @@ chance your distribution has a package for it:
 ```
 
 On windows I recommend [Strawberry Perl](http://strawberryperl.com/).
-You then also need to use `dmake` instead of `make` for manual installs.
+Tip: Use `dmake -PX` instead of `make -jX` for manual installs.
 
 Build Options
 -------------
@@ -59,7 +59,7 @@ Since we need LibSass for perl-libsass, we need to compile the sources
 when building CSS::Sass. LibSass can be compiled with different ways and
 Makefile.PL knows some switches to support most common use cases:
 
-```bash
+```
 $ perl Makefile.PL --help
 
 CSS::Sass Makefile.PL end-user options:
@@ -94,9 +94,9 @@ After installing:
 
     man CSS::Sass
 
-Or view [converted markdown version][1]
+Or view [converted markdown version][4]
 
-[1]: https://github.com/sass/perl-libsass/blob/master/lib/CSS/Sass.md
+[4]: https://github.com/sass/perl-libsass/blob/master/lib/CSS/Sass.md
 
 Command line utility
 --------------------
@@ -135,6 +135,20 @@ There are some options available for each known plugin.
     --[name]-plugin           enables the plugin with [name]
     --no-[name]-plugin        disabled the plugin with [name]
 ```
+
+
+Included default plugins
+------------------------
+
+```
+$ psass --list-plugins
+[--glob-plugin][2]
+[--math-plugin][3]
+```
+
+[2]: https://github.com/mgreter/libsass-glob
+[3]: https://github.com/mgreter/libsass-math
+
 
 Copyright And Licence
 ---------------------
