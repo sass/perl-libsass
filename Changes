@@ -1,3 +1,10 @@
+CSS::Sass (3.4.7)
+
+  * Bumped libsass version to latest 3.4 stable branch (3.4.6)
+  * Patch spec runner to skip expected failures (missing warnings)
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Mon, 16 Oct 2017 00:22:52 +0200
+
 CSS::Sass (3.4.6)
 
   * Bumped libsass version to latest 3.4 stable branch (3.4.5)
