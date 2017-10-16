@@ -175,6 +175,8 @@ if ($install_sassc) {
 if ($install_plugins) {
 	# add optional libsass-math plugin
 	push @submodules, "plugins/math";
+	# add optional libsass-img-size plugin
+	push @submodules, "plugins/img-size";
 	# add optional libsass-glob plugin
 	push @incs, 'plugins/glob/vendor';
 	push @submodules, "plugins/glob";
@@ -600,6 +602,26 @@ sub libsass_plugin_math
 	return join "\n", @ret;
 }
 
+sub libsass_plugin_img_size
+{
+	my @ret = 'IMG_SIZE_OBJ = plugins/img-size/src/img-size$(OBJ_EXT)';
+	# location of the created object
+	push @ret, 'IMG_SIZE_LIB = $(INST_ARCHAUTODIR)/plugins/img-size/img-size.$(SO)';
+	# create the target for the makefile
+	push @ret, '$(IMG_SIZE_LIB): $(LIBSASS_LIB) $(IMG_SIZE_OBJ)';
+	# make sure the plugin path exists for output
+	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/img-size';
+	# create the libsass shared library by linking against all objects
+	push @ret, "\t" . compile_lib('$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
+		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+	# add target to virtual "pure_all"
+	push @cleanups, '$(IMG_SIZE_OBJ)';
+	push @cleanups, '$(IMG_SIZE_LIB)';
+	push @targets, '$(IMG_SIZE_LIB)';
+	# return makefile part
+	return join "\n", @ret;
+}
+
 sub libsass_plugin_digest
 {
 	my @ret = 'DIGEST_OBJ = ' . join' ',
@@ -670,6 +692,7 @@ sub runOnce
 	if ($install_plugins) {
 		push @commands, '', libsass_plugin_glob();
 		push @commands, '', libsass_plugin_math();
+		push @commands, '', libsass_plugin_img_size();
 		# needs a few C-API changes not yet released
 		# push @commands, '', libsass_plugin_digest();
 	}

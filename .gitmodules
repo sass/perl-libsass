@@ -16,3 +16,6 @@
 [submodule "plugins/digest"]
 	path = plugins/digest
 	url = https://github.com/mgreter/libsass-digest
+[submodule "plugins/img-size"]
+	path = plugins/img-size
+	url = https://github.com/mgreter/libsass-img-size
