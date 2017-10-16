@@ -1,3 +1,11 @@
+CSS::Sass (3.4.8)
+
+  * Added img-size plugin (https://github.com/mgreter/libsass-img-size)
+  * Fixed issue with plugins not finding shared libsass library (win/nix)
+  * Fixed issue with gcc 4.4 compatibility and plugin loading (cpan only)
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Mon, 17 Oct 2017 00:05:03 +0200
+
 CSS::Sass (3.4.7)
 
   * Bumped libsass version to latest 3.4 stable branch (3.4.6)
