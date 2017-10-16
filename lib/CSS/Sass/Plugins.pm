@@ -47,7 +47,7 @@ return \%plugins unless -d $root;
 opendir (my $dh, $root) or
 	die "error querying plugins";
 while (my $item = readdir($dh)) {
-	next unless $item =~ m/^[a-zA-Z]+$/;
+	next unless $item =~ m/^[a-zA-Z\-]+$/;
 	$plugins{$item} = $root . $item
 }
 
