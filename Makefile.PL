@@ -526,10 +526,15 @@ sub compile_lib {
 	if ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
 		die "plugins are not available under MSVC";
 	}
-	elsif ($^O eq 'MSWin32' && $Config{cc} =~ /^gcc/) {
+	elsif ($^O eq 'MSWin32' && $Config{cc} =~ /gcc/) {
 		push @args, "-Wl,--out-implib,${name}.a";
 		push @args, '-Wl,--major-image-version,0.0.9';
 		push @args, '-Wl,--minor-image-version,0.0.9';
+	}
+	# add explicit path to libsass lib
+	# needed to resolve lib from plugins
+	unless ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
+		push @args, '-Wl,-rpath,$(INSTALLARCHLIB)';
 	}
 	# -static-libgcc -static-libstdc++
 	return join(' ', @args, @libs);
@@ -552,9 +557,10 @@ sub libsass_sassc
 	else {
 		# create the sassc executable by linking against sassc and libsass
 		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) $(SASSC_OBJ) $(LIBS)'
-		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass')
+		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass')
 		         . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
-		         . ($^O eq "linux" ? ' -ldl' : '');
+		         . ($^O eq "linux" ? ' -ldl' : '')
+		         . ' -Wl,-rpath,$(INSTALLARCHLIB)';
 	}
 	# add target to virtual "pure_all"
 	push @cleanups, '$(SASSC_OBJ)';
@@ -569,7 +575,7 @@ sub libsass_lib
 	# register our source and object files
 	my @ret = 'LIBSASS_OBJ = ' . join(" ", @SOURCES);
 	# location of the created object
-	push @ret, 'LIBSASS_LIB = $(INST_LIB)/libsass.$(SO)';
+	push @ret, 'LIBSASS_LIB = $(INST_ARCHLIB)/libsass.$(SO)';
 	# create the target for the makefile
 	push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
 	# create the libsass shared library by linking against all objects
@@ -593,7 +599,7 @@ sub libsass_plugin_math
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib('$(MATH_LIB)') . ' $(MATH_OBJ)'
-		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(MATH_OBJ)';
 	push @cleanups, '$(MATH_LIB)';
@@ -613,7 +619,7 @@ sub libsass_plugin_img_size
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/img-size';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib('$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
-		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(IMG_SIZE_OBJ)';
 	push @cleanups, '$(IMG_SIZE_LIB)';
@@ -638,7 +644,7 @@ sub libsass_plugin_digest
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib('$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
-	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(DIGEST_OBJ)';
 	push @cleanups, '$(DIGEST_LIB)';
@@ -663,7 +669,7 @@ sub libsass_plugin_glob
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib('$(GLOB_LIB)') . ' $(GLOB_OBJ)'
-	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_LIB) -lsass');
+	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(GLOB_OBJ)';
 	push @cleanups, '$(GLOB_LIB)';
