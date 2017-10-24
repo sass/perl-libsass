@@ -56,7 +56,7 @@ Build Options
 -------------
 
 Since we need LibSass for perl-libsass, we need to compile the sources
-when building CSS::Sass. LibSass can be compiled with different ways and
+when building CSS::Sass. LibSass can be compiled in different ways and
 Makefile.PL knows some switches to support most common use cases:
 
 ```
@@ -142,12 +142,15 @@ Included default plugins
 
 ```
 $ psass --list-plugins
-[--glob-plugin][2]
-[--math-plugin][3]
 ```
 
+- [--glob-plugin][2]
+- [--img-size-plugin][3]
+- [--math-plugin][4]
+
 [2]: https://github.com/mgreter/libsass-glob
-[3]: https://github.com/mgreter/libsass-math
+[3]: https://github.com/mgreter/libsass-img-size
+[4]: https://github.com/mgreter/libsass-math
 
 
 Copyright And Licence
