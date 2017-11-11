@@ -499,7 +499,7 @@ unless ( eval { ExtUtils::MakeMaker->VERSION(6.52) } ) {
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to
 # influence content of the Makefile that is written.
-WriteMakefile(%WriteMakefile);
+my $mm = WriteMakefile(%WriteMakefile);
 
 ################################################################################
 # extend EU::MM to compile additional LibSass tools
@@ -516,9 +516,22 @@ my @targets;
 my @cleanups;
 my @commands;
 my $static = 0;
+my $reported = 0;
+
+# http://perldoc.perl.org/ExtUtils/MakeMaker.html#make-install
+sub inst_lib {
+	my ($mm) = @_;
+	warn "Installing as a ", $mm->{INSTALLDIRS}, " module\n"
+		unless $reported; $reported = 1;
+	return '$(INSTALLARCHLIB)' if $mm->{INSTALLDIRS} eq "perl";
+	return '$(INSTALLSITEARCH)' if $mm->{INSTALLDIRS} eq "site";
+	return '$(INSTALLVENDORLIB)' if $mm->{INSTALLDIRS} eq "vendor";
+	die "invalid INSTALLDIRS setting, abort";
+}
+
 
 sub compile_lib {
-	my ($name) = @_;
+	my ($mm, $name) = @_;
 	my @args = (
 		'$(LD) $(OPTIMIZE) -lstdc++ -shared', "-o ${name}",
 	);
@@ -534,7 +547,7 @@ sub compile_lib {
 	# add explicit path to libsass lib
 	# needed to resolve lib from plugins
 	unless ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
-		push @args, '-Wl,-rpath,$(INSTALLARCHLIB)';
+		push @args, '-Wl,-rpath,' . inst_lib($mm);
 	}
 	# -static-libgcc -static-libstdc++
 	return join(' ', @args, @libs);
@@ -560,7 +573,7 @@ sub libsass_sassc
 		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass')
 		         . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
 		         . ($^O eq "linux" ? ' -ldl' : '')
-		         . ' -Wl,-rpath,$(INSTALLARCHLIB)';
+		         . ' -Wl,-rpath,' . inst_lib($_[0]);
 	}
 	# add target to virtual "pure_all"
 	push @cleanups, '$(SASSC_OBJ)';
@@ -579,7 +592,7 @@ sub libsass_lib
 	# create the target for the makefile
 	push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
+	push @ret, "\t" . compile_lib($_[0], '$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
 	# add target to virtual "pure_all"
 	push @cleanups, '$(LIBSASS_OBJ)';
 	push @cleanups, '$(LIBSASS_LIB)';
@@ -598,7 +611,7 @@ sub libsass_plugin_math
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('$(MATH_LIB)') . ' $(MATH_OBJ)'
+	push @ret, "\t" . compile_lib($_[0], '$(MATH_LIB)') . ' $(MATH_OBJ)'
 		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(MATH_OBJ)';
@@ -618,7 +631,7 @@ sub libsass_plugin_img_size
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/img-size';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
+	push @ret, "\t" . compile_lib($_[0], '$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
 		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(IMG_SIZE_OBJ)';
@@ -643,7 +656,7 @@ sub libsass_plugin_digest
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
+	push @ret, "\t" . compile_lib($_[0], '$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
 	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(DIGEST_OBJ)';
@@ -668,7 +681,7 @@ sub libsass_plugin_glob
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('$(GLOB_LIB)') . ' $(GLOB_OBJ)'
+	push @ret, "\t" . compile_lib($_[0], '$(GLOB_LIB)') . ' $(GLOB_OBJ)'
 	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(GLOB_OBJ)';
@@ -683,22 +696,22 @@ sub runOnce
 {
 	return if $ran;
 	# get instance
-	my $self = shift;
+	my $mm = shift;
 	# collect Makefile commands
 	@commands = (
 		# call parent class first
-		$self->SUPER::postamble,
+		$mm->SUPER::postamble,
 	);
 	if ($install_plugins || $install_sassc) {
-		push @commands, '', libsass_lib();
+		push @commands, '', libsass_lib($mm);
 	}
 	if ($install_sassc) {
-		push @commands, '', libsass_sassc();
+		push @commands, '', libsass_sassc($mm);
 	}
 	if ($install_plugins) {
-		push @commands, '', libsass_plugin_glob();
-		push @commands, '', libsass_plugin_math();
-		push @commands, '', libsass_plugin_img_size();
+		push @commands, '', libsass_plugin_glob($mm);
+		push @commands, '', libsass_plugin_math($mm);
+		push @commands, '', libsass_plugin_img_size($mm);
 		# needs a few C-API changes not yet released
 		# push @commands, '', libsass_plugin_digest();
 	}
@@ -712,8 +725,8 @@ sub runOnce
 sub postamble
 {
 	# get instance
-	my $self = shift;
-	runOnce($self);
+	my $mm = shift;
+	runOnce($mm);
 	# return code for Makefile
 	return join "\n", @commands;
 }
@@ -722,9 +735,9 @@ sub postamble
 sub clean
 {
 	# get instance
-	my $self = shift;
-	runOnce($self);
+	my $mm = shift;
+	runOnce($mm);
 	# collect parent clean targets
-	return $self->SUPER::clean . "\t- \$(RM_F) \\\n"
+	return $mm->SUPER::clean . "\t- \$(RM_F) \\\n"
 	       . join("\n",	map { "\t  $_ \\" } @cleanups);
 }
