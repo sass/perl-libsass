@@ -120,7 +120,7 @@ sub stderr
 	$stderr =~ s/[^\n]+(\d+) DEBUG: [^\n]*//g;
 	$norm_output->($stderr);
 	# clean todo warnings (remove all warning blocks)
-	$stderr =~ s/^(?:DEPRECATION )?WARNING(?:[^\n]+\n)*\n*//gm;
+	$stderr =~ s/^(?:DEPRECATION )?WARNING(?:(?!Error)[^\n]+\n)*\n*//gm;
 	$stderr =~ s/\n.*\Z//s;
 	utf8::decode($stderr);
 	return $stderr;
