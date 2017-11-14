@@ -432,7 +432,6 @@ my %WriteMakefile = (
 		'warnings'             => 0, # core as of 5.008
 		'strict'               => 0, # core as of 5.008,
 		# dependencies for psass cli tool
-		'File::Slurp'          => 0.01,
 		'Getopt::Long'         => 0.01,
 		'Encode::Locale'       => 0.01,
 		# dependencies for file watcher

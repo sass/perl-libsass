@@ -18,9 +18,6 @@ use Getopt::Long;
 # make the options case sensitive
 Getopt::Long::Configure("bundling");
 
-# convenient file handling
-use File::Slurp qw(write_file);
-
 # load constants from libsass
 use CSS::Sass qw(SASS_STYLE_EXPANDED);
 use CSS::Sass qw(SASS_STYLE_NESTED);
@@ -202,6 +199,43 @@ sub sass_options ()
 }
 
 ####################################################################################################
+# implement our own safe File::Slurp::write_file
+# since syswrite() is deprecated on :utf8 handles 
+####################################################################################################
+
+# To mark FILEHANDLE as UTF-8, use :utf8 or :encoding(UTF-8) . :utf8 just marks the
+# data as UTF-8 without further checking, while :encoding(UTF-8) checks the data for
+# actually being valid UTF-8. More details can be found in PerlIO::encoding.
+sub write_file ($$)
+{
+	use Fcntl qw(:flock LOCK_EX);
+	# my ($file, $content, $binmode) = @_; 
+	# avoid arg copies and use @_ directly
+	if (open (my $fh, ">", $_[0])) {
+		unless (flock($fh, LOCK_EX)) {
+			Carp::croak "Error aquiring file lock!\n",
+				"Path: ", $_[0], "\n",
+				"Reason: ", $!, "\n";
+		}
+		unless (binmode($fh, $_[2] || ':utf8')) {
+			Carp::croak "Error setting file mode!\n",
+				"Path: ", $_[0], "\n",
+				"Reason: ", $!, "\n";
+		}
+		unless (print $fh $_[1]) {
+			Carp::croak "Error writing output!\n",
+				"Path: ", $_[0], "\n",
+			 	"Reason: ", $!, "\n";
+		}
+	}
+	else {
+		Carp::croak "Error opening writable file!\n",
+			"Path: ", $_[0], "\n",
+			"Reason: ", $!, "\n";
+	}
+}
+
+####################################################################################################
 use CSS::Sass qw(sass_compile_file sass_compile);
 ####################################################################################################
 
@@ -243,7 +277,7 @@ sub compile ()
 		# by default we just print to standard out
 		unless (defined $output_file) { print $css; }
 		# or if output_file is defined via options we write it there
-		else { write_file($output_file, { binmode => ':utf8' }, $css ); }
+		else { write_file($output_file, $css ); }
 	}
 	elsif (defined $err) { $error->($err); }
 	else { $error->("fatal error - aborting"); }
@@ -253,7 +287,7 @@ sub compile ()
 	{
 		my $smap = $stats->{'source_map_string'};
 		unless ($smap) { $error->("source-map not generated <$source_map_file>") }
-		else { write_file($source_map_file, { binmode => ':utf8' }, $smap ); }
+		else { write_file($source_map_file, $smap ); }
 	}
 
 	# return according to expected return type
