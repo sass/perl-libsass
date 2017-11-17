@@ -39,6 +39,7 @@ my $debug_mode = 0;
 my $install_sassc = 0;
 my $install_plugins = 1;
 my $install_library = 0;
+my $native_watcher = 0;
 my $compiler = undef;
 my $profiling = 0;
 my $skip_manifest = 0;
@@ -62,6 +63,7 @@ sub help
 	print "  --sassc              Install optional sassc cli utility\n";
 	print "  --plugins            Install optional libsass plugins (default)\n";
 	print "  --library            Install libsass library (auto-enabled)\n";
+	print "  --native-watcher     Depend on optimized file watcher module\n";
 	print "  --help               This help screen\n";
 	print "\n  The following options are for developers only:\n\n";
 	print "  --debug              Build libsass in debug mode\n";
@@ -153,6 +155,7 @@ GetOptions(
 	'--skip-git!' => \$skip_git,
 	'--skip-version!' => \$skip_version,
 	'--skip-manifest!' => \$skip_manifest,
+	'--native-watcher!' => \$native_watcher,
 	# options for git submodules
 	'--update-deps!' => \$update_deps,
 	'--checkout-deps!' => \$checkout_deps,
@@ -417,13 +420,40 @@ if ($EMMV > 7.10 && $EMMV < 7.20) {
 }
 
 ################################################################################
+# Emit a message to inform user of suboptimal watch behavior
+# Filesys::Notify::KQueue will use inefficient polling scans
+################################################################################
+
+# stores choosen matcher
+my $watchdeps = undef;
+
+# list watchers per OS
+my %watchers = (
+	'linux' => [ 'Linux::Inotify2', 0.01 ],
+	'darwin' => [ 'Mac::FSEvents', 0.01 ],
+	'freebsd' => [ 'Filesys::Notify::KQueue', 0.01 ],
+	'MSWin32' => [ 'Win32::ChangeNotify', 0.01 ],
+	'cygwin' => [ 'Win32::ChangeNotify', 0.01 ]
+);
+
+# check if dependency is wanted and/or available
+if (exists $watchers{$^O} && ! $ENV{PERL_FNS_NO_OPT}) {
+	if ($native_watcher) { $watchdeps = $watchers{$^O}; }
+	elsif (!eval { require $watchers{$^O}->[0]; return 1; }) {
+		warn "Consider installing $watchers{$^O}->[0]\n";
+		warn "Or configure with `--native-watcher` option\n";
+	}
+}
+
+################################################################################
 # See lib/ExtUtils/MakeMaker.pm for details of how to
 # influence content of the Makefile that is written.
 ################################################################################
 
 my %WriteMakefile = (
 	NAME               => 'CSS::Sass',
-	VERSION_FROM       => 'lib/CSS/Sass.pm', # finds $VERSION, requires EU::MM from perl >= 5.5
+	# finds $VERSION, requires EU::MM from perl >= 5.5
+	VERSION_FROM       => 'lib/CSS/Sass.pm',
 	# runtime dependencies
 	PREREQ_PM          => {
 		# 'perl'                 => 5.008000,
@@ -432,13 +462,20 @@ my %WriteMakefile = (
 		'warnings'             => 0, # core as of 5.008
 		'strict'               => 0, # core as of 5.008,
 		# dependencies for psass cli tool
+		# 'Benchmark'          => 0.01,
 		'Getopt::Long'         => 0.01,
 		'Encode::Locale'       => 0.01,
 		# dependencies for file watcher
-		'List::Util'           => 1.45,
+		# uniq only available since 1.45
+		'List::Util'           => 1.45, # core as of 5.008
 		# this is an optional dependency
-		# not sure if we want to force it
-		# 'Filesys::Notify::Simple' => 0.01,
+		# only needed for psass filewatcher
+		'Filesys::Notify::Simple' => 0.01,
+		# it doesn't have any dependencies
+		# but you may want to install one of
+		# Linux::Inotify2, Win32::ChangeNotify
+		# Mac::FSEvents, Filesys::Notify::KQueue
+		$watchdeps ? @{$watchdeps} : (),
 	},
 	# test dependencies
 	TEST_REQUIRES      => {
