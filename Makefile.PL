@@ -33,20 +33,23 @@ use warnings;
 # commandline options
 ################################################################################
 
+# tiny helper to get options from environment or provided default
+sub env_option($$) { exists $ENV{$_[0]} ? $ENV{$_[0]} : $_[1]; }
+
 # command line options
-my $optimize = '-O3';
-my $debug_mode = 0;
-my $install_sassc = 0;
-my $install_plugins = 1;
-my $install_library = 0;
-my $native_watcher = 0;
-my $compiler = undef;
-my $profiling = 0;
-my $skip_manifest = 0;
-my $skip_version = 0;
-my $update_deps = 0;
-my $checkout_deps = 0;
-my $skip_git = 0;
+my $optimize = env_option 'PSASS_OPTIMIZE', '-O3';
+my $debug_mode = env_option 'PSASS_DEBUG_MODE', 0;
+my $install_sassc = env_option 'PSASS_INSTALL_SASSC', 0;
+my $install_plugins = env_option 'PSASS_INSTALL_PLUGINS', 1;
+my $install_library = env_option 'PSASS_INSTALL_LIBRARY', 0;
+my $native_watcher = env_option 'PSASS_NATIVE_WATCHER', 0;
+my $compiler = env_option 'PSASS_COMPILER', undef;
+my $profiling = env_option 'PSASS_PROFILING', 0;
+my $skip_manifest = env_option 'PSASS_SKIP_MANIFEST', 0;
+my $skip_version = env_option 'PSASS_SKIP_VERSION', 0;
+my $update_deps = env_option 'PSASS_UPDATE_DEPS', 0;
+my $checkout_deps = env_option 'PSASS_CHECKOUT_DEPS', 0;
+my $skip_git = env_option 'PSASS_SKIP_GIT', 0;
 
 # arrays for various switches
 my (@libs, @flags, @defs, @incs);
@@ -65,7 +68,8 @@ sub help
 	print "  --library            Install libsass library (auto-enabled)\n";
 	print "  --native-watcher     Depend on optimized file watcher module\n";
 	print "  --help               This help screen\n";
-	print "\n  The following options are for developers only:\n\n";
+	print "\n";
+	print "  The following options are for developers only:\n\n";
 	print "  --debug              Build libsass in debug mode\n";
 	print "  --profiling          Enable gcov profiling switches\n";
 	print "  --compiler           Skips compiler autodetection (passed to CppGuess)\n";
@@ -76,6 +80,10 @@ sub help
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
 	print "  --set-versions       Set versions of all perl package (.pm) files\n";
 	print "  --skip-git           Do not try to use anything git related\n";
+	print "\n";
+	print "  You may use environment variables to set any option\n";
+	print "  Prefix them with `PSASS_` and write all in uppercase\n";
+	print "  e.g. --native-watcher becomes PSASS_NATIVE_WATCHER\n";
 	exit 1;
 }
 
