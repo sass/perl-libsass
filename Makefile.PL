@@ -435,7 +435,7 @@ my %WriteMakefile = (
 		'Getopt::Long'         => 0.01,
 		'Encode::Locale'       => 0.01,
 		# dependencies for file watcher
-		'List::MoreUtils'      => 0.01,
+		'List::Util'           => 1.45,
 		# this is an optional dependency
 		# not sure if we want to force it
 		# 'Filesys::Notify::Simple' => 0.01,

@@ -35,7 +35,7 @@ our @EXPORT = qw(start_watchdog); # symbols to export by default
 ####################################################################################################
 
 # load function from core module
-use List::MoreUtils qw(uniq);
+use List::Util 1.45 qw(uniq);
 
 # check if the benchmark module is available
 my $benchmark = eval "use Benchmark; 1";
