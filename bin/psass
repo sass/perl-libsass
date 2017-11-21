@@ -28,9 +28,9 @@ use CSS::Sass::Plugins qw(%plugins);
 
 # setup encodings for std streams
 # not sure why this is not default
-binmode(STDIN,":encoding(locale)");
-binmode(STDOUT,":encoding(locale)");
-binmode(STDERR,":encoding(locale)");
+binmode(STDIN, ":encoding(console_in)");
+binmode(STDOUT, ":encoding(console_out)");
+binmode(STDERR, ":encoding(console_out)");
 
 ####################################################################################################
 # normalize command arguments to utf8

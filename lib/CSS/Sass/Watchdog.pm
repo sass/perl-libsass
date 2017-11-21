@@ -44,6 +44,33 @@ my $benchmark = eval "use Benchmark; 1";
 my ($parent_pid, $child_pid) = ($$, 0);
 
 ####################################################################################################
+# reset/reinit is needed to avoid a bug on windows
+# version strawberry-perl-5.22.2.1-32bit-portable
+# https://github.com/sass/perl-libsass/issues/33
+####################################################################################################
+
+sub reset_encoding()
+{
+	binmode(STDIN, ":raw");
+	binmode(STDOUT, ":raw");
+	binmode(STDERR, ":raw");
+}
+
+sub reinit_encoding()
+{
+	binmode(STDIN, ":encoding(console_in)");
+	binmode(STDOUT, ":encoding(console_out)");
+	binmode(STDERR, ":encoding(console_out)");
+}
+
+sub forks {
+	reset_encoding();
+	my $pid = fork();
+	reinit_encoding();
+	return $pid;
+}
+
+####################################################################################################
 # the watchdog process (maybe put in own module)
 ####################################################################################################
 
@@ -128,7 +155,7 @@ sub watchdog_parent ($$$)
 				# new watch file list
 				$files = \@includes;
 				# start new child process
-				unless ($child_pid = fork())
+				unless ($child_pid = forks())
 				{ watchdog_child($changes, $files); }
 			}
 
@@ -240,7 +267,7 @@ sub start_watchdog ($$)
 	my @files = @{$stats->{'included_files'} || []};
 
 	# start child process
-	if ($child_pid = fork())
+	if ($child_pid = forks())
 	{ watchdog_parent($changes, \@files, $compile); }
 	else { watchdog_child($changes, \@files); }
 
