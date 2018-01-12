@@ -1,3 +1,16 @@
+CSS::Sass (3.4.10)
+
+  * Bumped libsass version to latest 3.4 stable branch (3.4.8)
+  * Workaround windows bug with fork and Encode
+  * Allow env variables to configure install
+  * Add Filesys::Notify::Simple dependency 
+  * Skip spec test with invalid utf8 output
+  * Replace List::MoreUtils with List::Util
+  * Replace File::Slurp with own implementation
+  * Fix watchdog dependency detection
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Fri, 12 Jan 2018 03:01:32 +0200
+
 CSS::Sass (3.4.9)
 
   * Bumped libsass version to latest 3.4 stable branch (3.4.7)
