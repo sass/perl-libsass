@@ -1,3 +1,11 @@
+CSS::Sass (3.4.11)
+
+  * Bumped libsass version to latest 3.4 stable branch (3.4.9)
+  * Improve spec-runner to normalize nth-child binomial spacing
+  * Fix sass operation overloads for inverted operands
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Mon, 05 Feb 2018 23:31:14 +0200
+
 CSS::Sass (3.4.10)
 
   * Bumped libsass version to latest 3.4 stable branch (3.4.8)
