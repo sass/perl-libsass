@@ -47,30 +47,36 @@ use CSS::Sass qw(sass_stringify);
 ################################################################################
 use overload '""' => 'stringify'; # allow further overloading
 ################################################################################
-use overload '&' => sub { sass_operation(CSS::Sass::AND, $_[0], $_[1])->value ? 1 : 0; };
-use overload '|' => sub { sass_operation(CSS::Sass::OR, $_[0], $_[1])->value ? 1 : 0; };
 use overload 'bool' => sub { sass_operation(CSS::Sass::OR, $_[0], undef)->value ? 1 : 0; };
+################################################################################
+use overload '&' => sub { sass_operation(CSS::Sass::AND, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
+use overload '|' => sub { sass_operation(CSS::Sass::OR, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
 ################################################################################
 use overload 'eq' => sub { sass_stringify($_[0])->value eq sass_stringify($_[1])->value ? 1 : 0; };
 use overload 'ne' => sub { sass_stringify($_[0])->value ne sass_stringify($_[1])->value ? 1 : 0; };
 use overload '==' => sub { sass_operation(CSS::Sass::EQ, $_[0], $_[1])->value ? 1 : 0; };
 use overload '!=' => sub { sass_operation(CSS::Sass::NEQ, $_[0], $_[1])->value ? 1 : 0; };
 ################################################################################
-use overload 'lt' => sub { sass_stringify($_[0])->value lt sass_stringify($_[1])->value ? 1 : 0; };
-use overload 'le' => sub { sass_stringify($_[0])->value le sass_stringify($_[1])->value ? 1 : 0; };
-use overload 'gt' => sub { sass_stringify($_[0])->value gt sass_stringify($_[1])->value ? 1 : 0; };
-use overload 'ge' => sub { sass_stringify($_[0])->value ge sass_stringify($_[1])->value ? 1 : 0; };
+use overload 'eq' => sub { sass_stringify($_[2] ? $_[1] : $_[0])->value eq sass_stringify($_[2] ? $_[0] : $_[1])->value ? 1 : 0; };
+use overload 'ne' => sub { sass_stringify($_[2] ? $_[1] : $_[0])->value ne sass_stringify($_[2] ? $_[0] : $_[1])->value ? 1 : 0; };
+use overload '==' => sub { sass_operation(CSS::Sass::EQ, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
+use overload '!=' => sub { sass_operation(CSS::Sass::NEQ, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
 ################################################################################
-use overload '<'  => sub { sass_operation(CSS::Sass::LT , $_[0], $_[1])->value ? 1 : 0; };
-use overload '<=' => sub { sass_operation(CSS::Sass::LTE, $_[0], $_[1])->value ? 1 : 0; };
-use overload '>'  => sub { sass_operation(CSS::Sass::GT , $_[0], $_[1])->value ? 1 : 0; };
-use overload '>=' => sub { sass_operation(CSS::Sass::GTE, $_[0], $_[1])->value ? 1 : 0; };
+use overload 'lt' => sub { sass_stringify($_[2] ? $_[1] : $_[0])->value lt sass_stringify($_[2] ? $_[0] : $_[1])->value ? 1 : 0; };
+use overload 'le' => sub { sass_stringify($_[2] ? $_[1] : $_[0])->value le sass_stringify($_[2] ? $_[0] : $_[1])->value ? 1 : 0; };
+use overload 'gt' => sub { sass_stringify($_[2] ? $_[1] : $_[0])->value gt sass_stringify($_[2] ? $_[0] : $_[1])->value ? 1 : 0; };
+use overload 'ge' => sub { sass_stringify($_[2] ? $_[1] : $_[0])->value ge sass_stringify($_[2] ? $_[0] : $_[1])->value ? 1 : 0; };
 ################################################################################
-use overload '+' => sub { sass_operation(CSS::Sass::ADD, $_[0], $_[1]); };
-use overload '-' => sub { sass_operation(CSS::Sass::SUB, $_[0], $_[1]); };
-use overload '*' => sub { sass_operation(CSS::Sass::MUL, $_[0], $_[1]); };
-use overload '/' => sub { sass_operation(CSS::Sass::DIV, $_[0], $_[1]); };
-use overload '%' => sub { sass_operation(CSS::Sass::MOD, $_[0], $_[1]); };
+use overload '<'  => sub { sass_operation(CSS::Sass::LT , ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
+use overload '<=' => sub { sass_operation(CSS::Sass::LTE, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
+use overload '>'  => sub { sass_operation(CSS::Sass::GT , ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
+use overload '>=' => sub { sass_operation(CSS::Sass::GTE, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1]))->value ? 1 : 0; };
+################################################################################
+use overload '+' => sub { sass_operation(CSS::Sass::ADD, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1])); };
+use overload '-' => sub { sass_operation(CSS::Sass::SUB, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1])); };
+use overload '*' => sub { sass_operation(CSS::Sass::MUL, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1])); };
+use overload '/' => sub { sass_operation(CSS::Sass::DIV, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1])); };
+use overload '%' => sub { sass_operation(CSS::Sass::MOD, ($_[2] ? $_[1] : $_[0]), ($_[2] ? $_[0] : $_[1])); };
 ################################################################################
 
 sub new { import_sv($_[1]) }
