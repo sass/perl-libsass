@@ -72,6 +72,8 @@ my $norm_output = sub ($) {
 		$_[0] =~ s/\/libsass-closed-issues\//\/libsass-issues\//g;
 		$_[0] =~ s/\Q$cwd_win\E[\/\\]t[\/\\]sass-spec[\/\\]/\/sass\//g;
 		$_[0] =~ s/\Q$cwd_nix\E[\/\\]t[\/\\]sass-spec[\/\\]/\/sass\//g;
+		# normalize nth-child binomial whitespace
+		$_[0] =~ s/\(\s*(\d+n)\s*([+-])\s*(\d+)\s*\)/($1 $2 $3)/g;
 	}
 };
 
