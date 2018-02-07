@@ -65,6 +65,7 @@ my $norm_output = sub ($) {
 		$_[0] =~ s/(?:\r?\n)+/\n/g;
 		$_[0] =~ s/;(?:\s*;)+/;/g;
 		$_[0] =~ s/;\s*}/}/g;
+		$_[0] =~ s/:\s+(\n|\z)/:\n/g;
 		# normalize debug entries
 		$_[0] =~ s/[^\n]+(\d+) DEBUG: /$1: DEBUG: /g;
 		# normalize directory entries
@@ -156,7 +157,8 @@ sub expected
 	my ($spec) = @_;
 
 	local $/ = undef;
-	my $path = catfile($_[0]->{root}->{root}, "expected_output.css");
+	my $path = catfile($_[0]->{root}->{root}, "expected_output-libsass.css");
+	$path = catfile($_[0]->{root}->{root}, "expected_output.css") unless -f $path;
 	open my $fh, "<:raw:utf8", $path or
 		croak "Error opening <", $path, ">: $!";
 	binmode $fh; return join "", <$fh>;
