@@ -606,7 +606,7 @@ automatically recognize the format of your string data.
 
 L<CSS::Sass::Value>
 
-L<The Sass Home Page|http://sass-lang.com/>
+L<The Sass Home Page|https://sass-lang.com/>
 
 L<The libsass Home Page|https://github.com/sass/libsass>
 
