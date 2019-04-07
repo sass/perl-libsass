@@ -447,7 +447,7 @@ my %watchers = (
 # check if dependency is wanted and/or available
 if (exists $watchers{$^O} && ! $ENV{PERL_FNS_NO_OPT}) {
 	if ($native_watcher) { $watchdeps = $watchers{$^O}; }
-	elsif (!eval "require $watchers{$^O}->[0]; return 1;") {
+	elsif (!eval { require $watchers{$^O}->[0]; return 1; }) {
 		warn "Consider installing $watchers{$^O}->[0]\n";
 		warn "Or configure with `--native-watcher` option\n";
 	}
