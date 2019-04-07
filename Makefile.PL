@@ -331,9 +331,15 @@ my $orig = \&ExtUtils::MM_Unix::c_o;
 *ExtUtils::MM_Unix::c_o = sub {
 	my @rv = &{$orig};
 	foreach (@rv) {
+		# ExtUtils::CppGuess sometimes calls gcc and
+		# sometimes g++, thus we need to force the
+		# compiler to compile in the specific language
+		# fixes https://github.com/sass/perl-libsass/issues/38
+		s/\$\*\.c\s*(?=\n|\r|\Z)/-xc \$\*\.c/g;
+		s/\$\*\.c(pp|xx)\s*(?=\n|\r|\Z)/-xc++ \$\*\.c$1/g;
 		# add c++0x flag only for cpp files
 		# otherwise XS perl handshake fails
-		s/\$\*\.c(pp|xx)\s*(?=\n|\r|\Z)/-xc++ -std=c++0x \$\*\.c$1/g
+		s/\$\*\.c(pp|xx)\s*(?=\n|\r|\Z)/-std=c++0x \$\*\.c$1/g
 	}
 	return @rv;
 };
