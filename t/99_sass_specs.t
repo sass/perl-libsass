@@ -65,6 +65,8 @@ my $norm_output = sub ($) {
 		$_[0] =~ s/(?:\r?\n)+/\n/g;
 		$_[0] =~ s/;(?:\s*;)+/;/g;
 		$_[0] =~ s/;\s*}/}/g;
+		# trim trailing spaces
+		$_[0] =~ s/(?<!\s)[\t ]+$//gm;
 		# normalize debug entries
 		$_[0] =~ s/[^\n]+(\d+) DEBUG: /$1: DEBUG: /g;
 		# normalize directory entries
