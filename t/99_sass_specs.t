@@ -5,7 +5,34 @@ use strict;
 use warnings;
 use File::Basename;
 use File::Spec::Functions;
+use File::Path qw(make_path);
 use YAML::XS;
+
+################################################################################
+package Archive::HRX;
+################################################################################
+
+sub new {
+	my $path = $_[1];
+	my $hrx = bless {}, $_[0];
+	my $data = main::read_file($path);
+	if ($data =~ m/^[^<]*?(<=+>)/) {
+		my $boundary = $1;
+		while ($data =~ s/^$boundary[ \f\t]*//s) {
+			if ($data =~ s/^([^\r\n]+)\r?\n(.*?)(?=$boundary|\z)//s) {
+				$hrx->{main::catfile($1)} = $2;
+			}
+			elsif ($data =~ s/^\r?\n(.*?)(?=$boundary|\z)//s) {}
+			else { die "No HRX file block found\n"; }
+		}
+		# Error if data has not been parsed completely (be strict)
+		die "HRX file not completely parsed '$data'\n" if ($data ne "");
+	} else {
+		die "HRX must start with boundary '$data'\n";
+	}
+	return $hrx;
+}
+
 
 ################################################################################
 package DIR;
@@ -135,7 +162,9 @@ sub stdmsg
 	my ($spec) = @_;
 
 	local $/ = undef;
-	my $path = catfile($spec->{root}->{root}, "error-libsass");
+	my $path = catfile($spec->{root}->{root}, "warning-libsass");
+	$path = catfile($spec->{root}->{root}, "warning") unless -f $path;
+	$path = catfile($spec->{root}->{root}, "error-libsass") unless -f $path;
 	$path = catfile($spec->{root}->{root}, "error") unless -f $path;
 	return '' unless -f $path;
 	open my $fh, "<:raw:utf8", $path or
@@ -299,6 +328,95 @@ sub read_file($)
 }
 
 # ********************************************************************
+sub write_file($$)
+{
+	local $/ = undef;
+	open my $fh, ">:raw:utf8", $_[0] or
+		croak "Error opening <", $_[0], ">: $!";
+	binmode $fh; return print $fh $_[1];
+}
+
+# ********************************************************************
+sub unpack_hrx()
+{
+	my @dirs = (['t/sass-spec/spec', new DIR]);
+	# walk through all directories
+	# no recursion for performance
+	while (my $entry = shift(@dirs))
+	{
+		my ($dir, $parent) = @{$entry};
+		my $test = new DIR($dir, $parent);
+		opendir(my $dh, $dir) or die $!;
+		while (my $ent = readdir($dh))
+		{
+			next if $ent eq ".";
+			next if $ent eq "..";
+			next if $ent =~ m/^\./;
+			# create combined path
+			my $path = catfile($dir, $ent);
+			# go into subfolders
+			if (-d $path) {
+				push @dirs, [$path, $test];
+			}
+			elsif (-f $path && $path =~ m/\.hrx$/) {
+				my $hrx = new Archive::HRX($path);
+				foreach my $file (keys %{$hrx}) {
+					my $path = substr($path, 0, -4);
+					my $fname = catfile($path, $file);
+					my $root = dirname($fname);
+					# warn "extracting $fname\n";
+					make_path($root) unless -d $root;
+					write_file($fname, $hrx->{$file}) unless -f $fname;
+				}
+			}
+		}
+		# close anyway
+		closedir($dh);
+
+	}
+}
+# ********************************************************************
+sub revert_hrx()
+{
+	my @dirs = (['t/sass-spec/spec', new DIR]);
+	# walk through all directories
+	# no recursion for performance
+	while (my $entry = shift(@dirs))
+	{
+		my ($dir, $parent) = @{$entry};
+		my $test = new DIR($dir, $parent);
+		opendir(my $dh, $dir) or die $!;
+		while (my $ent = readdir($dh))
+		{
+			next if $ent eq ".";
+			next if $ent eq "..";
+			next if $ent =~ m/^\./;
+			# create combined path
+			my $path = catfile($dir, $ent);
+			# go into subfolders
+			if (-d $path) {
+				push @dirs, [$path, $test];
+			}
+			elsif (-f $path && $path =~ m/\.hrx$/) {
+				my $hrx = new Archive::HRX($path);
+				foreach my $file (keys %{$hrx}) {
+					my $path = substr($path, 0, -4);
+					my $fname = catfile($path, $file);
+					my $root = dirname($fname);
+					# warn "removing $fname\n";
+					unlink $fname if -f $fname;
+					next if $root eq $path;
+					rmdir($root) if -d $root;
+				}
+			}
+		}
+		# close anyway
+		closedir($dh);
+
+	}
+}
+
+# ********************************************************************
 sub load_tests()
 {
 
@@ -384,12 +502,17 @@ use vars qw(@tests @specs);
 # specs must be loaded first
 # before registering tests
 BEGIN {
+	unpack_hrx;
 	@tests = load_tests;
 	@specs = grep {
 		! $_->query('todo') &&
 		! $_->query('ignore') &&
 		$_->query('start') <= 3.4
 	} @tests;
+}
+
+END {
+	revert_hrx;
 }
 
 # report todo tests
