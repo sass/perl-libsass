@@ -158,10 +158,18 @@ sub expected
 	my ($spec) = @_;
 
 	local $/ = undef;
-	my $path = catfile($_[0]->{root}->{root}, "expected_output.css");
-	open my $fh, "<:raw:utf8", $path or
-		croak "Error opening <", $path, ">: $!";
-	binmode $fh; return join "", <$fh>;
+	my $path = catfile($_[0]->{root}->{root}, "expected_output-libsass.css");
+	$path = catfile($_[0]->{root}->{root}, "expected_output.css") unless -f $path;
+	$path = catfile($_[0]->{root}->{root}, "output-libsass.css") unless -f $path;
+	$path = catfile($_[0]->{root}->{root}, "output.css") unless -f $path;
+	if (-f $path) {
+		open my $fh, "<:raw:utf8", $path or
+			croak "Error opening <", $path, ">: $!";
+		binmode $fh; return join "", <$fh>;
+	}
+	else {
+		return "";
+	}
 
 }
 
