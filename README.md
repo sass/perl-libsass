@@ -13,6 +13,7 @@ Installation
 ------------
 
 [![Build Status](https://travis-ci.org/sass/perl-libsass.svg?branch=master)](https://travis-ci.org/sass/perl-libsass)
+[![Build status](https://ci.appveyor.com/api/projects/status/wg7joe46resvh1ow/branch/master?svg=true)](https://ci.appveyor.com/project/sass/perl-libsass/branch/master)
 [![Coverage Status](https://img.shields.io/coveralls/sass/perl-libsass.svg)](https://coveralls.io/r/sass/perl-libsass?branch=master)
 [![CPAN version](https://badge.fury.io/pl/CSS-Sass.svg)](http://badge.fury.io/pl/CSS-Sass)
 

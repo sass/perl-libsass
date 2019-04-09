@@ -26,4 +26,4 @@ script:
   - psass --list-plugins
 after_success:
   - find -name *.gcda -type f -exec gcov-4.8 -abc -o `basename {}` {} \;
-  - cover -gcov -report coveralls -ignore_re "^/usr" -ignore_re "^/plugins" -ignore_re "^libsass"
+  - cover -gcov -report coveralls -ignore_re "^/usr" -ignore_re "^plugins" -ignore_re "^libsass"
