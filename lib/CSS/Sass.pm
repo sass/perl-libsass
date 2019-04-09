@@ -73,6 +73,7 @@ our $VERSION = "3.4.11";
 
 require XSLoader;
 XSLoader::load('CSS::Sass', $VERSION);
+use CSS::Sass::Plugins qw(@ppaths);
 require CSS::Sass::Value;
 
 sub new
@@ -151,33 +152,56 @@ my $normalize_options = sub
     return $options;
 };
 
+# install the fix right before calling libsass
+# make sure you local'd the env variable before
+my $fix_lib_loading = sub {
+    # only do work on windows
+    return if $^O ne 'MSWin32';
+    # get path to our own module file
+    # libsass will be near somewhere
+    my $rpath = $INC{"CSS/Sass.pm"};
+    die "Module path not found" unless $rpath;
+    # normalize all slashes
+    $rpath =~ s/[\\\/]+/\//g;
+    # remove our own file from path
+    $rpath =~ s/CSS\/Sass\.pm$//;
+    # remove perl path parts
+    $rpath =~ s/(?:b?lib\/+)+//g;
+    # remove trailing slash
+    $rpath =~ s/[\\\/]+$//g;
+    # find lib and add path for loader
+    map { $ENV{'PATH'} .= ';' . $_ }
+    grep { -f join '/', $_, 'libsass.dll' } 
+    map { join '/', $rpath, $_, 'CSS/Sass' }
+    @ppaths; # imported from plugins module
+};
+
 sub sass_compile
 {
+    local $ENV{'PATH'};
+    $fix_lib_loading->();
     my ($sass_code, %options) = @_;
     no warnings 'uninitialized';
     $normalize_options->(\%options);
     my $r = compile_sass($sass_code, \%options);
-    # decode the streams (maybe move directly to XS code)
-    #utf8::decode($r->{output_string}) if defined $r->{output_string};
-    #utf8::decode($r->{output_string}) if defined $r->{output_string};
-    #utf8::decode($r->{error_message}) if defined $r->{error_message};
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
 sub sass_compile_file
 {
+    local $ENV{'PATH'};
+    $fix_lib_loading->();
     my ($input_path, %options) = @_;
     no warnings 'uninitialized';
     $normalize_options->(\%options);
     my $r = compile_sass_file($input_path, \%options);
-    # decode the streams (maybe move directly to XS code)
-    #utf8::decode($r->{output_string}) if defined $r->{output_string};
-    #utf8::decode($r->{error_message}) if defined $r->{error_message};
     wantarray ? ($r->{output_string}, $r->{error_message}, $r) : $r->{output_string}
 }
 
 sub compile
 {
+    local $ENV{'PATH'};
+    $fix_lib_loading->();
     my ($self, $sass_code) = @_;
     my ($compiled, $stats);
     ($compiled, $self->{last_error}, $stats) = sass_compile($sass_code, %{$self->options});
@@ -187,6 +211,8 @@ sub compile
 
 sub compile_file
 {
+    local $ENV{'PATH'};
+    $fix_lib_loading->();
     my ($self, $sass_file) = @_;
     my ($compiled, $stats);
     ($compiled, $self->{last_error}, $stats) = sass_compile_file($sass_file, %{$self->options});

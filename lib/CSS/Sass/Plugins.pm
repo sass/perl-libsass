@@ -29,27 +29,60 @@ our $VERSION = "3.4.11";
 # collect plugins
 our %plugins;
 ################################################################################
+# all plugin directory variants
+# propably too many, check-a-lot
+our @ppaths = (
+  'arch',
+  'arch/auto',
+  'arch/auto/lib',
+  'blib',
+  'blib/auto',
+  'blib/auto/arch',
+  'blib/arch',
+  'blib/arch/auto',
+  'blib/lib',
+  'blib/lib/arch',
+  'blib/lib/arch/auto',
+  'lib',
+  'lib/arch',
+  'lib/arch/auto',
+  'lib/auto',
+);
+################################################################################
 use Exporter 'import'; # gives you Exporter's import() method directly
-our @EXPORT = qw(%plugins); # symbols to export by default
+our @EXPORT = qw(%plugins @ppaths); # symbols to export by default
 ################################################################################
 
-# prefix to append to root path
-my $path = '/auto/CSS/Sass/plugins/';
-# get our own path for module file
-# we asume plugin path from install
-my $root = $INC{'CSS/Sass/Plugins.pm'};
-die "Module path not found" unless $root;
-# only interested in base path
-$root = substr($root, 0, -20) . $path;
-# silently ignore missing directory
-return \%plugins unless -d $root;
-# open plugins directory to query
-opendir (my $dh, $root) or
-	die "error querying plugins";
-while (my $item = readdir($dh)) {
-	next unless $item =~ m/^[a-zA-Z\-]+$/;
-	$plugins{$item} = $root . $item
+foreach my $path (map {
+  $_ . '/CSS/Sass/plugins'
+} @ppaths) {
+  # get our own path for module file
+  # we asume plugin path from install
+  my $rpath = $INC{'CSS/Sass/Plugins.pm'};
+  die "Module path not found" unless $rpath;
+  # normalize all slashes
+  $rpath =~ s/[\\\/]+/\//g;
+  # remove our own file from path
+  $rpath =~ s/CSS\/Plugins\.pm$//;
+  # remove perl path parts
+  $rpath =~ s/(?:b?lib\/+)+//g;
+  # remove trailing slash
+  $rpath =~ s/[\\\/]+$//g;
+  # only interested in base path
+  $rpath = $rpath . $path;
+  # silently ignore missing directory
+  next unless -d $rpath;
+  # open plugins directory to query
+  opendir (my $dh, $rpath) or
+    die "error querying plugins";
+  while (my $item = readdir($dh)) {
+    next unless $item =~ m/^[a-zA-Z\-]+$/;
+    $plugins{$item} = $rpath . $item
+  }
+
 }
+
+return \%plugins;
 
 ################################################################################
 ################################################################################

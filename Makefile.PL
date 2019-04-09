@@ -359,7 +359,7 @@ push @flags, '-o $*.o' if ($guess->is_gcc);
 # push @flags, '-stdlib=libstdc++' if ($guess->is_gcc);
 
 # create compile flags to include the libsass version
-push @defs, qq( LIBSASS_VERSION=\\"$libsass_version\\");
+push @defs, qq(LIBSASS_VERSION=\\"$libsass_version\\");
 
 # enable code profiling via gcov
 $optimize = '-O1' if $profiling;
@@ -568,18 +568,6 @@ my @commands;
 my $static = 0;
 my $reported = 0;
 
-# http://perldoc.perl.org/ExtUtils/MakeMaker.html#make-install
-sub inst_lib {
-	my ($mm) = @_;
-	warn "Installing as a ", $mm->{INSTALLDIRS}, " module\n"
-		unless $reported; $reported = 1;
-	return '$(INSTALLARCHLIB)' if $mm->{INSTALLDIRS} eq "perl";
-	return '$(INSTALLSITEARCH)' if $mm->{INSTALLDIRS} eq "site";
-	return '$(INSTALLVENDORLIB)' if $mm->{INSTALLDIRS} eq "vendor";
-	die "invalid INSTALLDIRS setting, abort";
-}
-
-
 sub compile_lib {
 	my ($mm, $name) = @_;
 	my @args = (
@@ -597,7 +585,7 @@ sub compile_lib {
 	# add explicit path to libsass lib
 	# needed to resolve lib from plugins
 	unless ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
-		push @args, '-Wl,-rpath,' . inst_lib($mm);
+		push @args, '-Wl,-rpath,\\$$ORIGIN/../..';
 	}
 	# -static-libgcc -static-libstdc++
 	return join(' ', @args, @libs);
@@ -620,10 +608,10 @@ sub libsass_sassc
 	else {
 		# create the sassc executable by linking against sassc and libsass
 		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) $(SASSC_OBJ) $(LIBS)'
-		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass')
+		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++')
 		         . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
 		         . ($^O eq "linux" ? ' -ldl' : '')
-		         . ' -Wl,-rpath,' . inst_lib($_[0]);
+		         . ' -Wl,-rpath,$(INST_ARCHAUTODIR)';
 	}
 	# add target to virtual "pure_all"
 	push @cleanups, '$(SASSC_OBJ)';
@@ -638,7 +626,7 @@ sub libsass_lib
 	# register our source and object files
 	my @ret = 'LIBSASS_OBJ = ' . join(" ", @SOURCES);
 	# location of the created object
-	push @ret, 'LIBSASS_LIB = $(INST_ARCHLIB)/libsass.$(SO)';
+	push @ret, 'LIBSASS_LIB = $(INST_ARCHAUTODIR)/libsass.$(SO)';
 	# create the target for the makefile
 	push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
 	# create the libsass shared library by linking against all objects
@@ -662,7 +650,7 @@ sub libsass_plugin_math
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib($_[0], '$(MATH_LIB)') . ' $(MATH_OBJ)'
-		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
+		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(MATH_OBJ)';
 	push @cleanups, '$(MATH_LIB)';
@@ -682,7 +670,7 @@ sub libsass_plugin_img_size
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/img-size';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib($_[0], '$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
-		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
+		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(IMG_SIZE_OBJ)';
 	push @cleanups, '$(IMG_SIZE_LIB)';
@@ -707,7 +695,7 @@ sub libsass_plugin_digest
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib($_[0], '$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
-	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
+	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(DIGEST_OBJ)';
 	push @cleanups, '$(DIGEST_LIB)';
@@ -732,7 +720,7 @@ sub libsass_plugin_glob
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
 	# create the libsass shared library by linking against all objects
 	push @ret, "\t" . compile_lib($_[0], '$(GLOB_LIB)') . ' $(GLOB_OBJ)'
-	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHLIB) -lsass');
+	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# add target to virtual "pure_all"
 	push @cleanups, '$(GLOB_OBJ)';
 	push @cleanups, '$(GLOB_LIB)';
