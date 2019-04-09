@@ -1,3 +1,19 @@
+CSS::Sass (3.4.12)
+
+  * Maintenance release (no libsass upgrade)
+  * Add unit tests for included plugins
+  * Changed plugin locations and auto loading
+  * Implement support for HRX spec tests
+  * Fix issue with newer ExtUtils::CppGuess
+  * Update ppport.h and adjust makefile
+  * Update sassc plugin to latest version
+  * Update img-size plugin to latest version
+  * Add loading of alternate spec output file names
+  * Fix spec test by trimming trailing white-space
+  * Add appveyor for windows/strawberry perl testing
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Thu, 10 Apr 2019 01:44:42 +0100
+
 CSS::Sass (3.4.11)
 
   * Bumped libsass version to latest 3.4 stable branch (3.4.9)
