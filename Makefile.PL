@@ -59,6 +59,7 @@ push @incs, '.', 'libsass/include';
 
 # query version of libsass dep
 my $libsass_version = '[na]';
+my $sassc_version = '[na]';
 
 sub help
 {
@@ -237,7 +238,6 @@ if (-d ".git" && !$skip_git)
 		open $manifest, ">:encoding(UTF-8)", "MANIFEST";
 		die "could not create MANIFEST: $!" unless $manifest;
 		print $manifest "MANIFEST\n";
-		print $manifest "libsass/VERSION\n";
 		while (my $module = shift @modules)
 		{
 			my $cwd = Cwd::getcwd;
@@ -249,7 +249,7 @@ if (-d ".git" && !$skip_git)
 			}
 			my @items = split(/\n+/, $files);
 			my @files = grep { ! -d } @items;
-			print $manifest grep { ! /\"/ }
+			print $manifest grep { ! /\"/ } # "
 				map { tr/\\/\//; $_ . "\n" }
 				map { File::Spec->abs2rel($_, $base) } @files;
 			push @modules,
@@ -272,7 +272,8 @@ if (-d ".git" && !$skip_git)
 	foreach my $submodule (@submodules)
 	{
 		if (-e "$submodule/.git" && !$skip_version) {
-			next unless $submodule eq "libsass"; # skip all others for now
+			print $manifest "$submodule/VERSION\n";
+			next unless $submodule eq "libsass" || $submodule eq "plugins/sassc";
 			system "git -C \"$submodule\" describe --abbrev=8 --dirty --always --tags > \"$submodule/VERSION\"";
 		}
 	}
@@ -288,9 +289,26 @@ if (-f "libsass/VERSION") {
 	$libsass_version = <$fh> if (defined $fh);
 	chomp($libsass_version);
 	print "Detected libsass $libsass_version\n";
+	# create compile flags to include the libsass version
+	push @defs, qq(LIBSASS_VERSION=\\"$libsass_version\\");
 } else {
 	# give a warning if the version could not be determined (probably not generated yet)
 	warn "Could not get version for libsass (", $libsass_version, ")\n";
+}
+
+if ($install_sassc) {
+	# read version from version file
+	if (-f "plugins/sassc/VERSION") {
+		open (my $fh, "<", "plugins/sassc/VERSION");
+		$sassc_version = <$fh> if (defined $fh);
+		chomp($sassc_version);
+		print "Detected sassc $sassc_version\n";
+		# create compile flags to include the libsass version
+		push @defs, qq(SASSC_VERSION=\\"$sassc_version\\");
+	} else {
+		# give a warning if the version could not be determined (probably not generated yet)
+		warn "Could not get version for sassc (", $sassc_version, ")\n";
+	}
 }
 
 ################################################################################
@@ -357,9 +375,6 @@ push @flags, '-o $*.o' if ($guess->is_gcc);
 
 # this fixes some clang issues (is detected as gcc)
 # push @flags, '-stdlib=libstdc++' if ($guess->is_gcc);
-
-# create compile flags to include the libsass version
-push @defs, qq(LIBSASS_VERSION=\\"$libsass_version\\");
 
 # enable code profiling via gcov
 $optimize = '-O1' if $profiling;
