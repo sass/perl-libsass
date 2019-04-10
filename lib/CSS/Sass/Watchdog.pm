@@ -25,7 +25,7 @@ use CSS::Sass;
 
 ################################################################################
 package CSS::Sass::Watchdog;
-our $VERSION = "3.4.13";
+our $VERSION = "3.5.0";
 ################################################################################
 
 use Exporter 'import'; # gives you Exporter's import() method directly
