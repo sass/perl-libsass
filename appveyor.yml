@@ -8,8 +8,10 @@ install:
   - cpanm --quiet --installdeps --with-develop --notest .
 
 build_script:
-  - perl Makefile.PL
-  - gmake
+  - perl Makefile.PL --sassc
+  - gmake install
+  - psass --version
+  - sassc --version
 
 test_script:
   - gmake test

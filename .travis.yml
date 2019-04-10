@@ -18,12 +18,13 @@ install:
   - cpanm -n Devel::Cover
   - cpanm -n Devel::Cover::Report::Coveralls
 script:
-  - perl Makefile.PL --profiling
+  - perl Makefile.PL --profiling --sassc
   - make -j5
   - HARNESS_PERL_SWITCHES=-MDevel::Cover make test
   - make install
   - psass --version
   - psass --list-plugins
+  - sassc --version
 after_success:
   - find -name *.gcda -type f -exec gcov-4.8 -abc -o `basename {}` {} \;
   - cover -gcov -report coveralls -ignore_re "^/usr" -ignore_re "^plugins" -ignore_re "^libsass"
