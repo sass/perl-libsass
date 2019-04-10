@@ -49,6 +49,7 @@ my $skip_manifest = env_option 'PSASS_SKIP_MANIFEST', 0;
 my $skip_version = env_option 'PSASS_SKIP_VERSION', 0;
 my $update_deps = env_option 'PSASS_UPDATE_DEPS', 0;
 my $checkout_deps = env_option 'PSASS_CHECKOUT_DEPS', 0;
+my $patch_gcc44 = env_option 'PSASS_PATCH_GCC44', 0;
 my $skip_git = env_option 'PSASS_SKIP_GIT', 0;
 
 # arrays for various switches
@@ -80,6 +81,7 @@ sub help
 	print "  --checkout-deps      Checkout submodules at linked commit (needs git repo)\n";
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
 	print "  --set-versions       Set versions of all perl package (.pm) files\n";
+	print "  --patch-gcc44        Patch libsass for gcc44 compatibility\n";
 	print "  --skip-git           Do not try to use anything git related\n";
 	print "\n";
 	print "  You may use environment variables to set any option\n";
@@ -161,6 +163,7 @@ GetOptions(
 	'--library!' => \$install_library,
 	'--compiler:s' => \$compiler,
 	'--profiling!' => \$profiling,
+	'--patch-gcc44' => \$patch_gcc44,
 	'--skip-git!' => \$skip_git,
 	'--skip-version!' => \$skip_version,
 	'--skip-manifest!' => \$skip_manifest,
@@ -309,6 +312,24 @@ if ($install_sassc) {
 		# give a warning if the version could not be determined (probably not generated yet)
 		warn "Could not get version for sassc (", $sassc_version, ")\n";
 	}
+}
+
+################################################################################
+# patch sources
+################################################################################
+
+if ($patch_gcc44) {
+	my $cwd = Cwd::getcwd;
+	chdir ("libsass") or die "pushd: $!";
+	print "Patching libsass source for gcc compatibility\n";
+	foreach my $patch (sort glob("../patches/*.patch")) {
+		print "applying $patch\n";
+		# system "git", "am", "--abort";
+		system "git", "am", "--3way", "--keep-cr",
+			"--ignore-space-change", "--quiet", $patch;
+	}
+	system "perl", "script/replace-range-for-loops.pl";
+	chdir ($cwd) or die "popd: $!";
 }
 
 ################################################################################
