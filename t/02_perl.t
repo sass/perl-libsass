@@ -14,7 +14,7 @@ $r = $sass->compile(".valid { color: red; }");
 isnt  ($r,                undef,       "Successful compile returns something");
 
 $r = eval { $sass->compile("this is invalid sass source") };
-like  ($@,                qr/on line 1 of stdin/, "Failed compile dies with error message");
+like  ($@,                qr/on line 1:22 of stdin/, "Failed compile dies with error message");
 
 $sass->options->{dont_die} = 1;
 eval {
@@ -23,12 +23,12 @@ eval {
 };
 fail  (                               "dont_die option doesn't die") if $@;
 is    ($r,                undef,      "dont_die option returns undef on error");
-like  ($sass->last_error, qr/on line 1 of stdin/, "Failed compile saves error message in last_error");
+like  ($sass->last_error, qr/on line 1:22 of stdin/, "Failed compile saves error message in last_error");
 
 
 $sass->options->{dont_die} = 0;
 $r = eval { $sass->compile('@import "colors"; .valid { color: $red; }') };
-like  ($@,                  qr/on line 1 of stdin/,  "failed import dies with error message");
+like  ($@,                  qr/on line 1:1 of stdin/,  "failed import dies with error message");
 
 $sass = CSS::Sass->new(include_paths => ['t/inc']);
 $r = eval { $sass->compile('@import "colors"; .valid { color: $red; }') };
@@ -47,7 +47,7 @@ is    ($err,                undef,       "Successful compile returns no errors")
 
 ($r, $err) = sass_compile("this is invalid sass source");
 is    ($r,                  undef,       "Failed compile returns no code");
-like  ($err,                qr/on line 1 of stdin/,  "Failed compile returns an error");
+like  ($err,                qr/on line 1:22 of stdin/,  "Failed compile returns an error");
 
 $r = sass_compile(".valid { color: red; }");
 isnt  ($r,                  undef,       "Successful compile scalar context returns something");
@@ -84,7 +84,7 @@ $fh->autoflush(); binmode $fh;
 print $fh "this is invalid sass source";
 close $fh;
 $r = eval { $sass->compile_file($filename) };
-like  ($@,                qr/on line 1 of .*\.scss/, "Failed compile dies with error message");
+like  ($@,                qr/on line 1:22 of .*\.scss/, "Failed compile dies with error message");
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
 $fh->autoflush(); binmode $fh;
@@ -97,7 +97,7 @@ eval {
 };
 fail  (                               "dont_die option doesn't die") if $@;
 is    ($r,                undef,      "dont_die option returns undef on error");
-like  ($sass->last_error, qr/on line 1 of .*\.scss/, "Failed compile saves error message in last_error");
+like  ($sass->last_error, qr/on line 1:22 of .*\.scss/, "Failed compile saves error message in last_error");
 
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
@@ -106,7 +106,7 @@ print $fh '@import "colors"; .valid { color: $red; }';
 close $fh;
 $sass->options->{dont_die} = 0;
 $r = eval { $sass->compile_file($filename) };
-like  ($@,                  qr/on line 1 of .*\.scss/,  "failed import dies with error message");
+like  ($@,                  qr/on line 1:1 of .*\.scss/,  "failed import dies with error message");
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
 $fh->autoflush(); binmode $fh;
@@ -140,7 +140,7 @@ print $fh "this is invalid sass source";
 close $fh;
 ($r, $err) = sass_compile_file($filename);
 is    ($r,                  undef,       "Failed compile returns no code");
-like  ($err,                qr/on line 1 of .*\.scss/,  "Failed compile returns an error");
+like  ($err,                qr/on line 1:22 of .*\.scss/,  "Failed compile returns an error");
 
 ($fh, $filename) = tempfile( SUFFIX => '.scss');
 $fh->autoflush(); binmode $fh;

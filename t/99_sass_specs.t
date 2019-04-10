@@ -427,7 +427,7 @@ sub load_tests()
 	my $root = new DIR;
 	$root->{start} = 0;
 	$root->{end} = 999;
-	$root->{prec} = 5;
+	$root->{prec} = 10;
 	my @dirs = (['t/sass-spec/spec', $root]);
 	# walk through all directories
 	# no recursion for performance
