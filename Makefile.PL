@@ -393,6 +393,7 @@ push @defs, 'DEBUG' if $debug_mode;
 
 # not sure why this does not work otherwise
 push @flags, '-o $*.o' if ($guess->is_gcc);
+push @flags, '-o $*.o' if ($guess->is_clang);
 
 # this fixes some clang issues (is detected as gcc)
 # push @flags, '-stdlib=libstdc++' if ($guess->is_gcc);
@@ -536,13 +537,13 @@ my %WriteMakefile = (
 	# build dependencies
 	BUILD_REQUIRES     => {
 		'Getopt::Long'         => 0.01,
-		'ExtUtils::CppGuess'   => 0.09,
+		'ExtUtils::CppGuess'   => 0.14,
 		'ExtUtils::MakeMaker'  => 6.52,
 	},
 	# build dependencies
 	CONFIGURE_REQUIRES => {
 		'Getopt::Long'         => 0.01,
-		'ExtUtils::CppGuess'   => 0.09,
+		'ExtUtils::CppGuess'   => 0.14,
 		'ExtUtils::MakeMaker'  => 6.52,
 	},
 	# additional information
