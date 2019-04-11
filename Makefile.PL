@@ -644,7 +644,7 @@ sub libsass_sassc
 	# otherwise we asume gcc
 	else {
 		# create the sassc executable by linking against sassc and libsass
-		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) $(SASSC_OBJ) $(LIBS)'
+		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) -lm $(SASSC_OBJ) $(LIBS)'
 		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_BIN) -lsass -lstdc++')
 		         . ' $(OPTIMIZE) -lstdc++ -std=c++0x ' . join(" ", @libs)
 		         . ($^O eq "linux" ? ' -ldl' : '')
