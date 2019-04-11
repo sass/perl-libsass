@@ -68,6 +68,7 @@ CSS::Sass Makefile.PL end-user options:
   --sassc              Install optional sassc cli utility
   --plugins            Install optional libsass plugins (default)
   --library            Install libsass library (auto-enabled)
+  --native-watcher     Depend on optimized file watcher module
   --help               This help screen
 
   The following options are for developers only:
@@ -81,7 +82,12 @@ CSS::Sass Makefile.PL end-user options:
   --checkout-deps      Checkout submodules at linked commit (needs git repo)
   --get-versions       Show versions of all perl package (.pm) files
   --set-versions       Set versions of all perl package (.pm) files
+  --patch-gcc44        Patch libsass for gcc44 compatibility
   --skip-git           Do not try to use anything git related
+
+  You may use environment variables to set any option
+  Prefix them with `PSASS_` and write all in uppercase
+  e.g. --native-watcher becomes PSASS_NATIVE_WATCHER
 ```
 
 Documentation
