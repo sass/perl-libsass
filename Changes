@@ -1,3 +1,10 @@
+CSS::Sass (3.4.13)
+
+  * Fix build failures when using clang
+  * Fix detection of installed modules
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Thu, 11 Apr 2019 22:14:04 +0100
+
 CSS::Sass (3.4.12)
 
   * Maintenance release (no libsass upgrade)
