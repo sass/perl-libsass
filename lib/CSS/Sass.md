@@ -368,7 +368,7 @@ heading towards full 3.4 compatibility. It can compile .scss and .sass files.
 
 [CSS::Sass::Value](https://metacpan.org/pod/CSS::Sass::Value)
 
-[The Sass Home Page](http://sass-lang.com/)
+[The Sass Home Page](https://sass-lang.com/)
 
 [The libsass Home Page](https://github.com/sass/libsass)
 
