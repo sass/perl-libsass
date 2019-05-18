@@ -1,0 +1,25 @@
+From 1921c22e27dbb1fae2d06cbb88268538c9efc914 Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sun, 19 May 2019 00:26:26 +0200
+Subject: [PATCH 05/12] Fix for modern c++11 string `back` method
+
+---
+ src/emitter.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/emitter.cpp b/src/emitter.cpp
+index c0334b25..4fe20108 100644
+--- a/src/emitter.cpp
++++ b/src/emitter.cpp
+@@ -114,7 +114,7 @@ namespace Sass {
+ 
+   char Emitter::last_char()
+   {
+-    return wbuf.buffer.back();
++    return wbuf.buffer.at(wbuf.buffer.length() - 1);
+   }
+ 
+   // append a single char to the buffer
+-- 
+2.21.0.windows.1
+

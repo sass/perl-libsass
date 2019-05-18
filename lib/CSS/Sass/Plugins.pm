@@ -24,7 +24,7 @@ use warnings;
 
 ################################################################################
 package CSS::Sass::Plugins;
-our $VERSION = "3.5.0";
+our $VERSION = "3.6.0";
 ################################################################################
 # collect plugins
 our %plugins;
@@ -63,11 +63,11 @@ foreach my $path (map {
   # normalize all slashes
   $rpath =~ s/[\\\/]+/\//g;
   # remove our own file from path
-  $rpath =~ s/CSS\/Plugins\.pm$//;
+  $rpath =~ s/CSS\/(?:Sass\/)?Plugins\.pm$//;
   # remove perl path parts
-  $rpath =~ s/(?:b?lib\/+)+//g;
+  $rpath =~ s/(?:b?lib\/+)+/\//g;
   # remove trailing slash
-  $rpath =~ s/[\\\/]+$//g;
+  $rpath =~ s/[\\\/]+$/\//g;
   # only interested in base path
   $rpath = $rpath . $path;
   # silently ignore missing directory

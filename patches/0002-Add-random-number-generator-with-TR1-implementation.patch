@@ -1,0 +1,122 @@
+From 165611f8f311672d3b911bf1a75fcb0ae81cf05d Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sat, 18 May 2019 19:29:24 +0200
+Subject: [PATCH 02/12] Add random number generator with TR1 implementation
+
+---
+ src/fn_numbers.cpp | 75 +++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 68 insertions(+), 7 deletions(-)
+
+diff --git a/src/fn_numbers.cpp b/src/fn_numbers.cpp
+index 28befb5a..175e0889 100644
+--- a/src/fn_numbers.cpp
++++ b/src/fn_numbers.cpp
+@@ -21,6 +21,24 @@
+ #include "wincrypt.h"
+ #endif
+ 
++#if defined __GNUC__ && ! defined __llvm__
++  #define GCC_VERSION (__GNUC__ * 10000 \
++                       + __GNUC_MINOR__ * 100 \
++                       + __GNUC_PATCHLEVEL__)
++  #if GCC_VERSION < 40500
++    #include <tr1/random>
++    #define IMPLEMENT_TR1
++    #define tr1ns std::tr1
++    #define uniform_real_distribution uniform_real
++  #else
++    #include <random>
++    #define tr1ns std
++  #endif
++#else
++  #include <random>
++  #define tr1ns std
++#endif
++
+ namespace Sass {
+ 
+   namespace Functions {
+@@ -51,7 +69,41 @@ namespace Sass {
+     // random_device degrades sharply once the entropy pool
+     // is exhausted. For practical use, random_device is
+     // generally only used to seed a PRNG such as mt19937.
+-    static std::mt19937 rand(static_cast<unsigned int>(GetSeed()));
++    static tr1ns::mt19937 rand(static_cast<unsigned int>(GetSeed()));
++
++    tr1ns::uniform_real_distribution<> std_dist(0, 1);
++    #ifdef IMPLEMENT_TR1
++      tr1ns::variate_generator <
++        tr1ns::mt19937,
++        tr1ns::uniform_real_distribution <double>
++      > gen_std_dist(rand, std_dist);
++    #endif
++
++    // Using ULONG_MAX here seems to fail on Mac OSX Clang!?
++    tr1ns::uniform_real_distribution<> full_dist(0, 4294967296);
++    #ifdef IMPLEMENT_TR1
++      tr1ns::variate_generator <
++        tr1ns::mt19937,
++        tr1ns::uniform_real_distribution <double>
++      > gen_full_dist(rand, full_dist);
++    #endif
++
++    // helper function to retrieve a random number in interval
++    // works around some compiler issues with older gcc versions
++    static double random(double min, double max)
++    {
++      tr1ns::uniform_real_distribution<> distributor(min, max);
++      #ifdef IMPLEMENT_TR1
++        tr1ns::variate_generator <
++          tr1ns::mt19937,
++          tr1ns::uniform_real_distribution <>
++        > gen(rand, distributor);
++        distributor(rand);
++        return gen();
++      #else
++        return distributor(rand);
++      #endif
++    }
+ 
+     ///////////////////
+     // NUMBER FUNCTIONS
+@@ -157,13 +209,19 @@ namespace Sass {
+           err << "Expected $limit to be an integer but got " << lv << " for `random'";
+           error(err.str(), pstate, traces);
+         }
+-        std::uniform_real_distribution<> distributor(1, lv + 1);
+-        uint_fast32_t distributed = static_cast<uint_fast32_t>(distributor(rand));
++        // std::uniform_real_distribution<> distributor(1, lv + 1);
++        // uint_fast32_t distributed = static_cast<uint_fast32_t>(distributor(rand));
++        uint_fast32_t distributed = random(1, lv + 1);
+         return SASS_MEMORY_NEW(Number, pstate, (double)distributed);
+       }
+       else if (b) {
+-        std::uniform_real_distribution<> distributor(0, 1);
+-        double distributed = static_cast<double>(distributor(rand));
++        // std::uniform_real_distribution<> distributor(0, 1);
++        // double distributed = static_cast<double>(distributor(rand));
++        #ifdef IMPLEMENT_TR1
++          double distributed = gen_std_dist();
++        #else
++          double distributed = std_dist(rand);
++        #endif
+         return SASS_MEMORY_NEW(Number, pstate, distributed);
+       } else if (v) {
+         traces.push_back(Backtrace(pstate));
+@@ -178,8 +236,11 @@ namespace Sass {
+     BUILT_IN(unique_id)
+     {
+       std::stringstream ss;
+-      std::uniform_real_distribution<> distributor(0, 4294967296); // 16^8
+-      uint_fast32_t distributed = static_cast<uint_fast32_t>(distributor(rand));
++      #ifdef IMPLEMENT_TR1
++        uint_fast32_t distributed = gen_full_dist();
++      #else
++        uint_fast32_t distributed = full_dist(rand);
++      #endif
+       ss << "u" << std::setfill('0') << std::setw(8) << std::hex << distributed;
+       return SASS_MEMORY_NEW(String_Quoted, pstate, ss.str());
+     }
+-- 
+2.21.0.windows.1
+

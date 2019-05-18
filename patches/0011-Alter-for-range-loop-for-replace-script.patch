@@ -1,0 +1,40 @@
+From 7052787ce9dd00a8e734f6d9103ea3d5491a1535 Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sun, 19 May 2019 01:51:40 +0200
+Subject: [PATCH 11/12] Alter for range loop for replace script
+
+---
+ src/extend.cpp     | 3 ++-
+ src/subset_map.cpp | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/extend.cpp b/src/extend.cpp
+index 79280a97..233c47d3 100644
+--- a/src/extend.cpp
++++ b/src/extend.cpp
+@@ -2087,7 +2087,8 @@ namespace Sass {
+     // we set `extended` flag on extended selectors
+     if (b->is_root()) {
+       // debug_subset_map(subset_map);
+-      for(const auto &it : subset_map.values()) {
++      std::vector<SubSetMapPair> sm = subset_map.values();
++      for(const auto &it : sm) {
+         const Complex_Selector* sel = nullptr;
+         const Compound_Selector* ext = nullptr;
+         if (it.first) sel = it.first->first();
+diff --git a/src/subset_map.cpp b/src/subset_map.cpp
+index 11586f30..3cfee4b5 100644
+--- a/src/subset_map.cpp
++++ b/src/subset_map.cpp
+@@ -27,7 +27,7 @@ namespace Sass {
+         continue;
+       }
+       const std::vector<std::pair<Compound_Selector_Obj, size_t> >& subsets = hash_[(*sel)[i]];
+-      for (const std::pair<Compound_Selector_Obj, size_t>& item : subsets) {
++      for (const auto& item : subsets) {
+         bool include = true;
+         for (const Simple_Selector_Obj& it : item.first->elements()) {
+           auto found = dict.find(it);
+-- 
+2.21.0.windows.1
+

@@ -1,7 +1,7 @@
-From 27dd2fe0f22cd56ec6f0618b3cb3803229e06025 Mon Sep 17 00:00:00 2001
+From e12670a0b2b9e6457965b43fd91f68526274ebb0 Mon Sep 17 00:00:00 2001
 From: Marcel Greter <marcel.greter@ocbnet.ch>
 Date: Mon, 9 Jan 2017 17:51:08 +0100
-Subject: [PATCH 3/3] Add script to unroll C++11 range based for loops
+Subject: [PATCH 01/12] Add script to unroll C++11 range based for loops
 
 ---
  script/replace-range-for-loops.md | 48 ++++++++++++++++++++++++++
@@ -66,7 +66,7 @@ index 00000000..093294d5
 +```
 diff --git a/script/replace-range-for-loops.pl b/script/replace-range-for-loops.pl
 new file mode 100644
-index 00000000..f08d7495
+index 00000000..eb0b1eac
 --- /dev/null
 +++ b/script/replace-range-for-loops.pl
 @@ -0,0 +1,57 @@
@@ -99,7 +99,7 @@ index 00000000..f08d7495
 +	my $org = $cpp;
 +
 +	my $re_decl = qr/(?:const\s*)?\w+(?:\:\:\w+)*(?:\s*[\*\&])?/;
-+	my $re_val = qr/\w+(?:\(\))?(?:(?:->|\.)\w+(?:\(\))?)*/;
++	my $re_val = qr/\w+(?:\[[^\]]+\])?(?:\(\))?(?:(?:->|\.)\w+(?:\(\))?)*/;
 +
 +	$cpp =~ s/for\s*\(\s*($re_decl)\s*(\w+)\s*:\s*(\(\*?$re_val\)|\*?$re_val)\s*\)\s*{/
 +		$count ++;

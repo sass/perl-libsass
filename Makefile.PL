@@ -787,8 +787,7 @@ sub runOnce
 		push @commands, '', libsass_plugin_glob($mm);
 		push @commands, '', libsass_plugin_math($mm);
 		push @commands, '', libsass_plugin_img_size($mm);
-		# needs a few C-API changes not yet released
-		# push @commands, '', libsass_plugin_digest();
+		push @commands, '', libsass_plugin_digest($mm);
 	}
 	# add new targets to virtual Makefile targets
 	push @commands, '', 'pure_all :: ' . join(" ", @targets);

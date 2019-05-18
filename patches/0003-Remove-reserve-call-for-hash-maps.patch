@@ -1,0 +1,46 @@
+From 965e581157b436d793b9897f6289d506af6fd124 Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sun, 19 May 2019 01:07:55 +0200
+Subject: [PATCH 03/12] Remove `reserve` call for hash maps
+
+---
+ src/ast.hpp         | 2 +-
+ src/ast_sel_cmp.cpp | 2 --
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/ast.hpp b/src/ast.hpp
+index c6af3ed6..93dcef21 100644
+--- a/src/ast.hpp
++++ b/src/ast.hpp
+@@ -306,7 +306,7 @@ namespace Sass {
+     : elements_(ExpressionMap(s)),
+       list_(std::vector<Expression_Obj>()),
+       hash_(0), duplicate_key_({})
+-    { elements_.reserve(s); list_.reserve(s); }
++    { list_.reserve(s); }
+     virtual ~Hashed();
+     size_t length() const                  { return list_.size(); }
+     bool empty() const                     { return list_.empty(); }
+diff --git a/src/ast_sel_cmp.cpp b/src/ast_sel_cmp.cpp
+index fe135799..f186ef08 100644
+--- a/src/ast_sel_cmp.cpp
++++ b/src/ast_sel_cmp.cpp
+@@ -154,7 +154,6 @@ namespace Sass {
+     if (&rhs == this) return true;
+     if (rhs.length() != length()) return false;
+     std::unordered_set<const Complex_Selector *, HashPtr, ComparePtrs> lhs_set;
+-    lhs_set.reserve(length());
+     for (const Complex_Selector_Obj &element : elements()) {
+       lhs_set.insert(element.ptr());
+     }
+@@ -186,7 +185,6 @@ namespace Sass {
+     if (&rhs == this) return true;
+     if (rhs.length() != length()) return false;
+     std::unordered_set<const Simple_Selector *, HashPtr, ComparePtrs> lhs_set;
+-    lhs_set.reserve(length());
+     for (const Simple_Selector_Obj &element : elements()) {
+       lhs_set.insert(element.ptr());
+     }
+-- 
+2.21.0.windows.1
+
