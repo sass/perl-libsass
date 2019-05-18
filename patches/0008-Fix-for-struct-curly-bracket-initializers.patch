@@ -1,0 +1,75 @@
+From 1ca4003b13143d068328aa3e4259579dc7103bb7 Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sun, 19 May 2019 01:10:04 +0200
+Subject: [PATCH 08/12] Fix for struct curly bracket initializers
+
+---
+ src/eval.cpp   | 10 +++++-----
+ src/expand.cpp |  2 +-
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/eval.cpp b/src/eval.cpp
+index 71bd0aea..111c7420 100644
+--- a/src/eval.cpp
++++ b/src/eval.cpp
+@@ -360,7 +360,7 @@ namespace Sass {
+     if (env->has("@warn[f]")) {
+ 
+       // add call stack entry
+-      callee_stack().push_back({
++      callee_stack().push_back((struct Sass_Callee) {
+         "@warn",
+         w->pstate().path,
+         w->pstate().line + 1,
+@@ -408,7 +408,7 @@ namespace Sass {
+     if (env->has("@error[f]")) {
+ 
+       // add call stack entry
+-      callee_stack().push_back({
++      callee_stack().push_back((struct Sass_Callee) {
+         "@error",
+         e->pstate().path,
+         e->pstate().line + 1,
+@@ -452,7 +452,7 @@ namespace Sass {
+     if (env->has("@debug[f]")) {
+ 
+       // add call stack entry
+-      callee_stack().push_back({
++      callee_stack().push_back((struct Sass_Callee) {
+         "@debug",
+         d->pstate().path,
+         d->pstate().line + 1,
+@@ -1051,7 +1051,7 @@ namespace Sass {
+       bind(std::string("Function"), c->name(), params, args, &fn_env, this, traces);
+       std::string msg(", in function `" + c->name() + "`");
+       traces.push_back(Backtrace(c->pstate(), msg));
+-      callee_stack().push_back({
++      callee_stack().push_back((struct Sass_Callee) {
+         c->name().c_str(),
+         c->pstate().path,
+         c->pstate().line + 1,
+@@ -1091,7 +1091,7 @@ namespace Sass {
+       bind(std::string("Function"), c->name(), params, args, &fn_env, this, traces);
+       std::string msg(", in function `" + c->name() + "`");
+       traces.push_back(Backtrace(c->pstate(), msg));
+-      callee_stack().push_back({
++      callee_stack().push_back((struct Sass_Callee) {
+         c->name().c_str(),
+         c->pstate().path,
+         c->pstate().line + 1,
+diff --git a/src/expand.cpp b/src/expand.cpp
+index bb1fab4b..76fb61a8 100644
+--- a/src/expand.cpp
++++ b/src/expand.cpp
+@@ -727,7 +727,7 @@ namespace Sass {
+     Arguments_Obj args = Cast<Arguments>(rv);
+     std::string msg(", in mixin `" + c->name() + "`");
+     traces.push_back(Backtrace(c->pstate(), msg));
+-    ctx.callee_stack.push_back({
++    ctx.callee_stack.push_back((struct Sass_Callee) {
+       c->name().c_str(),
+       c->pstate().path,
+       c->pstate().line + 1,
+-- 
+2.21.0.windows.1
+

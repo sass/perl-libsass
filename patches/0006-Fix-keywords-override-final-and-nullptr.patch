@@ -1,0 +1,77 @@
+From 7506a64085eb18fc310c6fedfeb2c43addf6753f Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sun, 19 May 2019 02:07:55 +0200
+Subject: [PATCH 06/12] Fix keywords override, final and nullptr
+
+---
+ src/emitter.cpp  |  4 ++--
+ src/prelexer.hpp |  6 +++---
+ src/sass.hpp     | 12 ++++++++++++
+ 3 files changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/src/emitter.cpp b/src/emitter.cpp
+index d840cac1..9389e633 100644
+--- a/src/emitter.cpp
++++ b/src/emitter.cpp
+@@ -60,11 +60,11 @@ namespace Sass {
+   // MAIN BUFFER MANIPULATION
+ 
+   // add outstanding delimiter
+-  void Emitter::finalize(bool final)
++  void Emitter::finalize(bool schedule)
+   {
+     scheduled_space = 0;
+     if (output_style() == SASS_STYLE_COMPRESSED)
+-      if (final) scheduled_delimiter = false;
++      if (schedule) scheduled_delimiter = false;
+     if (scheduled_linefeed)
+       scheduled_linefeed = 1;
+     flush_schedules();
+diff --git a/src/prelexer.hpp b/src/prelexer.hpp
+index 07ad09c1..a9805f3a 100644
+--- a/src/prelexer.hpp
++++ b/src/prelexer.hpp
+@@ -92,14 +92,14 @@ namespace Sass {
+         }
+ 
+         // look for the closer (maybe final, maybe not)
+-        else if (const char* final = stop(src)) {
++        else if (const char* last = stop(src)) {
+           // only close one level?
+           if (level > 0) -- level;
+           // return position at end of stop
+           // delimiter may be multiple chars
+-          else return final;
++          else return last;
+           // advance position
+-          src = final - 1;
++          src = last - 1;
+         }
+ 
+         // next
+diff --git a/src/sass.hpp b/src/sass.hpp
+index 014e4fa1..df49612a 100644
+--- a/src/sass.hpp
++++ b/src/sass.hpp
+@@ -47,6 +47,18 @@
+ # endif
+ #endif
+ 
++// patches for gcc44 compatibility
++#if defined __GNUC__ && ! defined __llvm__
++  #define GCC_VERSION (__GNUC__ * 10000 \
++                       + __GNUC_MINOR__ * 100 \
++                       + __GNUC_PATCHLEVEL__)
++  #if GCC_VERSION < 40500
++    #define nullptr NULL
++    // just consume them
++    #define override
++    #define final
++  #endif
++#endif
+ 
+ // include C-API header
+ #include "sass/base.h"
+-- 
+2.21.0.windows.1
+

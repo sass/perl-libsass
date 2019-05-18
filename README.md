@@ -151,13 +151,15 @@ Included default plugins
 $ psass --list-plugins
 ```
 
-- [--glob-plugin][2]
-- [--img-size-plugin][3]
-- [--math-plugin][4]
+- [--digest-plugin][2]
+- [--glob-plugin][3]
+- [--img-size-plugin][4]
+- [--math-plugin][5]
 
-[2]: https://github.com/mgreter/libsass-glob
-[3]: https://github.com/mgreter/libsass-img-size
-[4]: https://github.com/mgreter/libsass-math
+[2]: https://github.com/mgreter/libsass-digest
+[3]: https://github.com/mgreter/libsass-glob
+[4]: https://github.com/mgreter/libsass-img-size
+[5]: https://github.com/mgreter/libsass-math
 
 
 Copyright And Licence

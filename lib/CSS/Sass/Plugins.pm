@@ -24,7 +24,7 @@ use warnings;
 
 ################################################################################
 package CSS::Sass::Plugins;
-our $VERSION = "3.5.0";
+our $VERSION = "3.6.0";
 ################################################################################
 # collect plugins
 our %plugins;
@@ -32,6 +32,8 @@ our %plugins;
 # all plugin directory variants
 # propably too many, check-a-lot
 our @ppaths = (
+  'auto',
+  'auto/lib',
   'arch',
   'arch/auto',
   'arch/auto/lib',
@@ -44,9 +46,9 @@ our @ppaths = (
   'blib/lib/arch',
   'blib/lib/arch/auto',
   'lib',
+  'lib/auto',
   'lib/arch',
   'lib/arch/auto',
-  'lib/auto',
 );
 ################################################################################
 use Exporter 'import'; # gives you Exporter's import() method directly
@@ -63,13 +65,13 @@ foreach my $path (map {
   # normalize all slashes
   $rpath =~ s/[\\\/]+/\//g;
   # remove our own file from path
-  $rpath =~ s/CSS\/Plugins\.pm$//;
-  # remove perl path parts
-  $rpath =~ s/(?:b?lib\/+)+//g;
+  $rpath =~ s/CSS\/(?:Sass\/)?Plugins\.pm$//;
+  # remove perl path parts (install tests)
+  $rpath =~ s/(?:blib\/+lib\/*)$//g;
   # remove trailing slash
   $rpath =~ s/[\\\/]+$//g;
   # only interested in base path
-  $rpath = $rpath . $path;
+  $rpath = $rpath . '/' . $path;
   # silently ignore missing directory
   next unless -d $rpath;
   # open plugins directory to query
@@ -77,7 +79,9 @@ foreach my $path (map {
     die "error querying plugins";
   while (my $item = readdir($dh)) {
     next unless $item =~ m/^[a-zA-Z\-]+$/;
-    $plugins{$item} = $rpath . $item
+    $plugins{$item} = $rpath . '/' . $item;
+    # normalize directory slashes
+    $plugins{$item} =~ s/[\\\/]+/\//g;
   }
 
 }

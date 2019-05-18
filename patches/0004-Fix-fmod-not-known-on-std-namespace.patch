@@ -1,0 +1,25 @@
+From efac1d564e21fb8297fbba58787bd0adfdd5397d Mon Sep 17 00:00:00 2001
+From: Marcel Greter <marcel.greter@ocbnet.ch>
+Date: Sat, 18 May 2019 18:54:50 +0200
+Subject: [PATCH 04/12] Fix `fmod` not known on `std` namespace
+
+---
+ src/util.hpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/util.hpp b/src/util.hpp
+index 3ed56356..cf74a28b 100644
+--- a/src/util.hpp
++++ b/src/util.hpp
+@@ -25,7 +25,7 @@ namespace Sass {
+ 
+   template <typename T>
+   T absmod(const T& n, const T& r) {
+-    T m = std::fmod(n, r);
++    T m = fmod(n, r);
+     if (m < 0.0) m += r;
+     return m;
+   }
+-- 
+2.21.0.windows.1
+

@@ -9,6 +9,7 @@ install:
 
 build_script:
   - perl Makefile.PL --sassc
+  - gmake PSASS_FORCE_PLUGIN_CHECKS=1 test
   - gmake install
   - psass --version
   - sassc --version
