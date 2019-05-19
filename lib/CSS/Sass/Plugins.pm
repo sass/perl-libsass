@@ -32,6 +32,8 @@ our %plugins;
 # all plugin directory variants
 # propably too many, check-a-lot
 our @ppaths = (
+  'auto',
+  'auto/lib',
   'arch',
   'arch/auto',
   'arch/auto/lib',
@@ -44,9 +46,9 @@ our @ppaths = (
   'blib/lib/arch',
   'blib/lib/arch/auto',
   'lib',
+  'lib/auto',
   'lib/arch',
   'lib/arch/auto',
-  'lib/auto',
 );
 ################################################################################
 use Exporter 'import'; # gives you Exporter's import() method directly
