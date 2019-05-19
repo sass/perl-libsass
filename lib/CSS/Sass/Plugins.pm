@@ -66,16 +66,14 @@ foreach my $path (map {
   $rpath =~ s/[\\\/]+/\//g;
   # remove our own file from path
   $rpath =~ s/CSS\/(?:Sass\/)?Plugins\.pm$//;
-  # remove perl path parts
-  # $rpath =~ s/(?:b?lib\/+)+/\//g;
+  # remove perl path parts (install tests)
+  $rpath =~ s/(?:blib\/+lib\/*)$//g;
   # remove trailing slash
   $rpath =~ s/[\\\/]+$//g;
   # only interested in base path
   $rpath = $rpath . '/' . $path;
   # silently ignore missing directory
-  warn "check $rpath\n";
   next unless -d $rpath;
-  warn "FOUND $rpath\n";
   # open plugins directory to query
   opendir (my $dh, $rpath) or
     die "error querying plugins";
