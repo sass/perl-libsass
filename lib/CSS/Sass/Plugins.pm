@@ -73,7 +73,9 @@ foreach my $path (map {
   # only interested in base path
   $rpath = $rpath . $path;
   # silently ignore missing directory
+  warn "check $rpath\n";
   next unless -d $rpath;
+  warn "FOUND $rpath\n";
   # open plugins directory to query
   opendir (my $dh, $rpath) or
     die "error querying plugins";
