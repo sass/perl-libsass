@@ -22,8 +22,11 @@ script:
   - make -j5
   - HARNESS_PERL_SWITCHES=-MDevel::Cover make test
   - make install
+  - echo "query psass version"
   - psass --version
+  - echo "list of all plugins"
   - psass --list-plugins
+  - echo "query sassc version"
   - sassc --version
 after_success:
   - find -name *.gcda -type f -exec gcov-4.8 -abc -o `basename {}` {} \;

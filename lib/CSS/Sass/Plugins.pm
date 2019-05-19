@@ -66,7 +66,7 @@ foreach my $path (map {
   $rpath =~ s/CSS\/(?:Sass\/)?Plugins\.pm$//;
   # remove perl path parts
   $rpath =~ s/(?:b?lib\/+)+/\//g;
-  # remove trailing slash
+  # normalize trailing slash
   $rpath =~ s/[\\\/]+$/\//g;
   # only interested in base path
   $rpath = $rpath . $path;
@@ -77,7 +77,9 @@ foreach my $path (map {
     die "error querying plugins";
   while (my $item = readdir($dh)) {
     next unless $item =~ m/^[a-zA-Z\-]+$/;
-    $plugins{$item} = $rpath . $item
+    $plugins{$item} = $rpath . '/' . $item;
+    # normalize directory slashes
+    $plugins{$item} =~ s/[\\\/]+/\//g;
   }
 
 }
