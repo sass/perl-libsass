@@ -67,7 +67,7 @@ foreach my $path (map {
   # remove our own file from path
   $rpath =~ s/CSS\/(?:Sass\/)?Plugins\.pm$//;
   # remove perl path parts
-  $rpath =~ s/(?:b?lib\/+)+/\//g;
+  # $rpath =~ s/(?:b?lib\/+)+/\//g;
   # normalize trailing slash
   $rpath =~ s/[\\\/]+$/\//g;
   # only interested in base path
