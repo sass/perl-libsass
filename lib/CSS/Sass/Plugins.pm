@@ -68,10 +68,10 @@ foreach my $path (map {
   $rpath =~ s/CSS\/(?:Sass\/)?Plugins\.pm$//;
   # remove perl path parts
   # $rpath =~ s/(?:b?lib\/+)+/\//g;
-  # normalize trailing slash
-  $rpath =~ s/[\\\/]+$/\//g;
+  # remove trailing slash
+  $rpath =~ s/[\\\/]+$//g;
   # only interested in base path
-  $rpath = $rpath . $path;
+  $rpath = $rpath . '/' . $path;
   # silently ignore missing directory
   warn "check $rpath\n";
   next unless -d $rpath;
