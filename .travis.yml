@@ -20,7 +20,7 @@ install:
 script:
   - perl Makefile.PL --profiling --sassc
   - make -j5
-  - HARNESS_PERL_SWITCHES=-MDevel::Cover PSASS_FORCE_PLUGIN_CHECK=1 make test
+  - HARNESS_PERL_SWITCHES=-MDevel::Cover PSASS_FORCE_PLUGIN_CHECKS=1 make test
   - make install
   - echo "query psass version"
   - psass --version
