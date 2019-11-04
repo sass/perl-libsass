@@ -1,3 +1,13 @@
+CSS::Sass (3.6.1)
+
+  Updating libsass to version 3.6.3
+  Improves extend compatibility with dart-sass
+  https://github.com/sass/libsass/releases/tag/3.6.3
+
+  * Bumped libsass version to latest 3.6 stable branch (3.6.3)
+  * Fixed issue with building plugins on Mac OSX (#41)
+  * Updated sass-spec and adjusted spec runner
+
 CSS::Sass (3.6.0)
 
   First release with next major libsass version
