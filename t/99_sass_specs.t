@@ -20,7 +20,11 @@ sub new {
 		my $boundary = $1;
 		while ($data =~ s/^$boundary[ \f\t]*//s) {
 			if ($data =~ s/^([^\r\n]+)\r?\n(.*?)(?=$boundary|\z)//s) {
-				$hrx->{main::catfile($1)} = $2;
+				my $fname = main::catfile($1);
+				if (exists $hrx->{$fname}) {
+					warn "Overwriting ", $path, " => ", $fname, "\n";
+				}
+				$hrx->{$fname} = $2;
 			}
 			elsif ($data =~ s/^\r?\n(.*?)(?=$boundary|\z)//s) {}
 			else { die "No HRX file block found\n"; }
@@ -77,7 +81,9 @@ package SPEC;
 
 use CSS::Sass;
 use Cwd qw(getcwd);
+use Cwd qw(abs_path);
 use Carp qw(croak);
+use File::Basename;
 use File::Spec::Functions;
 
 my $cwd = getcwd;
@@ -102,7 +108,9 @@ my $norm_output = sub ($) {
 		$_[0] =~ s/\Q$cwd_win\E[\/\\]t[\/\\]sass-spec[\/\\]/\/sass\//g;
 		$_[0] =~ s/\Q$cwd_nix\E[\/\\]t[\/\\]sass-spec[\/\\]/\/sass\//g;
 		# normalize nth-child binomial whitespace
-		$_[0] =~ s/\(\s*(\d+n)\s*([+-])\s*(\d+)\s*\)/($1 $2 $3)/g;
+		# $_[0] =~ s/\(\s*(\d+n)\s*([+-])\s*(\d+)\s*\)/($1 $2 $3)/g;
+		# empty file (only linebreaks)
+		$_[0] =~ s/^(?:\r?\n)+$//g;
 	}
 };
 
@@ -176,7 +184,7 @@ sub stdmsg
 		$stderr =~ s/^(?:DEPRECATION )?WARNING(?:[^\n]+\n)*\n*//gm;
 	}
 	# clean error messages
-	$stderr =~ s/^Error(?:[^\n]+\n)*\n*//gm;
+	$stderr =~ s/^(?:Internal )?Error(?:[^\n]+\n)*\n*//gm;
 	$stderr =~ s/\n.*\Z//s;
 	utf8::decode($stderr);
 	return $stderr;
@@ -272,8 +280,13 @@ sub execute
 		$spec->query('prec'),
 		'output_style',
 		$spec->style,
+		'include_paths',
+		[abs_path('t/sass-spec/spec')],
+		'dont_die', 1
 	);
 
+	my $cwd = getcwd();
+	chdir(dirname($spec->{file}));
 	my $comp = CSS::Sass->new(%options);
 
 	# save stderr
@@ -282,16 +295,19 @@ sub execute
 
 	# redirect stderr to file
 	open(STDERR, "+>:raw:utf8", "specs.stderr.log"); select(STDERR); $| = 1;
-	my $css = eval { $comp->compile_file($spec->{file}) }; my $err = $@;
-	sysseek(STDERR, 0, 0); sysread(STDERR, my $msg, 65536); close(STDERR);
+	my ($css, $stats) = eval { $comp->compile_file(basename($spec->{file})) }; my $err = $@;
+	sysseek(STDERR, 0, 0); sysread(STDERR, my $msg, 65536);
+	close(STDERR); unlink("specs.stderr.log");
 
 	# reset stderr
 	open STDERR, '>&OLDFH';
 
 	# store the results
 	$spec->{css} = $css;
-	$spec->{err} = $err;
+	$spec->{err} = $stats->{"error_message"};
 	$spec->{msg} = $msg;
+
+	chdir($cwd);
 
 	# return the results
 	return $css, $err;
@@ -314,6 +330,8 @@ sub query { shift->{root}->query(@_); }
 
 ################################################################################
 package main;
+################################################################################
+our $unpackOnce; BEGIN { $unpackOnce = 0; }
 ################################################################################
 
 use Carp qw(croak);
@@ -339,6 +357,7 @@ sub write_file($$)
 # ********************************************************************
 sub unpack_hrx()
 {
+	return if $unpackOnce && -f 't/sass-spec/.unpacked';
 	my @dirs = (['t/sass-spec/spec', new DIR]);
 	# walk through all directories
 	# no recursion for performance
@@ -374,10 +393,16 @@ sub unpack_hrx()
 		closedir($dh);
 
 	}
+	# Mark that it was unpacked
+	if ($unpackOnce) {
+		write_file('t/sass-spec/.unpacked', '');
+	}
 }
 # ********************************************************************
 sub revert_hrx()
 {
+	return if $unpackOnce && -f 't/sass-spec/.unpacked';
+	unlink 't/sass-spec/.unpacked' if -f 't/sass-spec/.unpacked';
 	my @dirs = (['t/sass-spec/spec', new DIR]);
 	# walk through all directories
 	# no recursion for performance
@@ -443,11 +468,11 @@ sub load_tests()
 			$test->{style} = $yaml->{':output_style'};
 			$test->{start} = $yaml->{':start_version'};
 			$test->{end} = $yaml->{':end_version'};
-			$test->{ignore} = grep /^libsass$/i,
+			$test->{ignore} = grep /libsass/i,
 				@{$yaml->{':ignore_for'} || []};
-			$test->{wtodo} = grep /^libsass$/i,
+			$test->{wtodo} = grep /libsass/i,
 				@{$yaml->{':warning_todo'} || []};
-			$test->{todo} = grep /^libsass$/i,
+			$test->{todo} = grep /libsass/i,
 				@{$yaml->{':todo'} || []};
 		}
 
