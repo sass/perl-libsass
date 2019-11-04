@@ -306,7 +306,7 @@ if ($install_sassc) {
 		$sassc_version = <$fh> if (defined $fh);
 		chomp($sassc_version);
 		print "Detected sassc $sassc_version\n";
-		# create compile flags to include the libsass version
+		# create compile flags to include the sassc version
 		push @defs, qq(SASSC_VERSION=\\"$sassc_version\\");
 	} else {
 		# give a warning if the version could not be determined (probably not generated yet)
@@ -648,6 +648,10 @@ sub libsass_sassc
 	}
 	# otherwise we asume gcc
 	else {
+		# On windows there is nothing like rpath for dll load paths
+		# So dll and sassc would need to be in same directory
+		# For now we just fall back to link sassc statically
+		my $static = $static || $^O eq 'MSWin32';
 		# create the sassc executable by linking against sassc and libsass
 		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) -lm $(SASSC_OBJ) $(LIBS)'
 		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++')
