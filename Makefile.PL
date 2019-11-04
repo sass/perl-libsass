@@ -49,7 +49,7 @@ my $skip_manifest = env_option 'PSASS_SKIP_MANIFEST', 0;
 my $skip_version = env_option 'PSASS_SKIP_VERSION', 0;
 my $update_deps = env_option 'PSASS_UPDATE_DEPS', 0;
 my $checkout_deps = env_option 'PSASS_CHECKOUT_DEPS', 0;
-my $patch_gcc44 = env_option 'PSASS_PATCH_GCC44', 0;
+# my $patch_gcc44 = env_option 'PSASS_PATCH_GCC44', 0;
 my $skip_git = env_option 'PSASS_SKIP_GIT', 0;
 
 # arrays for various switches
@@ -81,7 +81,7 @@ sub help
 	print "  --checkout-deps      Checkout submodules at linked commit (needs git repo)\n";
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
 	print "  --set-versions       Set versions of all perl package (.pm) files\n";
-	print "  --patch-gcc44        Patch libsass for gcc44 compatibility\n";
+	# print "  --patch-gcc44        Patch libsass for gcc44 compatibility\n";
 	print "  --skip-git           Do not try to use anything git related\n";
 	print "\n";
 	print "  You may use environment variables to set any option\n";
@@ -163,7 +163,7 @@ GetOptions(
 	'--library!' => \$install_library,
 	'--compiler:s' => \$compiler,
 	'--profiling!' => \$profiling,
-	'--patch-gcc44' => \$patch_gcc44,
+	# '--patch-gcc44' => \$patch_gcc44,
 	'--skip-git!' => \$skip_git,
 	'--skip-version!' => \$skip_version,
 	'--skip-manifest!' => \$skip_manifest,
@@ -318,23 +318,28 @@ if ($install_sassc) {
 # patch sources
 ################################################################################
 
-if ($patch_gcc44) {
-	my $cwd = Cwd::getcwd;
-	chdir ("libsass") or die "pushd: $!";
-	print "Patching libsass source for gcc compatibility\n";
-	foreach my $patch (sort glob("../patches/*.patch")) {
-		print "applying $patch\n";
-		# system "git", "am", "--abort";
-		system "git", "am", "--3way", "--keep-cr",
-			"--ignore-space-change", "--quiet", $patch;
-	}
-	system "perl", "script/replace-range-for-loops.pl";
-	chdir ($cwd) or die "popd: $!";
-}
+# if ($patch_gcc44) {
+# 	my $cwd = Cwd::getcwd;
+# 	chdir ("libsass") or die "pushd: $!";
+# 	print "Patching libsass source for gcc compatibility\n";
+# 	foreach my $patch (sort glob("../patches/*.patch")) {
+# 		print "applying $patch\n";
+# 		# system "git", "am", "--abort";
+# 		system "git", "am", "--3way", "--keep-cr",
+# 			"--ignore-space-change", "--quiet", $patch;
+# 	}
+# 	system "perl", "script/replace-range-for-loops.pl";
+# 	chdir ($cwd) or die "popd: $!";
+# }
 
 ################################################################################
 # compiler configurations
 ################################################################################
+
+unless (defined $compiler) {
+	$compiler = $ENV{'CC'} || $ENV{'CXX'};
+	$compiler =~ s/\++$// if $compiler;
+}
 
 my $guess = ExtUtils::CppGuess->new(
 	(defined($compiler) ? (cc => $compiler) : ()),
@@ -350,14 +355,35 @@ if ($guess->is_gcc) {
 		$cc_version = sprintf("%d.%d.%d", $1, $2, $3);
 		$guess->{'gcc_version'} = $cc_version;
 		print "Detected GCC compiler $cc_version ...\n";
-		if ($1 < 4 || ($1 == 4 && $2 < 4)) {
+		if ($1 < 4 || ($1 == 4 && $2 < 7)) {
 			warn "Your GCC Version is too old for LibSass!\n";
-			warn "Needs at least gcc version 4.4 or higher!\n";
-			die "Please consider upgrading your GCC compiler!\n";
+			warn "Needs at least gcc version 4.7 or higher!\n";
+			warn "Please consider upgrading your GCC compiler!\n";
+			exit 0; # avoid any CPAN Testers failure reports
 		}
 	}
 	else {
 		print "Detected GCC compiler (version unknown) ...\n";
+	}
+}
+elsif ($guess->is_clang) {
+	# version not exposed by CppGuess!?
+	use Capture::Tiny 'capture_merged';
+	my $cmd = $guess->{cc} . " --version";
+	my $cc_version = capture_merged { system($cmd) };
+	if ($cc_version =~ m/clang\s+(?:version)?\s+(\d+)\.(\d+)\.(\d+)\s+\([^\)]+\)\r?\n/i) {
+		$cc_version = sprintf("%d.%d.%d", $1, $2, $3);
+		$guess->{'gcc_version'} = $cc_version;
+		print "Detected CLANG compiler $cc_version ...\n";
+		if ($1 < 3 || ($1 == 3 && $2 < 3)) {
+			warn "Your CLANG Version is too old for LibSass!\n";
+			warn "Needs at least clang version 3.3 or higher!\n";
+			warn "Please consider upgrading your clang compiler!\n";
+			exit 0; # avoid any CPAN Testers failure reports
+		}
+	}
+	else {
+		print "Detected CLANG compiler (version unknown) ...\n";
 	}
 }
 # we never really tested compilation via MSVC yet ...
