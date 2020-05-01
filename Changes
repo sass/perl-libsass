@@ -1,3 +1,14 @@
+CSS::Sass (3.6.2)
+
+  Updating libsass to version 3.6.4
+  https://github.com/sass/libsass/releases/tag/3.6.4
+
+  * Bumped libsass version to latest 3.6 stable branch (3.6.4)
+  * CPAN release for 3.6.1 was skipped due to regressions
+  * GCC 4.4 support was removed for now (might not come back)
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Thu, 1 May 2020 13:46:07 +0100
+
 CSS::Sass (3.6.1)
 
   Updating libsass to version 3.6.3
@@ -7,6 +18,8 @@ CSS::Sass (3.6.1)
   * Bumped libsass version to latest 3.6 stable branch (3.6.3)
   * Fixed issue with building plugins on Mac OSX (#41)
   * Updated sass-spec and adjusted spec runner
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Mon, 4 Nov 2019 12:00:00 +0200
 
 CSS::Sass (3.6.0)
 
