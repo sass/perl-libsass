@@ -49,7 +49,7 @@ my $skip_manifest = env_option 'PSASS_SKIP_MANIFEST', 0;
 my $skip_version = env_option 'PSASS_SKIP_VERSION', 0;
 my $update_deps = env_option 'PSASS_UPDATE_DEPS', 0;
 my $checkout_deps = env_option 'PSASS_CHECKOUT_DEPS', 0;
-my $patch_gcc44 = env_option 'PSASS_PATCH_GCC44', 0;
+# my $patch_gcc44 = env_option 'PSASS_PATCH_GCC44', 0;
 my $skip_git = env_option 'PSASS_SKIP_GIT', 0;
 
 # arrays for various switches
@@ -81,7 +81,7 @@ sub help
 	print "  --checkout-deps      Checkout submodules at linked commit (needs git repo)\n";
 	print "  --get-versions       Show versions of all perl package (.pm) files\n";
 	print "  --set-versions       Set versions of all perl package (.pm) files\n";
-	print "  --patch-gcc44        Patch libsass for gcc44 compatibility\n";
+	# print "  --patch-gcc44        Patch libsass for gcc44 compatibility\n";
 	print "  --skip-git           Do not try to use anything git related\n";
 	print "\n";
 	print "  You may use environment variables to set any option\n";
@@ -163,7 +163,7 @@ GetOptions(
 	'--library!' => \$install_library,
 	'--compiler:s' => \$compiler,
 	'--profiling!' => \$profiling,
-	'--patch-gcc44' => \$patch_gcc44,
+	# '--patch-gcc44' => \$patch_gcc44,
 	'--skip-git!' => \$skip_git,
 	'--skip-version!' => \$skip_version,
 	'--skip-manifest!' => \$skip_manifest,
@@ -306,7 +306,7 @@ if ($install_sassc) {
 		$sassc_version = <$fh> if (defined $fh);
 		chomp($sassc_version);
 		print "Detected sassc $sassc_version\n";
-		# create compile flags to include the libsass version
+		# create compile flags to include the sassc version
 		push @defs, qq(SASSC_VERSION=\\"$sassc_version\\");
 	} else {
 		# give a warning if the version could not be determined (probably not generated yet)
@@ -318,23 +318,28 @@ if ($install_sassc) {
 # patch sources
 ################################################################################
 
-if ($patch_gcc44) {
-	my $cwd = Cwd::getcwd;
-	chdir ("libsass") or die "pushd: $!";
-	print "Patching libsass source for gcc compatibility\n";
-	foreach my $patch (sort glob("../patches/*.patch")) {
-		print "applying $patch\n";
-		# system "git", "am", "--abort";
-		system "git", "am", "--3way", "--keep-cr",
-			"--ignore-space-change", "--quiet", $patch;
-	}
-	system "perl", "script/replace-range-for-loops.pl";
-	chdir ($cwd) or die "popd: $!";
-}
+# if ($patch_gcc44) {
+# 	my $cwd = Cwd::getcwd;
+# 	chdir ("libsass") or die "pushd: $!";
+# 	print "Patching libsass source for gcc compatibility\n";
+# 	foreach my $patch (sort glob("../patches/*.patch")) {
+# 		print "applying $patch\n";
+# 		# system "git", "am", "--abort";
+# 		system "git", "am", "--3way", "--keep-cr",
+# 			"--ignore-space-change", "--quiet", $patch;
+# 	}
+# 	system "perl", "script/replace-range-for-loops.pl";
+# 	chdir ($cwd) or die "popd: $!";
+# }
 
 ################################################################################
 # compiler configurations
 ################################################################################
+
+unless (defined $compiler) {
+	$compiler = $ENV{'CC'} || $ENV{'CXX'};
+	$compiler =~ s/\++$// if $compiler;
+}
 
 my $guess = ExtUtils::CppGuess->new(
 	(defined($compiler) ? (cc => $compiler) : ()),
@@ -350,14 +355,35 @@ if ($guess->is_gcc) {
 		$cc_version = sprintf("%d.%d.%d", $1, $2, $3);
 		$guess->{'gcc_version'} = $cc_version;
 		print "Detected GCC compiler $cc_version ...\n";
-		if ($1 < 4 || ($1 == 4 && $2 < 4)) {
+		if ($1 < 4 || ($1 == 4 && $2 < 7)) {
 			warn "Your GCC Version is too old for LibSass!\n";
-			warn "Needs at least gcc version 4.4 or higher!\n";
-			die "Please consider upgrading your GCC compiler!\n";
+			warn "Needs at least gcc version 4.7 or higher!\n";
+			warn "Please consider upgrading your GCC compiler!\n";
+			exit 0; # avoid any CPAN Testers failure reports
 		}
 	}
 	else {
 		print "Detected GCC compiler (version unknown) ...\n";
+	}
+}
+elsif ($guess->is_clang) {
+	# version not exposed by CppGuess!?
+	use Capture::Tiny 'capture_merged';
+	my $cmd = $guess->{cc} . " --version";
+	my $cc_version = capture_merged { system($cmd) };
+	if ($cc_version =~ m/clang\s+(?:version)?\s+(\d+)\.(\d+)\.(\d+)\s+\([^\)]+\)\r?\n/i) {
+		$cc_version = sprintf("%d.%d.%d", $1, $2, $3);
+		$guess->{'gcc_version'} = $cc_version;
+		print "Detected CLANG compiler $cc_version ...\n";
+		if ($1 < 3 || ($1 == 3 && $2 < 3)) {
+			warn "Your CLANG Version is too old for LibSass!\n";
+			warn "Needs at least clang version 3.3 or higher!\n";
+			warn "Please consider upgrading your clang compiler!\n";
+			exit 0; # avoid any CPAN Testers failure reports
+		}
+	}
+	else {
+		print "Detected CLANG compiler (version unknown) ...\n";
 	}
 }
 # we never really tested compilation via MSVC yet ...
@@ -606,7 +632,7 @@ my $static = 0;
 my $reported = 0;
 
 sub compile_lib {
-	my ($mm, $name) = @_;
+	my ($lib, $mm, $name) = @_;
 	my @args = (
 		'$(LD) $(OPTIMIZE) -lstdc++ -shared', "-o ${name}",
 	);
@@ -623,6 +649,11 @@ sub compile_lib {
 	# needed to resolve lib from plugins
 	unless ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
 		push @args, '-Wl,-rpath,\\$$ORIGIN/../..';
+	}
+	# add explicit library name on OSX
+	if ($^O eq 'darwin') {
+		push @args, '-Wl,-install_name,' . $lib;
+		# push @args, '-Wl,-rpath,@loader_path/../..';
 	}
 	# -static-libgcc -static-libstdc++
 	return join(' ', @args, @libs);
@@ -643,6 +674,10 @@ sub libsass_sassc
 	}
 	# otherwise we asume gcc
 	else {
+		# On windows there is nothing like rpath for dll load paths
+		# So dll and sassc would need to be in same directory
+		# For now we just fall back to link sassc statically
+		my $static = $static || $^O eq 'MSWin32';
 		# create the sassc executable by linking against sassc and libsass
 		push @ret, "\t" . '$(LD) -o $(SASSC_EXE) $(LDFLAGS) -lm $(SASSC_OBJ) $(LIBS)'
 		         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++')
@@ -667,7 +702,7 @@ sub libsass_lib
 	# create the target for the makefile
 	push @ret, '$(LIBSASS_LIB): $(LIBSASS_OBJ)';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib($_[0], '$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
+	push @ret, "\t" . compile_lib('libsass.$(SO)', $_[0], '$(LIBSASS_LIB)') . ' $(LIBSASS_OBJ)';
 	# add target to virtual "pure_all"
 	push @cleanups, '$(LIBSASS_OBJ)';
 	push @cleanups, '$(LIBSASS_LIB)';
@@ -686,8 +721,11 @@ sub libsass_plugin_math
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib($_[0], '$(MATH_LIB)') . ' $(MATH_OBJ)'
+	push @ret, "\t" . compile_lib('math.$(SO)', $_[0], '$(MATH_LIB)') . ' $(MATH_OBJ)'
 		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
+	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
+	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
+		. ' $(MATH_LIB)' if ($^O eq 'darwin' && !$static);
 	# add target to virtual "pure_all"
 	push @cleanups, '$(MATH_OBJ)';
 	push @cleanups, '$(MATH_LIB)';
@@ -706,8 +744,11 @@ sub libsass_plugin_img_size
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/img-size';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib($_[0], '$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
+	push @ret, "\t" . compile_lib('img-size.$(SO)', $_[0], '$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
 		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
+	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
+	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
+		. ' $(IMG_SIZE_LIB)' if ($^O eq 'darwin' && !$static);
 	# add target to virtual "pure_all"
 	push @cleanups, '$(IMG_SIZE_OBJ)';
 	push @cleanups, '$(IMG_SIZE_LIB)';
@@ -731,8 +772,11 @@ sub libsass_plugin_digest
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib($_[0], '$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
+	push @ret, "\t" . compile_lib('digest.$(SO)', $_[0], '$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
 	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
+	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
+	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
+		. ' $(DIGEST_LIB)' if ($^O eq 'darwin' && !$static);
 	# add target to virtual "pure_all"
 	push @cleanups, '$(DIGEST_OBJ)';
 	push @cleanups, '$(DIGEST_LIB)';
@@ -756,8 +800,11 @@ sub libsass_plugin_glob
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib($_[0], '$(GLOB_LIB)') . ' $(GLOB_OBJ)'
+	push @ret, "\t" . compile_lib('glob.$(SO)', $_[0], '$(GLOB_LIB)') . ' $(GLOB_OBJ)'
 	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
+	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
+	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
+		. ' $(GLOB_LIB)' if ($^O eq 'darwin' && !$static);
 	# add target to virtual "pure_all"
 	push @cleanups, '$(GLOB_OBJ)';
 	push @cleanups, '$(GLOB_LIB)';

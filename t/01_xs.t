@@ -13,7 +13,7 @@ BEGIN { use_ok('CSS::Sass') };
 my $r;
 $r = CSS::Sass::compile_sass("this is invalid sass source", {});
 is  ($r->{error_status},  1,           "Failed compile sets error_status");
-like($r->{error_message}, qr/on line 1:22 of stdin/,  "Failed compile sets error_message");
+like($r->{error_message}, qr/on line 1:28 of stdin/,  "Failed compile sets error_message");
 is  ($r->{output_string}, undef,       "Failed compile sets output_string to undef");
 
 $r = CSS::Sass::compile_sass(".valid { color: red; }", {});
