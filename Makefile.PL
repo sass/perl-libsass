@@ -480,8 +480,9 @@ if ($EMMV > 7.10 && $EMMV < 7.20) {
 	# Fix another issue if as-needed is not supported
 	# https://github.com/sass/perl-libsass/issues/26
 	unless (`ld --help` =~ /--no-as-needed/) {
-		warn "Your current ExtUtils::MakeMaker has a bug\n";
-		die "You need to upgrade ExtUtils::MakeMaker to 7.20+\n";
+		die "Your current ExtUtils::MakeMaker $EMMV has a known bug!\n" .
+		    "Bug is present with MakeMaker 7.10 and fixed with 7.20.\n" .
+		    "Please up or downgrade ExtUtils::MakeMaker accordingly!\n";
 	}
 	if (exists $compiler_flags{'dynamic_lib'}) {
 		my $dynlibs = $compiler_flags{'dynamic_lib'};
