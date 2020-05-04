@@ -1,3 +1,14 @@
+CSS::Sass (3.6.3)
+
+  Maintenance release including some build fixes.
+  Includes one other fix for libsass to fix source-map and
+  error positions in case utf8 is used in sass/scss files.
+
+  * Bumped libsass version to virtual 3.6.4-r1
+  * Fix plugin resolving on older DragonFly BSD
+
+-- Marcel Greter <perl-libsass@ocbnet.ch>  Mon, 4 May 2020 11:56:27 +0100
+
 CSS::Sass (3.6.2)
 
   Updating libsass to version 3.6.4
