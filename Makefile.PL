@@ -633,7 +633,7 @@ my $static = 0;
 my $reported = 0;
 
 sub compile_lib {
-	my ($lib, $mm, $name) = @_;
+	my ($lib, $mm, $name, $isPlugin) = @_;
 	my @args = (
 		'$(LD) $(OPTIMIZE) -lstdc++ -shared', "-o ${name}",
 	);
@@ -646,10 +646,13 @@ sub compile_lib {
 		push @args, '-Wl,--major-image-version,0.0.9';
 		push @args, '-Wl,--minor-image-version,0.0.9';
 	}
-	# add explicit path to libsass lib
-	# needed to resolve lib from plugins
+	# add explicit relative path to resolve libsass library
+	# makes plugin.so look for -lsass in `../..` when loaded
+	# this may not be supported on all operating systems!
 	unless ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
-		push @args, '-Wl,-rpath,\\$$ORIGIN/../..';
+		# the `-z origin` seems needed for some BSD derivates!
+		push @args, '-Wl,-z,origin' if $isPlugin && $^O ne 'MSWin32';
+		push @args, '-Wl,-rpath,\\$$ORIGIN/../..' if $isPlugin;
 	}
 	# add explicit library name on OSX
 	if ($^O eq 'darwin') {
@@ -722,7 +725,7 @@ sub libsass_plugin_math
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/math';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('math.$(SO)', $_[0], '$(MATH_LIB)') . ' $(MATH_OBJ)'
+	push @ret, "\t" . compile_lib('math.$(SO)', $_[0], '$(MATH_LIB)', 1) . ' $(MATH_OBJ)'
 		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
 	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
@@ -745,7 +748,7 @@ sub libsass_plugin_img_size
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/img-size';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('img-size.$(SO)', $_[0], '$(IMG_SIZE_LIB)') . ' $(IMG_SIZE_OBJ)'
+	push @ret, "\t" . compile_lib('img-size.$(SO)', $_[0], '$(IMG_SIZE_LIB)', 1) . ' $(IMG_SIZE_OBJ)'
 		     . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
 	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
@@ -773,7 +776,7 @@ sub libsass_plugin_digest
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/digest';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('digest.$(SO)', $_[0], '$(DIGEST_LIB)') . ' $(DIGEST_OBJ)'
+	push @ret, "\t" . compile_lib('digest.$(SO)', $_[0], '$(DIGEST_LIB)', 1) . ' $(DIGEST_OBJ)'
 	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
 	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
@@ -801,7 +804,7 @@ sub libsass_plugin_glob
 	# make sure the plugin path exists for output
 	push @ret, "\t" . '$(MKPATH) $(INST_ARCHAUTODIR)/plugins/glob';
 	# create the libsass shared library by linking against all objects
-	push @ret, "\t" . compile_lib('glob.$(SO)', $_[0], '$(GLOB_LIB)') . ' $(GLOB_OBJ)'
+	push @ret, "\t" . compile_lib('glob.$(SO)', $_[0], '$(GLOB_LIB)', 1) . ' $(GLOB_OBJ)'
 	         . ' ' . ($static ? '$(LIBSASS_OBJ)' : '-L$(INST_ARCHAUTODIR) -lsass -lstdc++');
 	# change dynamic loading of libsass.dylib to look relative to ourself (only on mac)
 	push @ret, "\t" . 'install_name_tool -change libsass.dylib @loader_path/../../libsass.dylib'
