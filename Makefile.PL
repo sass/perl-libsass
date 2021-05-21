@@ -651,7 +651,7 @@ sub compile_lib {
 	# this may not be supported on all operating systems!
 	unless ($^O eq 'MSWin32' && $Config{cc} =~ /^cl/) {
 		# the `-z origin` seems needed for some BSD derivates!
-		push @args, '-Wl,-z,origin' if $isPlugin && $^O ne 'MSWin32';
+		push @args, '-Wl,-z,origin' if $isPlugin && $^O ne 'MSWin32' && $^O ne 'darwin';
 		push @args, '-Wl,-rpath,\\$$ORIGIN/../..' if $isPlugin;
 	}
 	# add explicit library name on OSX

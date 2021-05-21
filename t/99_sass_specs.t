@@ -549,24 +549,15 @@ END {
 # 	$_->query('start') <= 3.4
 # } @tests);
 
-use Test::More tests => 3 * scalar @specs;
+use Test::More tests => 2 * scalar @specs;
 use Test::Differences;
 
 # run tests after filtering
 foreach my $spec (@specs)
 {
+	my $expected = $spec->expect;
 	# compare the result with expected data
-	eq_or_diff ($spec->css, $spec->expect, "CSS: " . $spec->file);
-	# skip some faulty error specs (perl is picky)
-	if ($spec->{file} =~ m/\Wissue_(?:2446)\W/) {
-		ok('Invalid UTF8 sequence in output');
-	} else {
-		eq_or_diff ($spec->err, $spec->stderr, "Errors: " . $spec->file);
-	}
-	# skip some faulty warning specs (perl is picky)
-	if ($spec->{file} =~ m/\Wissue_(?:308|1578)\W/) {
-		ok('Warning message not marked as todo in spec')
-	} else {
-		eq_or_diff ($spec->msg, $spec->stdmsg, "Warnings: " . $spec->file);
-	}
+	if ($expected) { eq_or_diff ($spec->css, $expected, "CSS: " . $spec->file); }
+	else { eq_or_diff ($spec->err, $spec->stderr, "Errors: " . $spec->file); }
+	eq_or_diff ($spec->msg, $spec->stdmsg, "Warnings: " . $spec->file);
 }
