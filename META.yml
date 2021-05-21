@@ -39,4 +39,4 @@ resources:
   homepage: https://metacpan.org/release/CSS-Sass
   license: http://opensource.org/licenses/MIT
   repository: https://github.com/sass/perl-libsass
-version: v3.6.3
+version: v3.6.4
